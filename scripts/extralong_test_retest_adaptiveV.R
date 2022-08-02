@@ -380,11 +380,75 @@ for (i in 1:length(tests)) {
   assign(paste0("new_",test),new_dat)
 }
 
+# special step for EDISC -- need to see if I can get n > 46, ideally n > 50
+{
+  test <- tests[8]
+  test_sum <- test_sums[8]
+  
+  dat <- extralong_repeat %>% dplyr::select(matches(test)) %>% cbind(demos,.) %>% 
+    filter(test_sessions_v.age %in% 18:35)
+  dat <- subset(dat, !is.na(dat[,ncol(dat)]))
+  
+  n <- unique(dat$bblid)
+  
+  temp <- dat %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),]    # this has the first instances of each unique bblid
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  dat_t1 <- dat %>% filter(combo %in% t.first$combo)  
+  dat_tn <- dat %>% filter(combo %notin% t.first$combo)
+  
+  temp <- dat_tn %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),]    # this has the first instances of each unique bblid
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  dat_t2 <- dat_tn %>% filter(combo %in% t.first$combo) 
+  dat_tn2 <- dat_tn %>% filter(combo %notin% t.first$combo)
+  
+  names(dat_t1)[21:ncol(dat_t1)] <- paste(names(dat_t1)[21:ncol(dat_t1)],"t1",sep="_")
+  names(dat_t2)[c(9,19:ncol(dat_t2))] <- paste(names(dat_t2)[c(9,19:ncol(dat_t2))],"t2",sep="_")
+  
+  new_dat <- left_join(dat_t1,dat_t2[c(5,9,19:ncol(dat_t2))],by="bblid")
+  new_dat <- subset(new_dat, !is.na(new_dat[,ncol(new_dat)])) %>% mutate(dotest_t1 = as.numeric(ymd(test_sessions_v.dotest)),
+                                                                         dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
+                                                                         new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
+  
+  temp <- dat_tn2 %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),]    # this has the first instances of each unique bblid
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  dat_t3 <- dat_tn2 %>% filter(combo %in% t.first$combo)  
+  
+  
+  names(dat_t3)[c(9,19:ncol(dat_t3))] <- paste(names(dat_t3)[c(9,19:ncol(dat_t3))],"t3",sep="_")
+  
+  new_dat1_3 <- left_join(dat_t1,dat_t3[c(5,9,19:ncol(dat_t3))],by="bblid")
+  new_dat1_3 <- subset(new_dat1_3, !is.na(new_dat1_3[,ncol(new_dat1_3)])) %>% mutate(dotest_t1 = as.numeric(ymd(test_sessions_v.dotest)),
+                                                                         dotest_t3 = as.numeric(ymd(test_sessions_v.dotest_t3)),
+                                                                         new_diffdays = dotest_t3 - dotest_t1) %>% arrange(new_diffdays)
+  
+  new_dat2_3 <- left_join(dat_t2,dat_t3[c(5,9,19:ncol(dat_t3))],by="bblid")
+  new_dat2_3 <- subset(new_dat2_3, !is.na(new_dat2_3[,ncol(new_dat2_3)])) %>% mutate(dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
+                                                                         dotest_t3 = as.numeric(ymd(test_sessions_v.dotest_t3)),
+                                                                         new_diffdays = dotest_t3 - dotest_t2) %>% arrange(new_diffdays)
+  names(new_dat1_3) <- names(new_dat)
+  names(new_dat2_3) <- names(new_dat)
+  
+  new_dat <- rbind(new_dat,new_dat1_3,new_dat2_3)
+  
+  assign(paste0("new_",test),new_dat)
+}
+
 
 # printing the pairs.panels produced above
 newtexts <- paste0("new_",tests)
 newtests <- mget(newtexts)
 
+# make a table to accompany plots 
+# specifically, showing N, range of diffdays, median and mean diffdays
+test_row <- data.frame(matrix(NA,nrow = length(tests),ncol = 5))
+names(test_row) <- c("N","Min diffdays","Max diffdays","Mean diffdays","Median diffdays")
+rownames(test_row) <- toupper(tests)
 
 # adding QA method of getting rid of people w/ > 3 SD of a difference
 for (i in 1:length(newtests)) {
@@ -399,19 +463,28 @@ for (i in 1:length(newtests)) {
   test_dat$drop_3sd <- ifelse((test_dat$sc > 3| test_dat$sc < (-3)),1,0)
   
   assign(paste0("new_",test),test_dat)
+  
+  test_row[i,] <- c(dim(test_dat)[1],min(test_dat$new_diffdays),max(test_dat$new_diffdays),mean(test_dat$new_diffdays),median(test_dat$new_diffdays))
 }
 
 newtests <- mget(newtexts)
 
-pdf("data/outputs/full_full/all_testretest_noPRA_moreQC_220802.pdf",height=9,width=12)
-for (i in 1:length(tests)) {
-  pairs.panels(newtests[[i]] %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
-  pairs.panels(newtests[[i]] %>% filter(drop_3sd != 1) %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
-}
-dev.off()
+# print both regular pairs.panels as well as drop_3sd implemented pairs.panels
+# pdf("data/outputs/full_full/all_testretest_noPRA_moreQC_220802.pdf",height=9,width=12)
+# for (i in 1:length(tests)) {
+#   pairs.panels(newtests[[i]] %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
+#   pairs.panels(newtests[[i]] %>% filter(drop_3sd != 1) %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
+# }
+# dev.off()
+
+# print table
+test_row %>% 
+  kbl(caption = "More Info for Scatters", align = rep("c", 8)) %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+  save_kable(file = "data/outputs/full_full/full_full_info_table_220802.pdf", self_contained = T)
 
 
-
+# maybe make a collection of plots with diffdays < 500 days or some other threshold
 
 
 
