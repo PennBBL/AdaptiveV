@@ -322,10 +322,7 @@ diffday_order <- repeats_only %>% arrange(diffdays) %>% filter(test_sessions_v.a
 
 
 
-
-# trying something new
-
-# while loop? 
+# creating new datasets with a loop
 
 # pra from itemwise??
 tests <- c("adt","aim","cpf","cpt","cpw","ddisc","digsym","edisc","er40","gng","medf","plot","pmat","pvrt","rdisc","volt")  # no pra for now
@@ -341,15 +338,18 @@ for (i in 1:length(tests)) {
     filter(test_sessions_v.age %in% 18:35)
   dat <- subset(dat, !is.na(dat[,ncol(dat)]))
   
+  # digsym variables are saved under ds as well as digsym
   if (test == "digsym"){
     dat <- extralong_repeat %>% dplyr::select(matches("digsym|ds")) %>% cbind(demos,.) %>% 
       filter(test_sessions_v.age %in% 18:35)
   }
   
+  # the last row has empty rows that aren't NA so it keeps too many rows
   if (test %in% c("digsym","gng","plot")){
     dat <- subset(dat, !is.na(dat[,ncol(dat)-1]))
   }
   
+  # getting rid of invalid codes, excluding disc tasks because they don't have any valid codes
   if (test %notin% c("ddisc","edisc","rdisc")){
     dat <- subset(dat, (dat[,grepl("_valid",colnames(dat))] %notin% c("F","N","V3")))
   }
@@ -386,25 +386,24 @@ newtexts <- paste0("new_",tests)
 newtests <- mget(newtexts)
 
 
-# need to add QA method of getting rid of people w/ > 3 SD of a difference
-test_dat <- newtests[[1]]
-temp <- test_dat[,grepl(test_sums[1],colnames(test_dat))]
+# adding QA method of getting rid of people w/ > 3 SD of a difference
+for (i in 1:length(newtests)) {
+  test <- tests[i]
+  test_dat <- newtests[[i]]
+  temp <- test_dat[,grepl(test_sums[i],colnames(test_dat))]
   
-mod <- lm(temp[,2]~temp[,1],data=temp,na.action=na.exclude)
-# ggplot(new_adt, aes(x=adt_pc_t1, y=adt_pc_t2)) + geom_point() + geom_smooth(method='lm')
-sc <- scale(residuals(mod,na.action=na.exclude))
-test_dat <- cbind(test_dat,sc)
-test_dat$drop_3sd <- ifelse((test_dat$sc > 3| test_dat$sc < (-3)),1,0)
+  mod <- lm(temp[,2]~temp[,1],data=temp,na.action=na.exclude)
+  # ggplot(new_adt, aes(x=adt_pc_t1, y=adt_pc_t2)) + geom_point() + geom_smooth(method='lm')
+  sc <- scale(residuals(mod,na.action=na.exclude))
+  test_dat <- cbind(test_dat,sc)
+  test_dat$drop_3sd <- ifelse((test_dat$sc > 3| test_dat$sc < (-3)),1,0)
+  
+  assign(paste0("new_",test),test_dat)
+}
 
-# old code for reference
-mod <- lm(adt_pc_t2~adt_pc_t1,data=new_adt,na.action=na.exclude)
-# ggplot(new_adt, aes(x=adt_pc_t1, y=adt_pc_t2)) + geom_point() + geom_smooth(method='lm')
-sc <- scale(residuals(mod,na.action=na.exclude))
-new_adt <- cbind(new_adt,sc)
-new_adt$drop_3sd <- ifelse((new_adt$sc > 3| new_adt$sc < (-3)),1,0)
+newtests <- mget(newtexts)
 
-
-pdf("data/outputs/full_full/all_testretest_noPRA_220802.pdf",height=9,width=12)
+pdf("data/outputs/full_full/all_testretest_noPRA_moreQC_220802.pdf",height=9,width=12)
 for (i in 1:length(tests)) {
   pairs.panels(newtests[[i]] %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
   pairs.panels(newtests[[i]] %>% filter(drop_3sd != 1) %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
