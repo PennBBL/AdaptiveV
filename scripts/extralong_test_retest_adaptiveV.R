@@ -56,7 +56,8 @@ extralong <- extralong %>% dplyr::select(datasetid_platform:KDDISC.valid_code,KD
 
 # keep only those with multiple timepoints
 extralong_repeat <- extralong %>% group_by(bblid) %>% dplyr::summarize(n = n()) %>% 
-  left_join(extralong,.,by="bblid") %>% filter(n>1,test_sessions.datasetid %notin% c(48505,42470)) %>% arrange(bblid,test_sessions_v.dotest)
+  left_join(extralong,.,by="bblid") %>% filter(n>1,test_sessions.datasetid %notin% c(48505,42470)) %>% 
+  arrange(bblid,test_sessions_v.dotest)
 
 extralong_repeat$test_sessions_v.dotest <- as.Date(extralong_repeat$test_sessions_v.dotest,format = "%Y-%m-%d")
 extralong_repeat$days <- as.numeric(ymd(extralong_repeat$test_sessions_v.dotest))
@@ -349,6 +350,10 @@ for (i in 1:length(tests)) {
     dat <- subset(dat, !is.na(dat[,ncol(dat)-1]))
   }
   
+  if (test %notin% c("ddisc","edisc","rdisc")){
+    dat <- subset(dat, (dat[,grepl("_valid",colnames(dat))] %notin% c("F","N","V3")))
+  }
+  
   n <- unique(dat$bblid)
   
   temp <- dat %>% dplyr::select("bblid","test_sessions_v.dotest")
@@ -372,20 +377,37 @@ for (i in 1:length(tests)) {
                                                                          dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
                                                                          new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
   
-  # need to add QA method of getting rid of people w/ > 3 SD of a difference
-  
-  assign(paste0(test,"_new"),new_dat)
-  pairs.panels(new_dat %>% dplyr::select(matches(test_sum)),lm=TRUE,scale=TRUE,ci=TRUE)
+  assign(paste0("new_",test),new_dat)
 }
 
 
 # printing the pairs.panels produced above
-newtexts <- paste0(tests,"_new")
+newtexts <- paste0("new_",tests)
 newtests <- mget(newtexts)
+
+
+# need to add QA method of getting rid of people w/ > 3 SD of a difference
+test_dat <- newtests[[1]]
+temp <- test_dat[,grepl(test_sums[1],colnames(test_dat))]
+  
+mod <- lm(temp[,2]~temp[,1],data=temp,na.action=na.exclude)
+# ggplot(new_adt, aes(x=adt_pc_t1, y=adt_pc_t2)) + geom_point() + geom_smooth(method='lm')
+sc <- scale(residuals(mod,na.action=na.exclude))
+test_dat <- cbind(test_dat,sc)
+test_dat$drop_3sd <- ifelse((test_dat$sc > 3| test_dat$sc < (-3)),1,0)
+
+# old code for reference
+mod <- lm(adt_pc_t2~adt_pc_t1,data=new_adt,na.action=na.exclude)
+# ggplot(new_adt, aes(x=adt_pc_t1, y=adt_pc_t2)) + geom_point() + geom_smooth(method='lm')
+sc <- scale(residuals(mod,na.action=na.exclude))
+new_adt <- cbind(new_adt,sc)
+new_adt$drop_3sd <- ifelse((new_adt$sc > 3| new_adt$sc < (-3)),1,0)
+
 
 pdf("data/outputs/full_full/all_testretest_noPRA_220802.pdf",height=9,width=12)
 for (i in 1:length(tests)) {
   pairs.panels(newtests[[i]] %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
+  pairs.panels(newtests[[i]] %>% filter(drop_3sd != 1) %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
 }
 dev.off()
 
