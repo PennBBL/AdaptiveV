@@ -19,7 +19,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
 
 # Study Enroll ----
 {
-  studyAll<-read.csv("data/inputs/bbl_study_all.csv", comment.char="#")  # 295 rows of unique bblid as of 7/27/22
+  studyAll<-read.csv("data/inputs/bbl_study_all.csv", comment.char="#")  # 300 rows of unique bblid as of 8/3/22
  
   #pull out adaptive enrolled subjects
   studyEnroll<-studyAll%>%
@@ -57,11 +57,11 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
       pull(ORDER_NAME)
   }
   
-  studyEnroll3 <- left_join(studyEnroll2,proto_order,by=c("bblid"="BBLID")) %>%      # 295 unique bblid rows, 7/27/22 (14 NA rows from group_order)
-    filter(study_status %notin% c("excluded","dropout","not enrolled"))              # 267 rows left after getting rid of "excluded","dropout","not enrolled", 7/20/22
+  studyEnroll3 <- left_join(studyEnroll2,proto_order,by=c("bblid"="BBLID")) %>%      # 300 unique bblid rows, 8/3/22 (13 NA rows from group_order)
+    filter(study_status %notin% c("excluded","dropout","not enrolled"))              # 272 rows left after getting rid of "excluded","dropout","not enrolled", 8/3/22
   
   # all rows that have data from bbl_study_all.csv, but not adaptive.csv
-  bblstudyall_no_adapive <- studyEnroll3 %>% filter(is.na(proto_1))    # 14 total but only 13 after excluding non-active/complete ppl
+  bblstudyall_no_adapive <- studyEnroll3 %>% filter(is.na(proto_1))    # 13 after excluding non-active/complete ppl
 }
 
 
@@ -110,14 +110,14 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
     dplyr::select(bblid, study_status, study_group, sex, race, ethnic, educ, age_enroll,proto_1,proto_2,proto_3,proto_4)
 
   # all rows that have data from bbl_study_all.csv, but not subjectvisitsall_v.csv
-  no_subjectvisitsall <- demographics_adaptive %>% filter(is.na(sex))
+  no_subjectvisitsall <- demographics_adaptive %>% filter(is.na(sex))   # 30 missing as of 8/3/22
 }
 
 
 #CNB ----
 
 {
-  cnb <- read.csv("data/inputs/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv")  # 249 rows 7/20/22
+  cnb <- read.csv("data/inputs/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv") 
   
   cnb1 <- cnb %>%
     dplyr::select(matches("datasetid_platform|test_sessions.datasetid|siteid|bblid.clean|age|battery|dotest|gng|cpf|medf|pvrt|er40|cpt|cpw|aim|adt|plot|volt|pmat|digsym|dscor|dsmemcr|dscorrt|dsmcrrt|KDDISC|KRDISC|EDISC"))
@@ -152,12 +152,12 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   cnb2$edisc_mcr <- rowMedians(as.matrix(edisc_ttrs))
   
   # keep all tasks, get rid of itemwise DISC cols
-  fullcnb <- cnb2 %>% dplyr::select(datasetid_platform:aim_mcrrt,matches("ddisc_|rdisc_|edisc_")) %>%  # 255 rows as of 7/27/22
+  fullcnb <- cnb2 %>% dplyr::select(datasetid_platform:aim_mcrrt,matches("ddisc_|rdisc_|edisc_")) %>%  # 257 rows as of 8/3/22
     filter(datasetid %notin% c(47859,48505))     # get rid of doubled up bblid: datasetid = 47859, datasetid = 48505
   
   
   # adding PRA from iw
-  for_pra <- read.csv("data/inputs/athena_195_360_220727.csv",na.strings=c(""," ","NA"))
+  for_pra <- read.csv("data/inputs/athena_195_360.csv",na.strings=c(""," ","NA"))
   
   PRA_iw <- for_pra %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% arrange(bblid) %>% 
     filter(test_sessions.siteid == "adaptive_v",test_sessions_v.battery == "PRA_D", bblid > 9999,!is.na(test_sessions_v.battery_complete)) %>% 
@@ -167,7 +167,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   PRA_resp[PRA_resp == 2] <- 0
   PRA_iw$pra_cr <- rowSums(PRA_resp,na.rm = T)
   
-  fullcnb2 <- left_join(fullcnb,PRA_iw %>% dplyr::select(bblid,pra_cr),by="bblid")
+  fullcnb2 <- left_join(fullcnb,PRA_iw %>% dplyr::select(bblid,pra_cr),by="bblid") # 7 NA as of 8/3/22
   
   
   # subset (old, from Mrugank's original script)
@@ -185,7 +185,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   
   
   tracker <- left_join(demographics_adaptive,cnb2_subset, by = c("bblid"))
-  dat_combined <- left_join(demographics_adaptive,fullcnb2, by = c("bblid"))
+  dat_combined <- left_join(demographics_adaptive,fullcnb2, by = c("bblid"))  
   
 }
 
@@ -288,8 +288,8 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   
   
   
-  # testing out new CAT CNB short tests  -- still looks missing for now? 7/27/22
-  adaptive_short <- read_csv("data/inputs/athena_253_324_220727.csv")
+  # testing out new CAT CNB short tests  -- still looks missing for now? 8/3/22
+  adaptive_short <- read_csv("data/inputs/athena_253_324.csv")
   
   adaptive_short1 <- adaptive_short %>% filter(test_sessions_v.battery == "cat_adaptive_v_battery_link1") %>% 
     dplyr::select(matches("test_sessions|aim|cpt|digsym|^ds|gng"))
@@ -316,12 +316,12 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   dat_combined2 <- left_join(dat_combined,adaptive_cnb, by = c("bblid" = "BBLID"))    # 100079 is excluded and still trying to figure out about 23064
   
   # all rows that have data from bbl_study_all.csv, but not in the adaptivecnb CSVs  
-  no_adaptivecnb <- dat_combined2 %>% filter(is.na(pra.1.00.d.cat_default)) # 16 rows of missing data
+  no_adaptivecnb <- dat_combined2 %>% filter(is.na(pra.1.00.d.cat_default)) # 21 rows missing (at least), 8/3/22
 }
 
 
 # print out CSV of combined CNB data
-write.csv(dat_combined2,"data/inputs/cnb_merged_20220728.csv",row.names = F)
+write.csv(dat_combined2,"data/inputs/cnb_merged_20220803.csv",row.names = F)
 
 
 
