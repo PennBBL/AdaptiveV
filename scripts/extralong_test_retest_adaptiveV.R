@@ -331,6 +331,7 @@ test_sums <- c("adt_pc","aim_tot_","cpf_cr","cpt_acc","cpw_cr","ddisc_sum","dsco
 
 demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.famid,bblid,test_sessions_v.age:platform,diffdays:combo)
 
+# take first two timepoints for comparison
 {
   for (i in 1:length(tests)) {
     test <- tests[i]
@@ -686,7 +687,7 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   # test_row %>%
   #   kbl(caption = "More Info for Scatters", align = rep("c", 8)) %>%
   #   kable_classic(full_width = F, html_font = "Cambria") %>%
-  #   save_kable(file = "data/outputs/full_full/full_full_info_table_someTP3_365_220803.pdf", self_contained = T)
+  #   save_kable(file = "data/outputs/full_full/full_full_info_table_someTP3_365_220804.pdf", self_contained = T)
 
 }
 
