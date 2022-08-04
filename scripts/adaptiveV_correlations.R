@@ -2361,7 +2361,10 @@ x99 <- x99 %>% mutate(dscr_cat = NA,dsmemcr_cat = NA,gng_cat = NA,aim_cat = NA,c
                 er40_2_cat,cpf_2_cat,er40.1.00.cat_emotive,er40.1.00.cat_neutral,medf.1.00.cat_same,
                 medf.1.00.cat_different,er40.2.00.cat_emotive,er40.2.00.cat_neutral)
 
-# for when I have different parts of ER40 and memory tasks separated
+# temporarily (no QC-ing whatsoever of CAT vs full data to match un-QC-ed extralong full vs full)
+x_xl <- x99
+
+# split tasks: need to add separated memory tasks 
 
 temp_er40_emo <- ER40_EMO_iw %>% dplyr::select(matches("^bblid$|er40_emo.ER40_D.ER40D_EMO|er40_resp.ER40_D.ER40D_EMORTCR|SMVE")) %>% 
   filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|ER40")),by=c("bblid" = "BBLID"))
@@ -2394,7 +2397,7 @@ split_er40_medf <- left_join(split_er40_medf,temp_medf_same %>% dplyr::select(ma
 
 x99_split <- left_join(x99,split_er40_medf,by="bblid")
 
-# PRA missing for full CNB, rapid/shortened tests missing for CAT CNB (AIM,CPT,DIGSYM,GNG,)
+# rapid/shortened tests missing for CAT CNB (AIM,CPT,DIGSYM,GNG,)
 # need to edit line above defining x99 when CAT shortened test are available
 
 sc <- matrix(NA,nrow(x99_split),ncol(x99_split)-6)
@@ -2410,7 +2413,6 @@ for (i in c(1:18,20:21,23:29,34:36,38:54)) {
   sc[,i] <- scale(residuals(mod,na.action=na.exclude))
 }
 
-# for now, not getting PVRT measures (waiting for new data) so work around it 
 # old stuff for reference below
 # mod <- lm(x99[,(14)]~proto_3,data=x99,na.action=na.exclude)
 # sc[,1] <- scale(residuals(mod,na.action=na.exclude))
@@ -2427,8 +2429,6 @@ x_PS <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Psychosis"))
 x_MD <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Mood-Anx-BP"))
 
 # write.csv(x,"CNB-CAT_test-retest_with_order-regressed.csv",na="",row.names=FALSE)
-
-colors <- c("#00AFBB", "#E7B800", "#FC4E07")
 
 
 # scatters spread by test
@@ -2585,6 +2585,68 @@ pairs.panels(x_MD %>% dplyr::select(matches("er40_noe_SMVE_Oreg|er40.2.00.cat_ne
 pairs.panels(x_MD %>% dplyr::select(matches("er40_noe_splitSMVE_Oreg|er40.2.00.cat_neutral_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)   # er40 split, neutral items, by split SMVE
 pairs.panels(x_MD %>% dplyr::select(matches("cpf_cr_Oreg|cpf_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)  
 dev.off()
+
+
+
+
+# for AdaptiveV vs Extralong (XL) comparison
+# overall
+pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_ALL_bytest_forXL_220803.pdf",height=9,width=12)
+pairs.panels(x_xl %>% dplyr::select(matches("adt_pc|adt_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_xl %>% dplyr::select(matches("aim_tot|aim_cat")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
+pairs.panels(x_xl %>% dplyr::select(matches("cpf_cr|cpf_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_xl %>% dplyr::select(matches("cpf_cr|cpf_2_cat")),lm=TRUE,scale=TRUE,ci=TRUE)  # new, corrected cpf (cpfv2)
+# pairs.panels(x_xl %>% dplyr::select(matches("cpt_acc|cpt_cat")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
+pairs.panels(x_xl %>% dplyr::select(matches("cpw_cr|cpw_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_xl %>% dplyr::select(matches("ddisc_sum|ddisc.1.00.cat_default")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_xl %>% dplyr::select(matches("dscor|dscr_cat")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_xl %>% dplyr::select(matches("edisc_sum|edisc.1.00.cat_default")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_xl %>% dplyr::select(matches("er40_cr|er40_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_xl %>% dplyr::select(matches("er40_cr|er40_2_cat")),lm=TRUE,scale=TRUE,ci=TRUE)                         # new, corrected er40 (er40v2)
+# pairs.panels(x_xl %>% dplyr::select(matches("gng_cr|gng_cat")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
+pairs.panels(x_xl %>% dplyr::select(matches("medf_pc|medf_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_xl %>% dplyr::select(matches("plot_pc|plot.1.00.cat_default")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_xl %>% dplyr::select(matches("pmat_pc|pmat.1.00.cat_default")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_xl %>% dplyr::select(matches("pra_cr|pra.1.00.d.cat_default")),lm=TRUE,scale=TRUE,ci=TRUE) # pra
+pairs.panels(x_xl %>% dplyr::select(matches("pvrt_cr|pvrt.1.00.cat_default")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_xl %>% dplyr::select(matches("rdisc_sum|rdisc.1.00.cat_default")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_xl %>% dplyr::select(matches("volt_cr|volt_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+dev.off()
+
+
+# table to accompany above plots
+adapt_XL <- data.frame(matrix(NA,ncol = 1,nrow = 19))
+rownames(adapt_XL) <- c("ADT","AIM","CPF","CPF v2","CPT","CPW","DDISC","DIGSYM","EDISC","ER40","ER40 v2",
+                        "GNG","MEDF","PLOT","PMAT","PRA","PVRT","RDISC","SVOLT")
+
+adapt_XL[1,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("adt_pc")))),sum(!is.na(x_xl %>% dplyr::select(matches("adt_cat")))))
+adapt_XL[2,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("aim_tot")))),sum(!is.na(x_xl %>% dplyr::select(matches("aim_cat")))))
+adapt_XL[3,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("cpf_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("cpf_cat")))))
+adapt_XL[4,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("cpf_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("cpf_2_cat")))))
+adapt_XL[5,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("cpt_acc")))),sum(!is.na(x_xl %>% dplyr::select(matches("cpt_cat")))))
+adapt_XL[6,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("cpw_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("cpw_cat")))))
+adapt_XL[7,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("ddisc_sum")))),sum(!is.na(x_xl %>% dplyr::select(matches("ddisc.1.00.cat_default")))))
+adapt_XL[8,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("dscor")))),sum(!is.na(x_xl %>% dplyr::select(matches("dscr_cat")))))
+adapt_XL[9,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("edisc_sum")))),sum(!is.na(x_xl %>% dplyr::select(matches("edisc.1.00.cat_default")))))
+adapt_XL[10,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("er40_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("er40_cat")))))
+adapt_XL[11,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("er40_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("er40_2_cat")))))
+adapt_XL[12,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("gng_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("gng_cat")))))
+adapt_XL[13,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("medf_pc")))),sum(!is.na(x_xl %>% dplyr::select(matches("medf_cat")))))
+adapt_XL[14,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("plot_pc")))),sum(!is.na(x_xl %>% dplyr::select(matches("plot.1.00.cat_default")))))
+adapt_XL[15,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("pmat_pc")))),sum(!is.na(x_xl %>% dplyr::select(matches("pmat.1.00.cat_default")))))
+adapt_XL[16,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("pra_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("pra.1.00.d.cat_default")))))
+adapt_XL[17,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("pvrt_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("pvrt.1.00.cat_default")))))
+adapt_XL[18,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("rdisc_sum")))),sum(!is.na(x_xl %>% dplyr::select(matches("rdisc.1.00.cat_default")))))
+adapt_XL[19,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("volt_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("volt_cat")))))
+
+adapt_XL %>% 
+  kbl(caption = "Number of Rows for each Test", align = rep("c", 8),
+      col.names = "N") %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+  column_spec(1, width = "12em") %>% 
+  save_kable(file = "data/outputs/AdaptiveV_table_forXL_220804.pdf", self_contained = T)
+
+
 
 
 
