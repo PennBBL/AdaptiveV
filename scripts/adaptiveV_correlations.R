@@ -50,14 +50,14 @@ library(lubridate)
 # load data ----
 
 # demos, proto order, groups, full cnb + cat cnb (missing rapid tests aka AIM, CPT, GNG, DIGSYM)
-all_cnb <- read.csv("data/inputs/cnb_merged_20220728.csv",na.strings=c(""," ","NA"))  # 267 rows as of 7/28/22
+all_cnb <- read.csv("data/inputs/cnb_merged_20220803.csv",na.strings=c(""," ","NA"))  # 272 rows as of 8/3/22
 x <- all_cnb
 
 # full CNB for itemwise DISC tasks
 f_cnb <- read.csv("data/inputs/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv",na.strings=c(""," ","NA"))
 f_cnb <- f_cnb %>% filter(test_sessions_v.battery %in% c("adaptive_v_battery_v0","adaptive_v_battery_v1","adaptive_v_battery_v2"),test_sessions.bblid.clean>9999)
 demo_f_cnb <- f_cnb %>% dplyr::select(datasetid_platform:test_sessions.bblid.clean,test_sessions_v.age:test_sessions_v.endtime) %>% 
-  rename(BBLID = test_sessions.bblid.clean)  # 260 rows as of 7/27/22
+  rename(BBLID = test_sessions.bblid.clean)  # 262 rows as of 8/3/22
 
 # old itemwise full CNB
 {
@@ -73,13 +73,13 @@ demo_f_cnb <- f_cnb %>% dplyr::select(datasetid_platform:test_sessions.bblid.cle
 }
 
 # new IW dataset from 7/13/22
-new_iw <- read.csv("data/inputs/athena_195_360_220727.csv",na.strings=c(""," ","NA"))
+new_iw <- read.csv("data/inputs/athena_195_360.csv",na.strings=c(""," ","NA"))
 new_iw_adaptive <- new_iw %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% 
   filter(test_sessions_v.battery %in% c("adaptive_v_battery_v1","adaptive_v_battery_v2","cat_adaptive_v_battery_link1","cat_adaptive_v_battery_link3"),
          bblid > 9999) %>% arrange(bblid) %>% 
   dplyr::select(test_sessions.datasetid:test_sessions.famid,bblid,test_sessions_v.admin_comments:test_sessions_v.batt_consent,test_sessions_v.deleted_flag:PRA_D.AGE)
 
-new_iw_ad <- new_iw_adaptive %>% filter(test_sessions_v.battery %in% c("adaptive_v_battery_v1","adaptive_v_battery_v2"))     # 256 unique bblid, ADT, CPF, MEDF, PMAT, VSPLOT, SVOLT, SPCPTNL, AIM, GNG, CPW, DIGSYM, ER40, PVRT, PRA (but empty) no MPRACT, PCET, SLNB
+new_iw_ad <- new_iw_adaptive %>% filter(test_sessions_v.battery %in% c("adaptive_v_battery_v1","adaptive_v_battery_v2"))     # 252 unique bblid, ADT, CPF, MEDF, PMAT, VSPLOT, SVOLT, SPCPTNL, AIM, GNG, CPW, DIGSYM, ER40, PVRT, PRA (but empty) no MPRACT, PCET, SLNB
 # new_iw_cat_1 <- new_iw_adaptive %>% filter(test_sessions_v.battery == "cat_adaptive_v_battery_link1")      # 259 unique bblid, but no actual data
 # new_iw_cat_3 <- new_iw_adaptive %>% filter(test_sessions_v.battery == "cat_adaptive_v_battery_link3")      # 261 unique bblid, but no actual data
 
@@ -88,18 +88,8 @@ new_iw_ad <- new_iw_ad %>% filter(test_sessions_v.battery_complete == 1, is.na(t
 
 
 # make new demos variable for new_iw?
-demo_new_iw <- new_iw_ad %>% dplyr::select(test_sessions.datasetid:test_sessions_v.endtime)  # 250 rows as of 7/27/22  
+demo_new_iw <- new_iw_ad %>% dplyr::select(test_sessions.datasetid:test_sessions_v.endtime)  # 252 rows as of 8/3/22  
 
-
-
-# QC data ----
-
-# * performance validity ----
-
-# creating performance validity scores for full CNB scores to:
-#   1) show distributions of performance validity scores
-#   2) keep only the best quality data
-#   3) compare this with other validity measures (manual + autovalidation rules)
 
 demo_from_iw1 <- fullcnb_iw1 %>% dplyr::select(test_sessions.datasetid:test_sessions_v.endtime)
 demo_from_iw2 <- fullcnb_iw2 %>% dplyr::select(test_sessions.datasetid:test_sessions_v.endtime)
@@ -136,131 +126,266 @@ demo_from_iw2 <- fullcnb_iw2 %>% dplyr::select(test_sessions.datasetid:test_sess
   DIGSYM_iw <- DIGSYM_iw[,1:469]
 }
 
+# separate itemwise data into each specific test
+{
+  dat <- new_iw_ad
+  demos <- demo_new_iw
+  
+  ADT_iw <- dat %>% dplyr::select(matches("^ADT36_A.ADT36A_CR$|^ADT36_A.ADT36A_PC$|^ADT36_A.ADT36A_RTCR$|ADT36_A.ADT36A_QID")) %>% cbind(demos,.)   # 252 rows, 8/3/22
+  CPF_iw <- dat %>% dplyr::select(matches("^CPF_B.CPF_CR$|^CPF_B.CPF_RTCR$|^CPF_B.CPF_W_RTCR$|CPF_B.CPF_TRIAL")) %>% cbind(demos,.)
+  CPW_iw <- dat %>% dplyr::select(matches("^CPW_A.CPW_CR$|^CPW_A.CPW_RTCR$|^CPW_A.CPW_W_RTCR$|CPW_A.CPW_TRIAL")) %>% cbind(demos,.)
+  DDISC_iw <- f_cnb %>% dplyr::select(matches("DDISC")) %>% cbind(demo_f_cnb,.)   # 262 rows, 8/3/22
+  EDISC_iw <- f_cnb %>% dplyr::select(matches("EDISC")) %>% cbind(demo_f_cnb,.) %>% dplyr::select(datasetid_platform:EDISC.valid_code,EDISC.q_101_resp:EDISC.test)
+  ER40_iw <- dat %>% dplyr::select(matches("^ER40_D.ER40D_CR$|^ER40_D.ER40D_RTCR$|ER40_D.ER40D_QID")) %>% cbind(demos,.)
+  MEDF_iw <- dat %>% dplyr::select(matches("^MEDF36_A.MEDF36A_CR$|^MEDF36_A.MEDF36A_PC$|^MEDF36_A.MEDF36A_RTCR$|MEDF36_A.MEDF36A_QID")) %>% cbind(demos,.)
+  PMAT_iw <- dat %>% dplyr::select(matches("^PMAT24_A.PMAT24_A_CR$|^PMAT24_A.PMAT24_A_PC$|^PMAT24_A.PMAT24_A_RTCR$|PMAT24_A.PMAT24_A_QID0000")) %>% cbind(demos,.)
+  PLOT_iw <- dat %>% dplyr::select(matches("VSPLOT15.VSPLOT15_"))
+  PLOT_iw <- PLOT_iw %>% dplyr::select(matches("_CR$|_PC$|RTCR$|_DEG_OFF_|_RT_|_ANS_|_EXCESS_|_CORR")) %>% cbind(demos,.)
+  PRA_iw <- new_iw %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% arrange(bblid) %>%   # 259 rows, 8/3/22
+    filter(test_sessions.siteid == "adaptive_v",test_sessions_v.battery == "PRA_D", bblid > 9999) %>% 
+    dplyr::select(matches("test_session|^bblid|PRA_D")) %>% dplyr::select(test_sessions.datasetid:test_sessions.famid,bblid,test_sessions_v.admin_comments:test_sessions_v.batt_consent,test_sessions_v.deleted_flag:PRA_D.AGE)
+  PVRT_iw <- dat %>% dplyr::select(matches("^SPVRT_A.SPVRTA_CR$|^SPVRT_A.SPVRTA_PC$|^SPVRT_A.SPVRTA_W_CR$|^SPVRT_A.SPVRTA_W_PC$|^SPVRT_A.SPVRTA_RTCR$|SPVRT_A.SPVRTA_QID")) %>% cbind(demos,.)
+  RDISC_iw <- f_cnb %>% dplyr::select(matches("RDISC")) %>% cbind(demo_f_cnb,.) %>% dplyr::select(datasetid_platform:KRDISC.test)
+  VOLT_iw <- dat %>% dplyr::select(matches("^SVOLT_A.SVOLT_CR$|^SVOLT_A.SVOLT_RTCR$|^SVOLT_A.SVOLT_W_RTCR$|SVOLT_A.SVOLT_TRIAL")) %>% cbind(demos,.)
+  
+  # rapid tests
+  AIM_iw <- dat %>% dplyr::select(matches("^AIM.AIMTOT$|^AIM.AIMTOTRT$|^AIM.AIM_QID")) %>% cbind(demos,.)
+  CPT_iw <- dat %>% dplyr::select(matches("^SPCPTNL.SCPL_TP$|^SPCPTNL.SCPL_TPRT$|^SPCPTNL.SCPT_QID")) %>% cbind(demos,.)
+  GNG_iw <- dat %>% dplyr::select(matches("^GNG150.GNG150_CR$|^GNG150.GNG150_RTCR$|^GNG150.GNG150_QID")) %>% cbind(demos,.)
+  DIGSYM_iw <- dat %>% dplyr::select(matches("^DIGSYM.DSCOR$|^DIGSYM.DSCORRT$|^DIGSYM.DS_TP$|^DIGSYM.DS_TPRT$|^DIGSYM.DSMEMCR$|^DIGSYM.DSMCRRT$|DIGSYM.DS_MEM_QID|DIGSYM.DS_QID")) %>% cbind(demos,.)
+  # last real response in DIGSYM_iw is DIGSYM.DS_QID000170_TTR
+  
+  # temp <- DIGSYM_iw %>% dplyr::select(!matches("_QID$"))
+  # temp$not_NA <- rowSums(!is.na(temp[,23:ncol(temp)]))
+  # head(sort(temp$not_NA,decreasing = T),15)
+  
+  DIGSYM_iw <- DIGSYM_iw %>% dplyr::select(test_sessions.datasetid:DIGSYM.DS_QID000170_TTR) # still true, 8/3/22
+  
+  
+  
+  
+  # all memory + ER40 + MEDF columns to make separate full CNB target/foil scores
+  
+  # ER40 separation
+  er40_all <- dat %>% dplyr::select(matches("ER40")) %>% cbind(demos,.)   # emotive vs neutral
+  er40_emo <- er40_all %>% dplyr::select(matches("_ANG|_FEAR|_HAP|_SAD")) %>% cbind(demos,.) %>% 
+    mutate(ER40_D.ER40D_EMO = rowSums(.[,15:18]))
+  # use iw data for ER40_D.ER40D_EMORTCR
+  # code below was used to check that the item ordering that I got from Lucky matched preexisting data. it did! yay:)
+  er40_ang <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000001_RESP:ER40_D.ER40D_QID000004_CORR,ER40_D.ER40D_QID000021_RESP:ER40_D.ER40D_QID000024_CORR)    # %>% mutate(ang = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
+  er40_fear <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000005_RESP:ER40_D.ER40D_QID000008_CORR,ER40_D.ER40D_QID000025_RESP:ER40_D.ER40D_QID000028_CORR)   #  %>% mutate(fear = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
+  er40_hap <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000009_RESP:ER40_D.ER40D_QID000012_CORR,ER40_D.ER40D_QID000029_RESP:ER40_D.ER40D_QID000032_CORR)    # %>% mutate(hap = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
+  er40_sad <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000017_RESP:ER40_D.ER40D_QID000020_CORR,ER40_D.ER40D_QID000037_RESP:ER40_D.ER40D_QID000040_CORR)    # %>% mutate(sad = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
+  
+  er40_noe <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000013_RESP:ER40_D.ER40D_QID000016_CORR,ER40_D.ER40D_QID000033_RESP:ER40_D.ER40D_QID000036_CORR)    # %>% mutate(noe = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
+  
+  er40_resp <- er40_all %>% dplyr::select(matches("_TTR"))
+  er40_resp$ER40_D.ER40D_EMORTCR <- rowMedians(as.matrix(er40_resp %>% dplyr::select(ER40_D.ER40D_QID000001_TTR:ER40_D.ER40D_QID000012_TTR,
+                                                                                     ER40_D.ER40D_QID000017_TTR:ER40_D.ER40D_QID000032_TTR,
+                                                                                     ER40_D.ER40D_QID000037_TTR:ER40_D.ER40D_QID000040_TTR)))
+  ER40_EMO_iw <- cbind(demos,er40_ang,er40_fear,er40_hap,er40_sad,er40_emo$ER40_D.ER40D_EMO,er40_resp$ER40_D.ER40D_EMORTCR)
+  ER40_NEU_iw <- cbind(demos,er40_noe,er40_all %>% dplyr::select(matches("_NOE")))
+  
+  
+  # MEDDF separation
+  medf_all <- dat %>% dplyr::select(matches("MEDF")) %>% cbind(demos,.)   # same vs different
+  # medf_emo <- medf_all %>% dplyr::select(matches("_ANG|_FEAR|_HAP|_SAD")) %>% cbind(demos,.) # initially used this to calculate MEDF36_A.MEDF36A_DIF, but realized this doesn't work 
+  # use iw data for MEDF36_A.MEDF36A_SAMERTCR
+  medf_resp <- medf_all %>% dplyr::select(matches("_TTR"))
+  medf_resp$MEDF36_A.MEDF36A_DIFRT <- rowMedians(as.matrix(medf_resp %>% dplyr::select(MEDF36_A.MEDF36A_QID000001_TTR:MEDF36_A.MEDF36A_QID000008_TTR,
+                                                                                       MEDF36_A.MEDF36A_QID000010_TTR:MEDF36_A.MEDF36A_QID000012_TTR,
+                                                                                       MEDF36_A.MEDF36A_QID000014_TTR:MEDF36_A.MEDF36A_QID000020_TTR,
+                                                                                       MEDF36_A.MEDF36A_QID000022_TTR:MEDF36_A.MEDF36A_QID000035_TTR)))
+  
+  medf_corr <- medf_all %>% dplyr::select(matches("_CORR"))
+  medf_corr$MEDF36_A.MEDF36A_DIF <- rowSums(medf_corr %>% dplyr::select(MEDF36_A.MEDF36A_QID000001_CORR:MEDF36_A.MEDF36A_QID000008_CORR,
+                                                                        MEDF36_A.MEDF36A_QID000010_CORR:MEDF36_A.MEDF36A_QID000012_CORR,
+                                                                        MEDF36_A.MEDF36A_QID000014_CORR:MEDF36_A.MEDF36A_QID000020_CORR,
+                                                                        MEDF36_A.MEDF36A_QID000022_CORR:MEDF36_A.MEDF36A_QID000035_CORR))
+  
+  
+  MEDF_DIF_iw <- cbind(demos,medf_all %>% dplyr::select(MEDF36_A.MEDF36A_QID000001_RESP:MEDF36_A.MEDF36A_QID000008_CORR,
+                                                        MEDF36_A.MEDF36A_QID000010_RESP:MEDF36_A.MEDF36A_QID000012_CORR,
+                                                        MEDF36_A.MEDF36A_QID000014_RESP:MEDF36_A.MEDF36A_QID000020_CORR,
+                                                        MEDF36_A.MEDF36A_QID000022_RESP:MEDF36_A.MEDF36A_QID000035_CORR),
+                       medf_corr$MEDF36_A.MEDF36A_DIF,medf_resp$MEDF36_A.MEDF36A_DIFRT)
+  
+  # recalculating RTCR for same items
+  medf_same_resp <- medf_all %>% dplyr::select(MEDF36_A.MEDF36A_QID000009_RESP:MEDF36_A.MEDF36A_QID000009_CORR,
+                                                MEDF36_A.MEDF36A_QID000013_RESP:MEDF36_A.MEDF36A_QID000013_CORR,
+                                                MEDF36_A.MEDF36A_QID000021_RESP:MEDF36_A.MEDF36A_QID000021_CORR,
+                                                MEDF36_A.MEDF36A_QID000036_RESP:MEDF36_A.MEDF36A_QID000036_CORR)
+  medf_same_resp$MEDF36_A.MEDF36A_SAME_RTCR <- rowMedians(as.matrix(medf_same_resp %>% dplyr::select(matches("_TTR"))))
+  
+  MEDF_SAME_iw <- cbind(demos, medf_same_resp %>% dplyr::select(MEDF36_A.MEDF36A_QID000009_RESP:MEDF36_A.MEDF36A_QID000036_CORR),
+                        medf_all %>% dplyr::select(MEDF36_A.MEDF36A_SAME_CR),medf_same_resp %>% dplyr::select(MEDF36_A.MEDF36A_SAME_RTCR))
+  
+  # CPF separation
+  cpf_all <- dat %>% dplyr::select(matches("CPF")) %>% cbind(demos,.)     # targets vs foils (TP vs TN)
+  
+  CPF_targets <- cpf_all %>% dplyr::select(CPF_B.CPF_TRIAL000003_RESP:CPF_B.CPF_TRIAL000006_CORR,
+                                           CPF_B.CPF_TRIAL000008_RESP:CPF_B.CPF_TRIAL000010_CORR,
+                                           CPF_B.CPF_TRIAL000014_RESP:CPF_B.CPF_TRIAL000014_CORR,
+                                           CPF_B.CPF_TRIAL000019_RESP:CPF_B.CPF_TRIAL000022_CORR,
+                                           CPF_B.CPF_TRIAL000025_RESP:CPF_B.CPF_TRIAL000025_CORR,
+                                           CPF_B.CPF_TRIAL000028_RESP:CPF_B.CPF_TRIAL000029_CORR,
+                                           CPF_B.CPF_TRIAL000031_RESP:CPF_B.CPF_TRIAL000031_CORR,
+                                           CPF_B.CPF_TRIAL000034_RESP:CPF_B.CPF_TRIAL000036_CORR,
+                                           CPF_B.CPF_TRIAL000040_RESP:CPF_B.CPF_TRIAL000040_CORR,
+                                           CPF_B.CPF_TP,CPF_B.CPF_TPRT) %>% cbind(demos,.)  # checked 8/3/22
+  
+  CPF_foils <- cpf_all %>% dplyr::select(CPF_B.CPF_TRIAL000001_RESP:CPF_B.CPF_TRIAL000002_CORR,
+                                         CPF_B.CPF_TRIAL000007_RESP:CPF_B.CPF_TRIAL000007_CORR,
+                                         CPF_B.CPF_TRIAL000011_RESP:CPF_B.CPF_TRIAL000013_CORR,
+                                         CPF_B.CPF_TRIAL000015_RESP:CPF_B.CPF_TRIAL000018_CORR,
+                                         CPF_B.CPF_TRIAL000023_RESP:CPF_B.CPF_TRIAL000024_CORR,
+                                         CPF_B.CPF_TRIAL000026_RESP:CPF_B.CPF_TRIAL000027_CORR,
+                                         CPF_B.CPF_TRIAL000030_RESP:CPF_B.CPF_TRIAL000030_CORR,
+                                         CPF_B.CPF_TRIAL000032_RESP:CPF_B.CPF_TRIAL000033_CORR,
+                                         CPF_B.CPF_TRIAL000037_RESP:CPF_B.CPF_TRIAL000039_CORR,
+                                         CPF_B.CPF_TN,CPF_B.CPF_TNRT) %>% cbind(demos,.)   # checked 8/3/22
+  
+  # temporary to check TP and TPRT, TN and TNR
+  { # TPRT are a little bit off but TP matches exactly, so i think we're safe
+    temp_resp <- CPF_targets %>% dplyr::select(matches("TTR"))
+    temp_resp$CPF_B.CPF_Tscore <- rowMedians(as.matrix(temp_resp)) 
+    temp_resp <- cbind(temp_resp,CPF_targets$CPF_B.CPF_TPRT)
+    
+    temp_corr <- CPF_targets %>% dplyr::select(matches("CORR"))
+    temp_corr$CPF_B.CPF_Tscore <- rowSums(temp_corr) 
+    temp_corr <- cbind(temp_corr,CPF_targets$CPF_B.CPF_TP)
+    
+    # TNRT are a little bit off but TN matches exactly, so i think we're safe
+    temp_resp <- CPF_foils %>% dplyr::select(matches("TTR"))
+    temp_resp$CPF_B.CPF_Tscore <- rowMedians(as.matrix(temp_resp)) 
+    temp_resp <- cbind(temp_resp,CPF_foils$CPF_B.CPF_TNRT)
+    
+    temp_corr <- CPF_foils %>% dplyr::select(matches("CORR"))
+    temp_corr$CPF_B.CPF_Tscore <- rowSums(temp_corr) 
+    temp_corr <- cbind(temp_corr,CPF_foils$CPF_B.CPF_TN)
+                                         }
+  
+  cpw_all <- dat %>% dplyr::select(matches("CPW")) %>% cbind(demos,.)     # targets vs foils (TP vs TN)
+  
+  CPW_targets <- cpw_all %>% dplyr::select(CPW_A.CPW_TRIAL000001_RESP:CPW_A.CPW_TRIAL000001_CORR,
+                                           CPW_A.CPW_TRIAL000003_RESP:CPW_A.CPW_TRIAL000003_CORR,
+                                           CPW_A.CPW_TRIAL000005_RESP:CPW_A.CPW_TRIAL000005_CORR,
+                                           CPW_A.CPW_TRIAL000009_RESP:CPW_A.CPW_TRIAL000010_CORR,
+                                           CPW_A.CPW_TRIAL000012_RESP:CPW_A.CPW_TRIAL000013_CORR,
+                                           CPW_A.CPW_TRIAL000016_RESP:CPW_A.CPW_TRIAL000017_CORR,
+                                           CPW_A.CPW_TRIAL000019_RESP:CPW_A.CPW_TRIAL000019_CORR,
+                                           CPW_A.CPW_TRIAL000021_RESP:CPW_A.CPW_TRIAL000022_CORR,
+                                           CPW_A.CPW_TRIAL000024_RESP:CPW_A.CPW_TRIAL000025_CORR,
+                                           CPW_A.CPW_TRIAL000029_RESP:CPW_A.CPW_TRIAL000029_CORR,
+                                           CPW_A.CPW_TRIAL000031_RESP:CPW_A.CPW_TRIAL000032_CORR,
+                                           CPW_A.CPW_TRIAL000036_RESP:CPW_A.CPW_TRIAL000036_CORR,
+                                           CPW_A.CPW_TRIAL000039_RESP:CPW_A.CPW_TRIAL000040_CORR,
+                                           CPW_A.CPW_TP,CPW_A.CPW_TPRT) %>% cbind(demos,.)  # checked 8/3/22
+  
+  CPW_foils <- cpw_all %>% dplyr::select(CPW_A.CPW_TRIAL000002_RESP:CPW_A.CPW_TRIAL000002_CORR,
+                                         CPW_A.CPW_TRIAL000004_RESP:CPW_A.CPW_TRIAL000004_CORR,
+                                         CPW_A.CPW_TRIAL000006_RESP:CPW_A.CPW_TRIAL000008_CORR,
+                                         CPW_A.CPW_TRIAL000011_RESP:CPW_A.CPW_TRIAL000011_CORR,
+                                         CPW_A.CPW_TRIAL000014_RESP:CPW_A.CPW_TRIAL000015_CORR,
+                                         CPW_A.CPW_TRIAL000018_RESP:CPW_A.CPW_TRIAL000018_CORR,
+                                         CPW_A.CPW_TRIAL000020_RESP:CPW_A.CPW_TRIAL000020_CORR,
+                                         CPW_A.CPW_TRIAL000023_RESP:CPW_A.CPW_TRIAL000023_CORR,
+                                         CPW_A.CPW_TRIAL000026_RESP:CPW_A.CPW_TRIAL000028_CORR,
+                                         CPW_A.CPW_TRIAL000030_RESP:CPW_A.CPW_TRIAL000030_CORR,
+                                         CPW_A.CPW_TRIAL000033_RESP:CPW_A.CPW_TRIAL000035_CORR,
+                                         CPW_A.CPW_TRIAL000037_RESP:CPW_A.CPW_TRIAL000038_CORR,
+                                         CPW_A.CPW_TN,CPW_A.CPW_TNRT) %>% cbind(demos,.)   # checked 8/3/22
+  
+  # temporary to check TP and TPRT, TN and TNR
+  { # TPRT are a little bit off but TP matches exactly, so i think we're safe
+    temp_resp <- CPW_targets %>% dplyr::select(matches("TTR"))
+    temp_resp$CPW_A.CPW_Tscore <- rowMedians(as.matrix(temp_resp)) 
+    temp_resp <- cbind(temp_resp,CPW_targets$CPW_A.CPW_TPRT)
+    
+    temp_corr <- CPW_targets %>% dplyr::select(matches("CORR"))
+    temp_corr$CPW_A.CPW_Tscore <- rowSums(temp_corr) 
+    temp_corr <- cbind(temp_corr,CPW_targets$CPW_A.CPW_TP)
+    
+    # TNRT are a little bit off but TN matches exactly, so i think we're safe
+    temp_resp <- CPW_foils %>% dplyr::select(matches("TTR"))
+    temp_resp$CPW_A.CPW_Tscore <- rowMedians(as.matrix(temp_resp)) 
+    temp_resp <- cbind(temp_resp,CPW_foils$CPW_A.CPW_TNRT)
+    
+    temp_corr <- CPW_foils %>% dplyr::select(matches("CORR"))
+    temp_corr$CPW_A.CPW_Tscore <- rowSums(temp_corr) 
+    temp_corr <- cbind(temp_corr,CPW_foils$CPW_A.CPW_TN)
+                                         }
+  
+  volt_all <- dat %>% dplyr::select(matches("VOLT")) %>% cbind(demos,.)   # targets vs foils (TP vs TN)
+  
+  VOLT_targets <- volt_all %>% dplyr::select(SVOLT_A.SVOLT_TRIAL000001_RESP:SVOLT_A.SVOLT_TRIAL000002_CORR,
+                                             SVOLT_A.SVOLT_TRIAL000004_RESP:SVOLT_A.SVOLT_TRIAL000005_CORR,
+                                             SVOLT_A.SVOLT_TRIAL000008_RESP:SVOLT_A.SVOLT_TRIAL000010_CORR,
+                                             SVOLT_A.SVOLT_TRIAL000013_RESP:SVOLT_A.SVOLT_TRIAL000013_CORR,
+                                             SVOLT_A.SVOLT_TRIAL000015_RESP:SVOLT_A.SVOLT_TRIAL000015_CORR,
+                                             SVOLT_A.SVOLT_TRIAL000019_RESP:SVOLT_A.SVOLT_TRIAL000019_CORR,
+                                             SVOLT_A.SVOLT_TP,SVOLT_A.SVOLT_TPRT) %>% cbind(demos,.)  # checked 8/3/22
+  
+  VOLT_foils <- volt_all %>% dplyr::select(SVOLT_A.SVOLT_TRIAL000003_RESP:SVOLT_A.SVOLT_TRIAL000003_CORR,
+                                           SVOLT_A.SVOLT_TRIAL000006_RESP:SVOLT_A.SVOLT_TRIAL000007_CORR,
+                                           SVOLT_A.SVOLT_TRIAL000011_RESP:SVOLT_A.SVOLT_TRIAL000012_CORR,
+                                           SVOLT_A.SVOLT_TRIAL000014_RESP:SVOLT_A.SVOLT_TRIAL000014_CORR,
+                                           SVOLT_A.SVOLT_TRIAL000016_RESP:SVOLT_A.SVOLT_TRIAL000018_CORR,
+                                           SVOLT_A.SVOLT_TRIAL000020_RESP:SVOLT_A.SVOLT_TRIAL000020_CORR,
+                                           SVOLT_A.SVOLT_TN,SVOLT_A.SVOLT_TNRT) %>% cbind(demos,.)   # checked 8/3/22
+  
+  # temporary to check TP and TPRT, TN and TNR
+  { # TPRT are a little bit off but TP matches exactly, so i think we're safe
+    temp_resp <- VOLT_targets %>% dplyr::select(matches("TTR"))
+    temp_resp$SVOLT_A.SVOLT_Tscore <- rowMedians(as.matrix(temp_resp)) 
+    temp_resp <- cbind(temp_resp,VOLT_targets$SVOLT_A.SVOLT_TPRT)
+    
+    temp_corr <- VOLT_targets %>% dplyr::select(matches("CORR"))
+    temp_corr$SVOLT_A.SVOLT_Tscore <- rowSums(temp_corr) 
+    temp_corr <- cbind(temp_corr,VOLT_targets$SVOLT_A.SVOLT_TP)
+    
+    # TNRT are a little bit off but TN matches exactly, so i think we're safe
+    temp_resp <- VOLT_foils %>% dplyr::select(matches("TTR"))
+    temp_resp$SVOLT_A.SVOLT_Tscore <- rowMedians(as.matrix(temp_resp)) 
+    temp_resp <- cbind(temp_resp,VOLT_foils$SVOLT_A.SVOLT_TNRT)
+    
+    temp_corr <- VOLT_foils %>% dplyr::select(matches("CORR"))
+    temp_corr$SVOLT_A.SVOLT_Tscore <- rowSums(temp_corr) 
+    temp_corr <- cbind(temp_corr,VOLT_foils$SVOLT_A.SVOLT_TN)
+                                           }
+  
+  # adding summary scores to DISC tasks
+  # disc_tasks <- all_cnb %>% dplyr::select(bblid,ddisc_sum:edisc_mcr) # for some reason, there are some scores missing when using this method
+  # 
+  # DDISC_iw <- left_join(DDISC_iw,disc_tasks %>% dplyr::select(bblid,ddisc_sum,ddisc_mcr),by=c("BBLID" = "bblid"))
+  # EDISC_iw <- left_join(EDISC_iw,disc_tasks %>% dplyr::select(bblid,edisc_sum,edisc_mcr),by=c("BBLID" = "bblid"))
+  # RDISC_iw <- left_join(RDISC_iw,disc_tasks %>% dplyr::select(bblid,rdisc_sum,rdisc_mcr),by=c("BBLID" = "bblid"))
+  
+  DDISC_iw$ddisc_sum <- rowSums((DDISC_iw %>% dplyr::select(matches("KDDISC.q")))-1)
+  DDISC_iw$ddisc_mcr <- rowMedians(as.matrix(DDISC_iw %>% dplyr::select(matches("KDDISC.trr"))))
+  
+  RDISC_iw$rdisc_sum <- rowSums((RDISC_iw %>% dplyr::select(matches("RDISC.q")))-1)
+  RDISC_iw$rdisc_mcr <- rowMedians(as.matrix(RDISC_iw %>% dplyr::select(matches("RDISC.trr"))))
+  
+  EDISC_iw$edisc_sum <- rowSums((EDISC_iw %>% dplyr::select(matches("_resp")))-1)
+  EDISC_iw$edisc_mcr <- rowMedians(as.matrix(EDISC_iw %>% dplyr::select(matches("_ttr"))))
+}
 
 
-# same as above but for new_iw_ad_v1_v2
-dat <- new_iw_ad
-demos <- demo_new_iw
-
-ADT_iw <- dat %>% dplyr::select(matches("^ADT36_A.ADT36A_CR$|^ADT36_A.ADT36A_PC$|^ADT36_A.ADT36A_RTCR$|ADT36_A.ADT36A_QID")) %>% cbind(demos,.)
-CPF_iw <- dat %>% dplyr::select(matches("^CPF_B.CPF_CR$|^CPF_B.CPF_RTCR$|^CPF_B.CPF_W_RTCR$|CPF_B.CPF_TRIAL")) %>% cbind(demos,.)
-CPW_iw <- dat %>% dplyr::select(matches("^CPW_A.CPW_CR$|^CPW_A.CPW_RTCR$|^CPW_A.CPW_W_RTCR$|CPW_A.CPW_TRIAL")) %>% cbind(demos,.)
-DDISC_iw <- f_cnb %>% dplyr::select(matches("DDISC")) %>% cbind(demo_f_cnb,.)
-EDISC_iw <- f_cnb %>% dplyr::select(matches("EDISC")) %>% cbind(demo_f_cnb,.)
-ER40_iw <- dat %>% dplyr::select(matches("^ER40_D.ER40D_CR$|^ER40_D.ER40D_RTCR$|ER40_D.ER40D_QID")) %>% cbind(demos,.)
-MEDF_iw <- dat %>% dplyr::select(matches("^MEDF36_A.MEDF36A_CR$|^MEDF36_A.MEDF36A_PC$|^MEDF36_A.MEDF36A_RTCR$|MEDF36_A.MEDF36A_QID")) %>% cbind(demos,.)
-PMAT_iw <- dat %>% dplyr::select(matches("^PMAT24_A.PMAT24_A_CR$|^PMAT24_A.PMAT24_A_PC$|^PMAT24_A.PMAT24_A_RTCR$|PMAT24_A.PMAT24_A_QID0000")) %>% cbind(demos,.)
-PLOT_iw <- dat %>% dplyr::select(matches("VSPLOT15.VSPLOT15_"))
-PLOT_iw <- PLOT_iw %>% dplyr::select(matches("_CR$|_PC$|RTCR$|_DEG_OFF_|_RT_|_ANS_|_EXCESS_|_CORR")) %>% cbind(demos,.)
-PRA_iw <- new_iw %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% arrange(bblid) %>% 
-  filter(test_sessions.siteid == "adaptive_v",test_sessions_v.battery == "PRA_D", bblid > 9999) %>% 
-  dplyr::select(matches("test_session|^bblid|PRA_D")) %>% dplyr::select(test_sessions.datasetid:test_sessions.famid,bblid,test_sessions_v.admin_comments:test_sessions_v.batt_consent,test_sessions_v.deleted_flag:PRA_D.AGE)
-PVRT_iw <- dat %>% dplyr::select(matches("^SPVRT_A.SPVRTA_CR$|^SPVRT_A.SPVRTA_PC$|^SPVRT_A.SPVRTA_W_CR$|^SPVRT_A.SPVRTA_W_PC$|^SPVRT_A.SPVRTA_RTCR$|SPVRT_A.SPVRTA_QID")) %>% cbind(demos,.)
-RDISC_iw <- f_cnb %>% dplyr::select(matches("RDISC")) %>% cbind(demo_f_cnb,.)
-VOLT_iw <- dat %>% dplyr::select(matches("^SVOLT_A.SVOLT_CR$|^SVOLT_A.SVOLT_RTCR$|^SVOLT_A.SVOLT_W_RTCR$|SVOLT_A.SVOLT_TRIAL")) %>% cbind(demos,.)
-
-# rapid tests
-AIM_iw <- dat %>% dplyr::select(matches("^AIM.AIMTOT$|^AIM.AIMTOTRT$|^AIM.AIM_QID")) %>% cbind(demos,.)
-CPT_iw <- dat %>% dplyr::select(matches("^SPCPTNL.SCPL_TP$|^SPCPTNL.SCPL_TPRT$|^SPCPTNL.SCPT_QID")) %>% cbind(demos,.)
-GNG_iw <- dat %>% dplyr::select(matches("^GNG150.GNG150_CR$|^GNG150.GNG150_RTCR$|^GNG150.GNG150_QID")) %>% cbind(demos,.)
-DIGSYM_iw <- dat %>% dplyr::select(matches("^DIGSYM.DSCOR$|^DIGSYM.DSCORRT$|^DIGSYM.DS_TP$|^DIGSYM.DS_TPRT$|^DIGSYM.DSMEMCR$|^DIGSYM.DSMCRRT$|DIGSYM.DS_MEM_QID|DIGSYM.DS_QID")) %>% cbind(demos,.)
-# last real response in DIGSYM_iw is DIGSYM.DS_QID000170_TTR
-
-# temp <- DIGSYM_iw %>% dplyr::select(!matches("_QID$"))
-# temp$not_NA <- rowSums(!is.na(temp[,23:ncol(temp)]))
-# head(sort(temp$not_NA,decreasing = T),15)
-
-DIGSYM_iw <- DIGSYM_iw %>% dplyr::select(test_sessions.datasetid:DIGSYM.DS_QID000170_TTR) # still true, 7/20/22
 
 
 
 
-# all memory + ER40 + MEDF columns to make separate full CNB target/foil scores
+# QC data ----
 
-# ER40 separation
-er40_all <- dat %>% dplyr::select(matches("ER40")) %>% cbind(demos,.)   # emotive vs neutral
-er40_emo <- er40_all %>% dplyr::select(matches("_ANG|_FEAR|_HAP|_SAD")) %>% cbind(demos,.) %>% 
-  mutate(ER40_D.ER40D_EMO = rowSums(.[,17:20]))
-# use iw data for ER40_D.ER40D_EMORTCR
-# code below was used to check that the item ordering that I got from Lucky matched preexisting data. it did! yay:)
-er40_ang <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000001_RESP:ER40_D.ER40D_QID000004_CORR,ER40_D.ER40D_QID000021_RESP:ER40_D.ER40D_QID000024_CORR)    # %>% mutate(ang = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
-er40_fear <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000005_RESP:ER40_D.ER40D_QID000008_CORR,ER40_D.ER40D_QID000025_RESP:ER40_D.ER40D_QID000028_CORR)   #  %>% mutate(fear = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
-er40_hap <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000009_RESP:ER40_D.ER40D_QID000012_CORR,ER40_D.ER40D_QID000029_RESP:ER40_D.ER40D_QID000032_CORR)    # %>% mutate(hap = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
-er40_sad <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000017_RESP:ER40_D.ER40D_QID000020_CORR,ER40_D.ER40D_QID000037_RESP:ER40_D.ER40D_QID000040_CORR)    # %>% mutate(sad = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
-
-er40_noe <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000013_RESP:ER40_D.ER40D_QID000016_CORR,ER40_D.ER40D_QID000033_RESP:ER40_D.ER40D_QID000036_CORR)    # %>% mutate(noe = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
-
-er40_resp <- er40_all %>% dplyr::select(matches("_TTR"))
-er40_resp$ER40_D.ER40D_EMORTCR <- rowMedians(as.matrix(er40_resp %>% dplyr::select(ER40_D.ER40D_QID000001_TTR:ER40_D.ER40D_QID000012_TTR,
-                                                                                   ER40_D.ER40D_QID000017_TTR:ER40_D.ER40D_QID000032_TTR,
-                                                                                   ER40_D.ER40D_QID000037_TTR:ER40_D.ER40D_QID000040_TTR)))
-ER40_EMO_iw <- cbind(demos,er40_ang,er40_fear,er40_hap,er40_sad,er40_emo$ER40_D.ER40D_EMO,er40_resp$ER40_D.ER40D_EMORTCR)
-ER40_NEU_iw <- cbind(demos,er40_noe,er40_all %>% dplyr::select(matches("_NOE")))
-
-
-# MEDDF separation
-medf_all <- dat %>% dplyr::select(matches("MEDF")) %>% cbind(demos,.)   # same vs different
-# medf_emo <- medf_all %>% dplyr::select(matches("_ANG|_FEAR|_HAP|_SAD")) %>% cbind(demos,.) # initially used this to calculate MEDF36_A.MEDF36A_DIF, but realized this doesn't work 
-# use iw data for MEDF36_A.MEDF36A_SAMERTCR
-medf_resp <- medf_all %>% dplyr::select(matches("_TTR"))
-medf_resp$MEDF36_A.MEDF36A_DIFRT <- rowMedians(as.matrix(medf_resp %>% dplyr::select(MEDF36_A.MEDF36A_QID000001_TTR:MEDF36_A.MEDF36A_QID000008_TTR,
-                                                                                      MEDF36_A.MEDF36A_QID000010_TTR:MEDF36_A.MEDF36A_QID000012_TTR,
-                                                                                      MEDF36_A.MEDF36A_QID000014_TTR:MEDF36_A.MEDF36A_QID000020_TTR,
-                                                                                      MEDF36_A.MEDF36A_QID000022_TTR:MEDF36_A.MEDF36A_QID000035_TTR)))
-
-medf_corr <- medf_all %>% dplyr::select(matches("_CORR"))
-medf_corr$MEDF36_A.MEDF36A_DIF <- rowSums(medf_corr %>% dplyr::select(MEDF36_A.MEDF36A_QID000001_CORR:MEDF36_A.MEDF36A_QID000008_CORR,
-                                                                      MEDF36_A.MEDF36A_QID000010_CORR:MEDF36_A.MEDF36A_QID000012_CORR,
-                                                                      MEDF36_A.MEDF36A_QID000014_CORR:MEDF36_A.MEDF36A_QID000020_CORR,
-                                                                      MEDF36_A.MEDF36A_QID000022_CORR:MEDF36_A.MEDF36A_QID000035_CORR))
-
-
-MEDF_DIF_iw <- cbind(demos,medf_all %>% dplyr::select(MEDF36_A.MEDF36A_QID000001_RESP:MEDF36_A.MEDF36A_QID000008_CORR,
-                                                      MEDF36_A.MEDF36A_QID000010_RESP:MEDF36_A.MEDF36A_QID000012_CORR,
-                                                      MEDF36_A.MEDF36A_QID000014_RESP:MEDF36_A.MEDF36A_QID000020_CORR,
-                                                      MEDF36_A.MEDF36A_QID000022_RESP:MEDF36_A.MEDF36A_QID000035_CORR),
-                     medf_corr$MEDF36_A.MEDF36A_DIF,medf_resp$MEDF36_A.MEDF36A_DIFRT)
-
-MEDF_SAME_iw <- cbind(demos, medf_all %>% dplyr::select(MEDF36_A.MEDF36A_QID000009_RESP:MEDF36_A.MEDF36A_QID000009_CORR,
-                                                        MEDF36_A.MEDF36A_QID000013_RESP:MEDF36_A.MEDF36A_QID000013_CORR,
-                                                        MEDF36_A.MEDF36A_QID000021_RESP:MEDF36_A.MEDF36A_QID000021_CORR,
-                                                        MEDF36_A.MEDF36A_QID000036_RESP:MEDF36_A.MEDF36A_QID000036_CORR,
-                                                        MEDF36_A.MEDF36A_SAME_CR,MEDF36_A.MEDF36A_SAME_RTCR))
-
-# CPF separation
-cpf_all <- dat %>% dplyr::select(matches("CPF")) %>% cbind(demos,.)     # targets vs foils (TP vs TN)
-
-
-
-
-cpw_all <- dat %>% dplyr::select(matches("CPW")) %>% cbind(demos,.)     # targets vs foils (TP vs TN)
-
-volt_all <- dat %>% dplyr::select(matches("VOLT")) %>% cbind(demos,.)   # targets vs foils (TP vs TN)
-
-
-# join new split full CNB scores together
-full_split <- data.frame(cpf_all %>% dplyr::select(matches("CPF_B.CPF_TP|CPF_B.CPF_TN")) %>% cbind(demos,.),
-                         cpw_all %>% dplyr::select(matches("CPW_A.CPW_TP|CPW_A.CPW_TN")),
-                         er40_emo %>% dplyr::select(matches("ER40_D.ER40D_EMO")), er40_resp$ER40_D.ER40D_EMORTCR,
-                         er40_all %>% dplyr::select(matches("_NOE")),
-                         medf_emo %>% dplyr::select(matches("MEDF36_A.MEDF36A_SAME")), medf_resp$MEDF36_A.MEDF36A_SAMERT,
-                         medf_all %>% dplyr::select(matches("_SAME")),
-                         volt_all %>% dplyr::select(matches("SVOLT_A.SVOLT_TP|SVOLT_A.SVOLT_TN")))
-
-
-
-# adding summary scores to DISC tasks
-disc_tasks <- all_cnb %>% dplyr::select(bblid,ddisc_sum:edisc_mcr)
-
-DDISC_iw <- left_join(DDISC_iw,disc_tasks %>% dplyr::select(bblid,ddisc_sum,ddisc_mcr),by=c("BBLID" = "bblid"))
-EDISC_iw <- left_join(EDISC_iw,disc_tasks %>% dplyr::select(bblid,edisc_sum,edisc_mcr),by=c("BBLID" = "bblid"))
-RDISC_iw <- left_join(RDISC_iw,disc_tasks %>% dplyr::select(bblid,rdisc_sum,rdisc_mcr),by=c("BBLID" = "bblid"))
-
-
-
-
-
+# * SMVE ----
 # SMVE for non-rapid tests
+
+# creating performance validity scores for full CNB scores to:
+#   1) show distributions of performance validity scores
+#   2) keep only the best quality data
+#   3) compare this with other validity measures (manual + autovalidation rules)
+
 
 # ADT
 dat <-ADT_iw[,c(grep("_CORR",colnames(ADT_iw)),grep("_TTR",colnames(ADT_iw)))]
@@ -314,8 +439,57 @@ CPF_iw$PFscore1 <- ifelse(CPF_iw$CPF_B.CPF_CR == 40, max(CPF_iw$PFscore1,na.rm =
 CPF_iw$PFscore2 <- ifelse(CPF_iw$CPF_B.CPF_CR == 40, max(CPF_iw$PFscore2,na.rm = T),CPF_iw$PFscore2)
 CPF_iw$SMVE <- (0.42 * CPF_iw$outlier_score_2cut) + (0.02 * CPF_iw$acc3e) + (0.05 * CPF_iw$PFscore1) + (0.50 * CPF_iw$PFscore2)
 
-# ** need new ones here for the separated targs/foils ----
 
+# CPF targets
+dat <-CPF_targets[,c(grep("_CORR",colnames(CPF_targets)),grep("_TTR",colnames(CPF_targets)))]
+items <- ncol(dat)/2
+dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+res <- matrix(NA,dim(dat)[1],items)
+for (j in 1:items) {
+  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+res2 <- res
+res2[abs(res2) < 2] <- 0
+res2[abs(res2) > 2] <- 1
+outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+dat2 <- dat[,1:items]
+acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+pfit1 <- r.pbis(dat2)$PFscores
+pfit2 <- E.KB(dat2)$PFscores
+sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+CPF_targets <- data.frame(CPF_targets,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+names(CPF_targets)[(ncol(CPF_targets)-2):ncol(CPF_targets)] <- c("PFscore1","PFscore2","SMVE")
+# no 0%, but 100% scores need adjusting
+
+CPF_targets$PFscore1 <- ifelse(CPF_targets$CPF_B.CPF_TP == 20, max(CPF_targets$PFscore1,na.rm = T),CPF_targets$PFscore1)
+CPF_targets$PFscore2 <- ifelse(CPF_targets$CPF_B.CPF_TP == 20, max(CPF_targets$PFscore2,na.rm = T),CPF_targets$PFscore2)
+CPF_targets$SMVE <- (0.42 * CPF_targets$outlier_score_2cut) + (0.02 * CPF_targets$acc3e) + (0.05 * CPF_targets$PFscore1) + (0.50 * CPF_targets$PFscore2)
+
+
+# CPF foils
+dat <-CPF_foils[,c(grep("_CORR",colnames(CPF_foils)),grep("_TTR",colnames(CPF_foils)))]
+items <- ncol(dat)/2
+dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+res <- matrix(NA,dim(dat)[1],items)
+for (j in 1:items) {
+  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+res2 <- res
+res2[abs(res2) < 2] <- 0
+res2[abs(res2) > 2] <- 1
+outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+dat2 <- dat[,1:items]
+acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+pfit1 <- r.pbis(dat2)$PFscores
+pfit2 <- E.KB(dat2)$PFscores
+sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+CPF_foils <- data.frame(CPF_foils,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+names(CPF_foils)[(ncol(CPF_foils)-2):ncol(CPF_foils)] <- c("PFscore1","PFscore2","SMVE")
+# no 0%, but 100% scores need adjusting
+
+CPF_foils$PFscore1 <- ifelse(CPF_foils$CPF_B.CPF_TN == 20, max(CPF_foils$PFscore1,na.rm = T),CPF_foils$PFscore1)
+CPF_foils$PFscore2 <- ifelse(CPF_foils$CPF_B.CPF_TN == 20, max(CPF_foils$PFscore2,na.rm = T),CPF_foils$PFscore2)
+CPF_foils$SMVE <- (0.42 * CPF_foils$outlier_score_2cut) + (0.02 * CPF_foils$acc3e) + (0.05 * CPF_foils$PFscore1) + (0.50 * CPF_foils$PFscore2)
 
 
 # CPT
@@ -348,7 +522,57 @@ CPW_iw$PFscore1 <- ifelse(CPW_iw$CPW_A.CPW_CR == 40, max(CPW_iw$PFscore1,na.rm =
 CPW_iw$PFscore2 <- ifelse(CPW_iw$CPW_A.CPW_CR == 40, max(CPW_iw$PFscore2,na.rm = T),CPW_iw$PFscore2)
 CPW_iw$SMVE <- (0.42 * CPW_iw$outlier_score_2cut) + (0.02 * CPW_iw$acc3e) + (0.05 * CPW_iw$PFscore1) + (0.50 * CPW_iw$PFscore2)
 
-# ** need new ones here for the separated targs/foils ----
+
+# CPW targets
+dat <-CPW_targets[,c(grep("_CORR",colnames(CPW_targets)),grep("_TTR",colnames(CPW_targets)))]
+items <- ncol(dat)/2
+dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+res <- matrix(NA,dim(dat)[1],items)
+for (j in 1:items) {
+  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+res2 <- res
+res2[abs(res2) < 2] <- 0
+res2[abs(res2) > 2] <- 1
+outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+dat2 <- dat[,1:items]
+acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+pfit1 <- r.pbis(dat2)$PFscores
+pfit2 <- E.KB(dat2)$PFscores
+sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+CPW_targets <- data.frame(CPW_targets,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+names(CPW_targets)[(ncol(CPW_targets)-2):ncol(CPW_targets)] <- c("PFscore1","PFscore2","SMVE")
+# no 0%, but 100% scores need adjusting
+
+CPW_targets$PFscore1 <- ifelse(CPW_targets$CPW_A.CPW_TP == 20, max(CPW_targets$PFscore1,na.rm = T),CPW_targets$PFscore1)
+CPW_targets$PFscore2 <- ifelse(CPW_targets$CPW_A.CPW_TP == 20, max(CPW_targets$PFscore2,na.rm = T),CPW_targets$PFscore2)
+CPW_targets$SMVE <- (0.42 * CPW_targets$outlier_score_2cut) + (0.02 * CPW_targets$acc3e) + (0.05 * CPW_targets$PFscore1) + (0.50 * CPW_targets$PFscore2)
+
+
+# CPW foils
+dat <-CPW_foils[,c(grep("_CORR",colnames(CPW_foils)),grep("_TTR",colnames(CPW_foils)))]
+items <- ncol(dat)/2
+dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+res <- matrix(NA,dim(dat)[1],items)
+for (j in 1:items) {
+  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+res2 <- res
+res2[abs(res2) < 2] <- 0
+res2[abs(res2) > 2] <- 1
+outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+dat2 <- dat[,1:items]
+acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+pfit1 <- r.pbis(dat2)$PFscores
+pfit2 <- E.KB(dat2)$PFscores
+sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+CPW_foils <- data.frame(CPW_foils,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+names(CPW_foils)[(ncol(CPW_foils)-2):ncol(CPW_foils)] <- c("PFscore1","PFscore2","SMVE")
+# no 0%, but 100% scores need adjusting
+
+CPW_foils$PFscore1 <- ifelse(CPW_foils$CPW_A.CPW_TN == 20, max(CPW_foils$PFscore1,na.rm = T),CPW_foils$PFscore1)
+CPW_foils$PFscore2 <- ifelse(CPW_foils$CPW_A.CPW_TN == 20, max(CPW_foils$PFscore2,na.rm = T),CPW_foils$PFscore2)
+CPW_foils$SMVE <- (0.42 * CPW_foils$outlier_score_2cut) + (0.02 * CPW_foils$acc3e) + (0.05 * CPW_foils$PFscore1) + (0.50 * CPW_foils$PFscore2)
 
 
 # DDISC 
@@ -378,7 +602,7 @@ DDISC_iw$PFscore1 <- ifelse(DDISC_iw$ddisc_sum == 34, max(DDISC_iw$PFscore1,na.r
 DDISC_iw$PFscore2 <- ifelse(DDISC_iw$ddisc_sum == 34, max(DDISC_iw$PFscore2,na.rm = T),
                             ifelse(DDISC_iw$ddisc_sum == 0, min(DDISC_iw$PFscore2,na.rm = T),DDISC_iw$PFscore2))
 DDISC_iw$SMVE <- (0.34 * DDISC_iw$outlier_score_2cut) + (0 * DDISC_iw$acc3e) + (0.22 * DDISC_iw$PFscore1) + (0.44 * DDISC_iw$PFscore2)
-# still 4 rows with no SMVE because of missing itemwise or score
+# still 1 row with no SMVE because of missing itemwise
 
 
 # DIGSYM
@@ -388,7 +612,6 @@ DDISC_iw$SMVE <- (0.34 * DDISC_iw$outlier_score_2cut) + (0 * DDISC_iw$acc3e) + (
 
 # EDISC 
 dat <-EDISC_iw[,c(grep("_resp",colnames(EDISC_iw)),grep("_ttr",colnames(EDISC_iw)))]
-dat <- dat[,c(101:134,235:268)]
 dat[,1:34] <- dat[,1:34]-1
 items <- ncol(dat)/2
 dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
@@ -414,7 +637,7 @@ EDISC_iw$PFscore1 <- ifelse(EDISC_iw$edisc_sum == 34, max(EDISC_iw$PFscore1,na.r
 EDISC_iw$PFscore2 <- ifelse(EDISC_iw$edisc_sum == 34, max(EDISC_iw$PFscore2,na.rm = T),
                            ifelse(EDISC_iw$edisc_sum == 0, min(EDISC_iw$PFscore2,na.rm = T),EDISC_iw$PFscore2))
 EDISC_iw$SMVE <- (0.34 * EDISC_iw$outlier_score_2cut) + (0 * EDISC_iw$acc3e) + (0.22 * EDISC_iw$PFscore1) + (0.44 * EDISC_iw$PFscore2)
-# still 5 rows with no SMVE because of missing itemwise or score
+# still 2 rows with no SMVE because of missing itemwise
 
 
 # ER40
@@ -635,7 +858,7 @@ PLOT_iw$PFscore2 <- ifelse(PLOT_iw$VSPLOT15.VSPLOT15_PC == 100, max(PLOT_iw$PFsc
 PLOT_iw$SMVE <- (0.34 * PLOT_iw$outlier_score_2cut) + (0 * PLOT_iw$acc3e) + (0.22 * PLOT_iw$PFscore1) + (0.44 * PLOT_iw$PFscore2)
 
 
-# PRA - MISSING
+# PRA - no RT data, no SMVE
 
 
 # PVRT
@@ -667,7 +890,7 @@ PVRT_iw$SMVE <- (0.34 * PVRT_iw$outlier_score_2cut) + (0 * PVRT_iw$acc3e) + (0.2
 
 
 # RDISC 
-dat <- RDISC_iw[,1:101]
+dat <- RDISC_iw
 dat <-dat[,c(grep(".q_",colnames(dat)),grep(".trr_",colnames(dat)))]
 dat[,1:41] <- dat[,1:41]-1
 items <- ncol(dat)/2
@@ -694,7 +917,7 @@ RDISC_iw$PFscore1 <- ifelse(RDISC_iw$rdisc_sum == 41, max(RDISC_iw$PFscore1,na.r
 RDISC_iw$PFscore2 <- ifelse(RDISC_iw$rdisc_sum == 41, max(RDISC_iw$PFscore2,na.rm = T),
                             ifelse(RDISC_iw$rdisc_sum == 0, min(RDISC_iw$PFscore2,na.rm = T),RDISC_iw$PFscore2))
 RDISC_iw$SMVE <- (0.34 * RDISC_iw$outlier_score_2cut) + (0 * RDISC_iw$acc3e) + (0.22 * RDISC_iw$PFscore1) + (0.44 * RDISC_iw$PFscore2)
-# still 4 rows with no SMVE because of missing itemwise or score
+# still 1 row with no SMVE because of missing itemwise
 
 
 # VOLT
@@ -722,7 +945,58 @@ VOLT_iw$PFscore1 <- ifelse(VOLT_iw$SVOLT_A.SVOLT_CR == 20, max(VOLT_iw$PFscore1,
 VOLT_iw$PFscore2 <- ifelse(VOLT_iw$SVOLT_A.SVOLT_CR == 20, max(VOLT_iw$PFscore2,na.rm = T),VOLT_iw$PFscore2)
 VOLT_iw$SMVE <- (0.42 * VOLT_iw$outlier_score_2cut) + (0.02 * VOLT_iw$acc3e) + (0.05 * VOLT_iw$PFscore1) + (0.50 * VOLT_iw$PFscore2)
 
-# ** need new ones here for the separated targs/foils ----
+
+# VOLT targets
+dat <-VOLT_targets[,c(grep("_CORR",colnames(VOLT_targets)),grep("_TTR",colnames(VOLT_targets)))]
+items <- ncol(dat)/2
+dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+res <- matrix(NA,dim(dat)[1],items)
+for (j in 1:items) {
+  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+res2 <- res
+res2[abs(res2) < 2] <- 0
+res2[abs(res2) > 2] <- 1
+outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+dat2 <- dat[,1:items]
+acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+pfit1 <- r.pbis(dat2)$PFscores
+pfit2 <- E.KB(dat2)$PFscores
+sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+VOLT_targets <- data.frame(VOLT_targets,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+names(VOLT_targets)[(ncol(VOLT_targets)-2):ncol(VOLT_targets)] <- c("PFscore1","PFscore2","SMVE")
+# no 0%, but 100% scores need adjusting
+
+VOLT_targets$PFscore1 <- ifelse(VOLT_targets$SVOLT_A.SVOLT_TP == 10, max(VOLT_targets$PFscore1,na.rm = T),VOLT_targets$PFscore1)
+VOLT_targets$PFscore2 <- ifelse(VOLT_targets$SVOLT_A.SVOLT_TP == 10, max(VOLT_targets$PFscore2,na.rm = T),VOLT_targets$PFscore2)
+VOLT_targets$SMVE <- (0.42 * VOLT_targets$outlier_score_2cut) + (0.02 * VOLT_targets$acc3e) + (0.05 * VOLT_targets$PFscore1) + (0.50 * VOLT_targets$PFscore2)
+
+
+# VOLT foils
+dat <-VOLT_foils[,c(grep("_CORR",colnames(VOLT_foils)),grep("_TTR",colnames(VOLT_foils)))]
+items <- ncol(dat)/2
+dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+res <- matrix(NA,dim(dat)[1],items)
+for (j in 1:items) {
+  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+res2 <- res
+res2[abs(res2) < 2] <- 0
+res2[abs(res2) > 2] <- 1
+outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+dat2 <- dat[,1:items]
+acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+pfit1 <- r.pbis(dat2)$PFscores
+pfit2 <- E.KB(dat2)$PFscores
+sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+VOLT_foils <- data.frame(VOLT_foils,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+names(VOLT_foils)[(ncol(VOLT_foils)-2):ncol(VOLT_foils)] <- c("PFscore1","PFscore2","SMVE")
+# no 0%, but 100% scores need adjusting
+
+VOLT_foils$PFscore1 <- ifelse(VOLT_foils$SVOLT_A.SVOLT_TN == 10, max(VOLT_foils$PFscore1,na.rm = T),VOLT_foils$PFscore1)
+VOLT_foils$PFscore2 <- ifelse(VOLT_foils$SVOLT_A.SVOLT_TN == 10, max(VOLT_foils$PFscore2,na.rm = T),VOLT_foils$PFscore2)
+VOLT_foils$SMVE <- (0.42 * VOLT_foils$outlier_score_2cut) + (0.02 * VOLT_foils$acc3e) + (0.05 * VOLT_foils$PFscore1) + (0.50 * VOLT_foils$PFscore2)
+
 
 
 
@@ -743,45 +1017,47 @@ qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
 data_left <- dat[which(dat$SMVE > qu),]  # 225 left
 n_left <- dim(data_left)[1]
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  geom_hline(yintercept = qu) +
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SMVE Distribution for full-form ADT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                         x = "", y = "SMVE") + 
-  # scale_color_manual(values = wes_palette("Darjeeling1",n=1)) + scale_fill_manual(values = wes_palette("Darjeeling1",n=1)) +
-  # scale_y_continuous(breaks = seq(0,175000,25000)) +
-  coord_flip() 
-
-# pdf("data/outputs/ADT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    geom_hline(yintercept = qu) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SMVE Distribution for full-form ADT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                           x = "", y = "SMVE") + 
+    # scale_color_manual(values = wes_palette("Darjeeling1",n=1)) + scale_fill_manual(values = wes_palette("Darjeeling1",n=1)) +
+    # scale_y_continuous(breaks = seq(0,175000,25000)) +
+    coord_flip() 
+  
+  # pdf("data/outputs/ADT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
 
 smve_sum <- data.frame(cutoff = qu,n = n_left)
 no_good[,2] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
@@ -790,80 +1066,82 @@ no_good[,2] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
 # AIM distribution of performance
 dat <- AIM_iw
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = AIM.AIMTOT)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "AIM.TOT Distribution for full-form AIM",
-                         x = "", y = "TOTAL CORRECT") + 
-  coord_flip() 
-
-# pdf("data/outputs/AIM_TOT_dist_6Jul22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
-
-
-my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = AIM.AIMTOTRT)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "AIM.TOTRT Distribution for full-form AIM",
-                         x = "", y = "TOTRT") + 
-  coord_flip() 
-
-# pdf("data/outputs/AIM_TOTRT_dist_6Jul22.pdf",height = 7,width = 10)
-# my_plot1
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = AIM.AIMTOT)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "AIM.TOT Distribution for full-form AIM",
+                           x = "", y = "TOTAL CORRECT") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/AIM_TOT_dist_6Jul22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+  
+  
+  my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = AIM.AIMTOTRT)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "AIM.TOTRT Distribution for full-form AIM",
+                           x = "", y = "TOTRT") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/AIM_TOTRT_dist_6Jul22.pdf",height = 7,width = 10)
+  # my_plot1
+  # dev.off()
+}
 
 # get rid of bottom outlier, AIMTOT < 40
 bad_aim <- dat %>% filter(AIM.AIMTOT < 40) %>% pull(bblid)
@@ -878,43 +1156,45 @@ qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
 data_left <- dat[which(dat$SMVE > qu),]  # 185 left
 n_left <- dim(data_left)[1]
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  geom_hline(yintercept = qu) +
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SMVE Distribution for full-form CPF", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                         x = "", y = "SMVE") + 
-  coord_flip() 
-
-# pdf("data/outputs/CPF_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    geom_hline(yintercept = qu) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SMVE Distribution for full-form CPF", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                           x = "", y = "SMVE") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/CPF_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
 
 smve_sum[3,] <- data.frame(cutoff = qu,n = n_left)
 no_good[,4] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
@@ -923,86 +1203,84 @@ no_good[,4] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
 # CPT distribution of performance
 dat <- CPT_iw
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SPCPTNL.SCPL_TP)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SPCPTNL.SCPL_TP Distribution for full-form CPT",
-                         x = "", y = "TOTAL CORRECT") + 
-  coord_flip() 
-
-# pdf("data/outputs/rapid_dist/CPT_TP_dist_6Jul22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
-
-
-my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SPCPTNL.SCPL_TPRT)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SPCPTNL.SCPL_TPRT Distribution for full-form CPT",
-                         x = "", y = "TOTRT") + 
-  coord_flip() 
-
-# pdf("data/outputs/rapid_dist/CPT_TPRT_dist_6Jul22.pdf",height = 7,width = 10)
-# my_plot1
-# dev.off()
-
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SPCPTNL.SCPL_TP)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SPCPTNL.SCPL_TP Distribution for full-form CPT",
+                           x = "", y = "TOTAL CORRECT") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/rapid_dist/CPT_TP_dist_6Jul22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+  
+  
+  my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SPCPTNL.SCPL_TPRT)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SPCPTNL.SCPL_TPRT Distribution for full-form CPT",
+                           x = "", y = "TOTRT") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/rapid_dist/CPT_TPRT_dist_6Jul22.pdf",height = 7,width = 10)
+  # my_plot1
+  # dev.off()
+}
 
 # for LRNR, need to reorder everything by trial first
-
-dat <- CPT_iw
-
 CPT_new_order <- data.frame(bblid = dat$bblid, dat$SPCPTNL.SCPL_TP,dat$SPCPTNL.SCPL_TPRT,dat[,grepl("TRIAL",colnames(dat))|grepl("RESP",colnames(dat))])
 
 for (i in 1:nrow(CPT_new_order)) {
@@ -1017,43 +1295,45 @@ for (i in 1:nrow(CPT_new_order)) {
 CPT_iw$SPCPTNL.SCPT_LRNR <- count_LRNR(CPT_new_order)
 dat <- CPT_iw
 
-# one extreme outlier, code below removes that (LRNR = 150)
-my_plot2 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SPCPTNL.SCPT_LRNR)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SPCPTNL.SCPT_LRNR Distribution for full-form CPT",
-                         x = "", y = "LRNR") + 
-  coord_flip() 
-
-# pdf("data/outputs/rapid_dist/CPT_LRNR_dist_noext_220720.pdf",height = 7,width = 10)
-# my_plot2
-# dev.off()
+# one extreme outlier, code below removes that (LRNR = 25)
+{
+  my_plot2 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SPCPTNL.SCPT_LRNR)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SPCPTNL.SCPT_LRNR Distribution for full-form CPT",
+                           x = "", y = "LRNR") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/rapid_dist/CPT_LRNR_dist_noext_220720.pdf",height = 7,width = 10)
+  # my_plot2
+  # dev.off()
+}
 
 bad_cpt <- dat %>% filter(SPCPTNL.SCPT_LRNR == 25) %>% pull(bblid)
 no_good[,5] <- ifelse(no_good$BBLID %in% bad_cpt,1,0)
@@ -1067,43 +1347,45 @@ qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
 data_left <- dat[which(dat$SMVE > qu),]  # 185 left
 n_left <- dim(data_left)[1]
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  geom_hline(yintercept = qu) +
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SMVE Distribution for full-form CPW", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                         x = "", y = "SMVE") + 
-  coord_flip() 
-
-# pdf("data/outputs/CPW_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    geom_hline(yintercept = qu) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SMVE Distribution for full-form CPW", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                           x = "", y = "SMVE") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/CPW_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
 
 smve_sum[5,] <- data.frame(cutoff = qu,n = n_left)
 no_good[,6] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
@@ -1117,43 +1399,45 @@ qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
 data_left <- dat[which(dat$SMVE > qu),]  # 230 left
 n_left <- dim(data_left)[1]
 
-my_plot <- ggplot(dat, aes(x = test_sessions.siteid, y = SMVE)) +
-  ggdist::stat_halfeye(
-    adjust = .5,
-    width = .6,
-    justification = -.2,
-    .width = 0,
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) +
-  geom_boxplot(
-    width = .12,
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5,
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  +
-  geom_hline(yintercept = qu) +
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SMVE Distribution for full-form DDISC", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                         x = "", y = "SMVE") +
-  coord_flip()
-
-# pdf("data/outputs/DDISC_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions.siteid, y = SMVE)) +
+    ggdist::stat_halfeye(
+      adjust = .5,
+      width = .6,
+      justification = -.2,
+      .width = 0,
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) +
+    geom_boxplot(
+      width = .12,
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5,
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  +
+    geom_hline(yintercept = qu) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SMVE Distribution for full-form DDISC", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                           x = "", y = "SMVE") +
+    coord_flip()
+  
+  # pdf("data/outputs/DDISC_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
 
 smve_sum[6,] <- data.frame(cutoff = qu,n = n_left)
 no_good[,7] <- ifelse(no_good$BBLID %in% data_left$BBLID,0,1)
@@ -1162,231 +1446,233 @@ no_good[,7] <- ifelse(no_good$BBLID %in% data_left$BBLID,0,1)
 # DIGSYM distribution of performance 
 dat <- DIGSYM_iw
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSCOR)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "DIGSYM.DSCOR Distribution for full-form DIGSYM",
-                         x = "", y = "TOTAL CORRECT") + 
-  coord_flip() 
-
-# pdf("data/outputs/rapid_dist/DS_COR_dist_6Jul22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
-
-
-my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSCORRT)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "DIGSYM.DSCORRT Distribution for full-form DIGSYM",
-                         x = "", y = "COR RT") + 
-  coord_flip() 
-
-# pdf("data/outputs/rapid_dist/DS_CORRT_dist_6Jul22.pdf",height = 7,width = 10)
-# my_plot1
-# dev.off()
-
-my_plot2 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DS_TP)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "DIGSYM.DS_TP Distribution for full-form DIGSYM",
-                         x = "", y = "TOTAL CORRECT") + 
-  coord_flip() 
-
-# pdf("data/outputs/rapid_dist/DS_TP_dist_6Jul22.pdf",height = 7,width = 10)
-# my_plot2
-# dev.off()
-
-
-my_plot3 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DS_TPRT)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "DIGSYM.DS_TPRT Distribution for full-form DIGSYM",
-                         x = "", y = "TPRT") + 
-  coord_flip() 
-
-# pdf("data/outputs/rapid_dist/DS_TPRT_dist_6Jul22.pdf",height = 7,width = 10)
-# my_plot3
-# dev.off()
-
-my_plot4 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSMEMCR)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "DIGSYM.DSMEMCR Distribution for full-form DIGSYM",
-                         x = "", y = "TOTAL CORRECT (memory)") + 
-  scale_y_continuous(breaks=seq(0, 10, 1)) +
-  coord_flip() 
-
-# pdf("data/outputs/rapid_dist/DS_MEMCR_dist_6Jul22.pdf",height = 7,width = 10)
-# my_plot4
-# dev.off()
-
-
-my_plot5 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSMCRRT)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "DIGSYM.DSMCRRT Distribution for full-form DIGSYM",
-                         x = "", y = "COR RT (memory)") + 
-  coord_flip() 
-
-# pdf("data/outputs/rapid_dist/DS_MCRRT_dist_6Jul22.pdf",height = 7,width = 10)
-# my_plot5
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSCOR)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "DIGSYM.DSCOR Distribution for full-form DIGSYM",
+                           x = "", y = "TOTAL CORRECT") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/rapid_dist/DS_COR_dist_6Jul22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+  
+  
+  my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSCORRT)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "DIGSYM.DSCORRT Distribution for full-form DIGSYM",
+                           x = "", y = "COR RT") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/rapid_dist/DS_CORRT_dist_6Jul22.pdf",height = 7,width = 10)
+  # my_plot1
+  # dev.off()
+  
+  my_plot2 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DS_TP)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "DIGSYM.DS_TP Distribution for full-form DIGSYM",
+                           x = "", y = "TOTAL CORRECT") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/rapid_dist/DS_TP_dist_6Jul22.pdf",height = 7,width = 10)
+  # my_plot2
+  # dev.off()
+  
+  
+  my_plot3 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DS_TPRT)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "DIGSYM.DS_TPRT Distribution for full-form DIGSYM",
+                           x = "", y = "TPRT") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/rapid_dist/DS_TPRT_dist_6Jul22.pdf",height = 7,width = 10)
+  # my_plot3
+  # dev.off()
+  
+  my_plot4 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSMEMCR)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "DIGSYM.DSMEMCR Distribution for full-form DIGSYM",
+                           x = "", y = "TOTAL CORRECT (memory)") + 
+    scale_y_continuous(breaks=seq(0, 10, 1)) +
+    coord_flip() 
+  
+  # pdf("data/outputs/rapid_dist/DS_MEMCR_dist_6Jul22.pdf",height = 7,width = 10)
+  # my_plot4
+  # dev.off()
+  
+  
+  my_plot5 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSMCRRT)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "DIGSYM.DSMCRRT Distribution for full-form DIGSYM",
+                           x = "", y = "COR RT (memory)") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/rapid_dist/DS_MCRRT_dist_6Jul22.pdf",height = 7,width = 10)
+  # my_plot5
+  # dev.off()
+}
 
 bad_ds <- dat %>% filter(DIGSYM.DSCOR > 90) %>% pull(bblid)
 no_good[,8] <- ifelse(no_good$BBLID %in% bad_ds,1,0)
@@ -1400,43 +1686,45 @@ qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
 data_left <- dat[which(dat$SMVE > qu),]  # 229 left
 n_left <- dim(data_left)[1]
 
-my_plot <- ggplot(dat, aes(x = test_sessions.siteid, y = SMVE)) +
-  ggdist::stat_halfeye(
-    adjust = .5,
-    width = .6,
-    justification = -.2,
-    .width = 0,
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) +
-  geom_boxplot(
-    width = .12,
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5,
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  +
-  geom_hline(yintercept = qu) +
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SMVE Distribution for full-form EDISC", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                         x = "", y = "SMVE") +
-  coord_flip()
-
-# pdf("data/outputs/EDISC_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions.siteid, y = SMVE)) +
+    ggdist::stat_halfeye(
+      adjust = .5,
+      width = .6,
+      justification = -.2,
+      .width = 0,
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) +
+    geom_boxplot(
+      width = .12,
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5,
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  +
+    geom_hline(yintercept = qu) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SMVE Distribution for full-form EDISC", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                           x = "", y = "SMVE") +
+    coord_flip()
+  
+  # pdf("data/outputs/EDISC_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
 
 smve_sum[8,] <- data.frame(cutoff = qu,n = n_left)
 no_good[,9] <- ifelse(no_good$BBLID %in% data_left$BBLID,0,1)
@@ -1450,43 +1738,45 @@ qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
 data_left <- dat[which(dat$SMVE > qu),]  # 225 left
 n_left <- dim(data_left)[1]
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-  ggdist::stat_halfeye(
-    adjust = .5,
-    width = .6,
-    justification = -.2,
-    .width = 0,
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) +
-  geom_boxplot(
-    width = .12,
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5,
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  +
-  geom_hline(yintercept = qu) +
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SMVE Distribution for full-form ER40", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                         x = "", y = "SMVE") +
-  coord_flip()
-
-# pdf("data/outputs/ER40_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
+    ggdist::stat_halfeye(
+      adjust = .5,
+      width = .6,
+      justification = -.2,
+      .width = 0,
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) +
+    geom_boxplot(
+      width = .12,
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5,
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  +
+    geom_hline(yintercept = qu) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SMVE Distribution for full-form ER40", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                           x = "", y = "SMVE") +
+    coord_flip()
+  
+  # pdf("data/outputs/ER40_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
 
 smve_sum[9,] <- data.frame(cutoff = qu,n = n_left)
 no_good[,10] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
@@ -1495,122 +1785,126 @@ no_good[,10] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
 # GNG distribution of performance 
 dat <- GNG_iw
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = GNG150.GNG150_CR)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "GNG150.GNG150_CR Distribution for full-form GNG",
-                         x = "", y = "TOTAL CORRECT") + 
-  coord_flip() 
-
-# pdf("data/outputs/rapid_dist/GNG_CR_dist_6Jul22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
-
-
-my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = GNG150.GNG150_RTCR)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "GNG150.GNG150_RTCR Distribution for full-form DIGSYM",
-                         x = "", y = "COR RT") + 
-  coord_flip() 
-
-# pdf("data/outputs/rapid_dist/GNG_RTCR_dist_6Jul22.pdf",height = 7,width = 10)
-# my_plot1
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = GNG150.GNG150_CR)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "GNG150.GNG150_CR Distribution for full-form GNG",
+                           x = "", y = "TOTAL CORRECT") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/rapid_dist/GNG_CR_dist_6Jul22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+  
+  
+  my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = GNG150.GNG150_RTCR)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "GNG150.GNG150_RTCR Distribution for full-form DIGSYM",
+                           x = "", y = "COR RT") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/rapid_dist/GNG_RTCR_dist_6Jul22.pdf",height = 7,width = 10)
+  # my_plot1
+  # dev.off()
+}
 
 # looking at LRNR
 GNG_iw$GNG150.GNG150_LRNR <- count_LRNR(dat)
 dat <- GNG_iw
 
 # one extreme outlier, code below removes that (LRNR = 150)
-my_plot2 <- ggplot(dat %>% filter(GNG150.GNG150_LRNR<150), aes(x = test_sessions_v.battery_complete, y = GNG150.GNG150_LRNR)) + 
-  ggdist::stat_halfeye(
-    adjust = .5, 
-    width = .6,
-    justification = -.2, 
-    .width = 0, 
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) + 
-  geom_boxplot(
-    width = .12, 
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5, 
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  + 
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "GNG150.GNG150_LRNR Distribution for full-form GNG",
-                         x = "", y = "LRNR") + 
-  coord_flip() 
-
-# pdf("data/outputs/rapid_dist/GNG_LRNR_dist_noext_8Jul22.pdf",height = 7,width = 10)
-# my_plot2
-# dev.off()
+{
+  my_plot2 <- ggplot(dat %>% filter(GNG150.GNG150_LRNR<150), aes(x = test_sessions_v.battery_complete, y = GNG150.GNG150_LRNR)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "GNG150.GNG150_LRNR Distribution for full-form GNG",
+                           x = "", y = "LRNR") + 
+    coord_flip() 
+  
+  # pdf("data/outputs/rapid_dist/GNG_LRNR_dist_noext_8Jul22.pdf",height = 7,width = 10)
+  # my_plot2
+  # dev.off()
+}
 
 bad_gng <- dat %>% filter(GNG150.GNG150_LRNR == 150) %>% pull(bblid)
 no_good[,11] <- ifelse(no_good$BBLID %in% bad_gng,1,0)
@@ -1624,43 +1918,45 @@ qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
 data_left <- dat[which(dat$SMVE > qu),]  # 225 left
 n_left <- dim(data_left)[1]
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-  ggdist::stat_halfeye(
-    adjust = .5,
-    width = .6,
-    justification = -.2,
-    .width = 0,
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) +
-  geom_boxplot(
-    width = .12,
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5,
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  +
-  geom_hline(yintercept = qu) +
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SMVE Distribution for full-form MEDF", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                         x = "", y = "SMVE") +
-  coord_flip()
-
-# pdf("data/outputs/MEDF_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
+    ggdist::stat_halfeye(
+      adjust = .5,
+      width = .6,
+      justification = -.2,
+      .width = 0,
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) +
+    geom_boxplot(
+      width = .12,
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5,
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  +
+    geom_hline(yintercept = qu) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SMVE Distribution for full-form MEDF", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                           x = "", y = "SMVE") +
+    coord_flip()
+  
+  # pdf("data/outputs/MEDF_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
 
 smve_sum[11,] <- data.frame(cutoff = qu,n = n_left)
 no_good[,12] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
@@ -1674,43 +1970,45 @@ qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
 data_left <- dat[which(dat$SMVE > qu),]  # 225 left
 n_left <- dim(data_left)[1]
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-  ggdist::stat_halfeye(
-    adjust = .5,
-    width = .6,
-    justification = -.2,
-    .width = 0,
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) +
-  geom_boxplot(
-    width = .12,
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5,
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  +
-  geom_hline(yintercept = qu) +
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SMVE Distribution for full-form PLOT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                         x = "", y = "SMVE") +
-  coord_flip()
-
-# pdf("data/outputs/PLOT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
+    ggdist::stat_halfeye(
+      adjust = .5,
+      width = .6,
+      justification = -.2,
+      .width = 0,
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) +
+    geom_boxplot(
+      width = .12,
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5,
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  +
+    geom_hline(yintercept = qu) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SMVE Distribution for full-form PLOT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                           x = "", y = "SMVE") +
+    coord_flip()
+  
+  # pdf("data/outputs/PLOT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
 
 smve_sum[12,] <- data.frame(cutoff = qu,n = n_left)
 no_good[,13] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
@@ -1724,96 +2022,52 @@ qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
 data_left <- dat[which(dat$SMVE > qu),]  # 225 left
 n_left <- dim(data_left)[1]
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-  ggdist::stat_halfeye(
-    adjust = .5,
-    width = .6,
-    justification = -.2,
-    .width = 0,
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) +
-  geom_boxplot(
-    width = .12,
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5,
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  +
-  geom_hline(yintercept = qu) +
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SMVE Distribution for full-form PMAT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                         x = "", y = "SMVE") +
-  coord_flip()
-
-# pdf("data/outputs/PMAT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
+    ggdist::stat_halfeye(
+      adjust = .5,
+      width = .6,
+      justification = -.2,
+      .width = 0,
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) +
+    geom_boxplot(
+      width = .12,
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5,
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  +
+    geom_hline(yintercept = qu) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SMVE Distribution for full-form PMAT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                           x = "", y = "SMVE") +
+    coord_flip()
+  
+  # pdf("data/outputs/PMAT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
 
 smve_sum[13,] <- data.frame(cutoff = qu,n = n_left)
 no_good[,14] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
 
 
 # PRA distribution of performance validity
-# dat <- PRA_iw
-# n_tot <- dim(dat)[1]
-# qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-# 
-# data_left <- dat[which(dat$SMVE > qu),]  # 185 left
-# n_left <- dim(data_left)[1]
-# 
-# my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-#   ggdist::stat_halfeye(
-#     adjust = .5,
-#     width = .6,
-#     justification = -.2,
-#     .width = 0,
-#     point_colour = NA,
-#     alpha = 0.8,
-#     fill  = "aquamarine3"
-#   ) +
-#   geom_boxplot(
-#     width = .12,
-#     outlier.color = NA, ## `outlier.shape = NA` works as well
-#     alpha = 0.5,
-#     color = "aquamarine3"
-#   ) +
-#   geom_point(
-#     size = .5,
-#     alpha = 0.3,
-#     position = position_jitternudge(
-#       jitter.width = .1,
-#       jitter.height = 0,
-#       nudge.x = -.2,
-#       nudge.y = 0,
-#       seed = 1
-#     ),
-#     color = "aquamarine3"
-#   )  +
-#   geom_hline(yintercept = qu) +
-#   coord_cartesian(xlim = c(1.2, NA)) +
-#   theme_minimal() + labs(title = "SMVE Distribution for full-form PRA", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-#                          x = "", y = "SMVE") +
-#   coord_flip()
-# 
-# pdf("data/outputs/PRA_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
-# 
-# smve_sum[14,] <- data.frame(cutoff = qu,n = n_left)
-# no_good[,15] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
+# no clear QC method yet
 
 
 # PVRT distribution of performance validity
@@ -1824,43 +2078,45 @@ qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
 data_left <- dat[which(dat$SMVE > qu),]  # 225 left
 n_left <- dim(data_left)[1]
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-  ggdist::stat_halfeye(
-    adjust = .5,
-    width = .6,
-    justification = -.2,
-    .width = 0,
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) +
-  geom_boxplot(
-    width = .12,
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5,
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  +
-  geom_hline(yintercept = qu) +
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SMVE Distribution for full-form PVRT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                         x = "", y = "SMVE") +
-  coord_flip()
-
-# pdf("data/outputs/PVRT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
+    ggdist::stat_halfeye(
+      adjust = .5,
+      width = .6,
+      justification = -.2,
+      .width = 0,
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) +
+    geom_boxplot(
+      width = .12,
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5,
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  +
+    geom_hline(yintercept = qu) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SMVE Distribution for full-form PVRT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                           x = "", y = "SMVE") +
+    coord_flip()
+  
+  # pdf("data/outputs/PVRT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
 
 smve_sum[15,] <- data.frame(cutoff = qu,n = n_left)
 no_good[,16] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
@@ -1874,43 +2130,45 @@ qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
 data_left <- dat[which(dat$SMVE > qu),]  # 230 left
 n_left <- dim(data_left)[1]
 
-my_plot <- ggplot(dat, aes(x = test_sessions.siteid, y = SMVE)) +
-  ggdist::stat_halfeye(
-    adjust = .5,
-    width = .6,
-    justification = -.2,
-    .width = 0,
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) +
-  geom_boxplot(
-    width = .12,
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5,
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  +
-  geom_hline(yintercept = qu) +
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SMVE Distribution for full-form RDISC", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                         x = "", y = "SMVE") +
-  coord_flip()
-
-# pdf("data/outputs/RDISC_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions.siteid, y = SMVE)) +
+    ggdist::stat_halfeye(
+      adjust = .5,
+      width = .6,
+      justification = -.2,
+      .width = 0,
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) +
+    geom_boxplot(
+      width = .12,
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5,
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  +
+    geom_hline(yintercept = qu) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SMVE Distribution for full-form RDISC", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                           x = "", y = "SMVE") +
+    coord_flip()
+  
+  # pdf("data/outputs/RDISC_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
 
 smve_sum[16,] <- data.frame(cutoff = qu,n = n_left)
 no_good[,17] <- ifelse(no_good$BBLID %in% data_left$BBLID,0,1)
@@ -1924,43 +2182,45 @@ qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
 data_left <- dat[which(dat$SMVE > qu),]  # 225 left
 n_left <- dim(data_left)[1]
 
-my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-  ggdist::stat_halfeye(
-    adjust = .5,
-    width = .6,
-    justification = -.2,
-    .width = 0,
-    point_colour = NA,
-    alpha = 0.8,
-    fill  = "aquamarine3"
-  ) +
-  geom_boxplot(
-    width = .12,
-    outlier.color = NA, ## `outlier.shape = NA` works as well
-    alpha = 0.5,
-    color = "aquamarine3"
-  ) +
-  geom_point(
-    size = .5,
-    alpha = 0.3,
-    position = position_jitternudge(
-      jitter.width = .1,
-      jitter.height = 0,
-      nudge.x = -.2,
-      nudge.y = 0,
-      seed = 1
-    ),
-    color = "aquamarine3"
-  )  +
-  geom_hline(yintercept = qu) +
-  coord_cartesian(xlim = c(1.2, NA)) +
-  theme_minimal() + labs(title = "SMVE Distribution for full-form VOLT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                         x = "", y = "SMVE") +
-  coord_flip()
-
-# pdf("data/outputs/VOLT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-# my_plot
-# dev.off()
+{
+  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
+    ggdist::stat_halfeye(
+      adjust = .5,
+      width = .6,
+      justification = -.2,
+      .width = 0,
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) +
+    geom_boxplot(
+      width = .12,
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5,
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  +
+    geom_hline(yintercept = qu) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "SMVE Distribution for full-form VOLT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                           x = "", y = "SMVE") +
+    coord_flip()
+  
+  # pdf("data/outputs/VOLT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
 
 smve_sum[17,] <- data.frame(cutoff = qu,n = n_left)
 no_good[,18] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
@@ -1974,7 +2234,7 @@ smve_sum %>%
   kbl(caption = "SMVE Cutoff value + Rows left per Test", align = rep("c", 8),
       col.names = c("Cutoff", "Rows Left")) %>%
   kable_classic(full_width = F, html_font = "Cambria") %>%
-  save_kable(file = "data/outputs/SMVE_table_220725.pdf", self_contained = T)
+  save_kable(file = "data/outputs/SMVE_table_220803.pdf", self_contained = T)
 
 
 # sum of all test SMVE_drops
@@ -2094,8 +2354,8 @@ cat_acc <- x %>% dplyr::select(matches("default"))
 x99 <- data.frame(x %>% dplyr::select(bblid,age_enroll,study_group,sex,proto_3,proto_4),acc,cat_acc,er40_cat,
                   medf_cat,adt_cat,cpf_cat,cpw_cat,volt_cat,er40_2_cat,cpf_2_cat, x %>% dplyr::select(er40.1.00.cat_emotive,
                   er40.1.00.cat_neutral,medf.1.00.cat_same,medf.1.00.cat_different,er40.2.00.cat_emotive,er40.2.00.cat_neutral))
-x99 <- x99 %>% mutate(pra_acc = NA,dscr_cat = NA,dsmemcr_cat = NA,gng_cat = NA,aim_cat = NA,cpt_cat = NA,pvrt_pc_cat = NA) %>% 
-  dplyr::select(bblid:cpt_acc,pra_acc,er40_cat,pvrt.1.00.cat_default,pvrt_pc_cat,pmat.1.00.cat_default,volt_cat,
+x99 <- x99 %>% mutate(dscr_cat = NA,dsmemcr_cat = NA,gng_cat = NA,aim_cat = NA,cpt_cat = NA,pvrt_pc_cat = NA) %>% 
+  dplyr::select(bblid:cpt_acc,pra_cr,er40_cat,pvrt.1.00.cat_default,pvrt_pc_cat,pmat.1.00.cat_default,volt_cat,
                 cpf_cat,medf_cat,adt_cat,plot.1.00.cat_default,cpw_cat,dscr_cat,dsmemcr_cat,gng_cat,aim_cat,
                 ddisc.1.00.cat_default,rdisc.1.00.cat_default,edisc.1.00.cat_default,cpt_cat,pra.1.00.d.cat_default,
                 er40_2_cat,cpf_2_cat,er40.1.00.cat_emotive,er40.1.00.cat_neutral,medf.1.00.cat_same,
