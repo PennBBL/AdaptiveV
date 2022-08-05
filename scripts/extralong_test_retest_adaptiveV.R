@@ -23,8 +23,9 @@ library(lubridate)
 
 # load CSVs and create dataset ----
 
-extralong <- read.csv("data/inputs/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv")  #29851 rows , 7/21/22
-extralong <- extralong %>% filter(test_sessions.bblid.clean>9999) %>% rename(bblid = test_sessions.bblid.clean)  # 16093 rows
+XL <- read.csv("data/inputs/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv")  #29895 rows , 8/4/22
+extralong <- XL %>% filter(test_sessions.bblid.clean>9999) %>% rename(bblid = test_sessions.bblid.clean)  # 16093 rows
+# extralong <- XL %>% filter(test_sessions.bblid.clean>9999,test_sessions.siteid != "adaptive_v") %>% rename(bblid = test_sessions.bblid.clean)
 
 # cpt_acc generation
 extralong <- extralong %>% mutate(cpt_acc = cpt_ptp - cpt_pfp) %>% dplyr::select(datasetid_platform:cpt_pfp,cpt_acc,cpt_fprt:KRDISC.trr_41.1)
@@ -79,6 +80,22 @@ extralong_repeat[which(extralong_repeat$datasetid_platform == "92134_webcnp"),"d
 
 # keep only non-timepoint1 datapoints to look at histograms
 repeats_only <- extralong_repeat %>% filter(diffdays > 0) %>% mutate(constant = 1)  # 3265 rows as of 7/27/22
+
+
+# PRA from itemwise
+for_pra <- read.csv("data/inputs/athena_195_360.csv",na.strings=c(""," ","NA"))
+for_pra2 <-  read.csv("data/inputs/athena_253_324.csv",na.strings=c(""," ","NA"))
+
+PRA_iw <- for_pra %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% arrange(bblid) %>% 
+  filter(bblid > 9999,!is.na(PRA_D.PRADWORDCR)) %>% 
+  dplyr::select(matches("test_session|^bblid|PRA_D"))
+
+PRA_iw$PRA_D.PRADWORDCR <- ifelse(!is.na(PRA_iw$PRA_D.PRADWORDCR),PRA_iw$PRA_D.PRADWORDCR,0)
+
+PRA_iw2 <- for_pra2 %>% mutate(bblid = as.numeric(test_sessions.bblid)) %>% arrange(bblid) %>% 
+  filter(bblid > 9999,!is.na(PRA_D.PRADWORDCR)) %>% 
+  dplyr::select(matches("test_session|^bblid|PRA_D"))
+
 
 # distribution of difference in days
 {
@@ -327,7 +344,7 @@ diffday_order <- repeats_only %>% arrange(diffdays) %>% filter(test_sessions_v.a
 # * only first two timepoints ----
 # pra from itemwise??
 tests <- c("adt","aim","cpf","cpt","cpw","ddisc","digsym","edisc","er40","gng","medf","plot","pmat","pvrt","rdisc","volt")  # no pra for now
-test_sums <- c("adt_pc","aim_tot_","cpf_cr","cpt_acc","cpw_cr","ddisc_sum","dscor_","edisc_sum","er40_cr","gng_cr","medf_pc","plot_pc","pmat_pc","pvrt_cr","rdisc_sum","volt_cr")
+test_sums <- c("adt_pc","aim_tot_","cpf_cr","cpt_acc","cpw_cr","ddisc_sum","dscor_","edisc_sum","er40_cr","gng_cr","medf_pc","plot_pc","pmat_pc","pvrt_pc","rdisc_sum","volt_cr")
 
 demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.famid,bblid,test_sessions_v.age:platform,diffdays:combo)
 
@@ -352,10 +369,8 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
       dat <- subset(dat, !is.na(dat[,ncol(dat)-1]))
     }
     
-    # getting rid of invalid codes, excluding disc tasks because they don't have any valid codes
-    if (test %notin% c("ddisc","edisc","rdisc")){
-      dat <- subset(dat, (dat[,grepl("_valid",colnames(dat))] != "N"))
-    }
+    # getting rid of invalid codes
+    dat <- subset(dat, (dat[,grepl("_valid",colnames(dat))] != "N"))
     
     n <- unique(dat$bblid)
     
@@ -509,10 +524,8 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
       dat <- subset(dat, !is.na(dat[,ncol(dat)-1]))
     }
     
-    # getting rid of invalid codes, excluding disc tasks because they don't have any valid codes
-    if (test %notin% c("ddisc","edisc","rdisc")){
-      dat <- subset(dat, (dat[,grepl("_valid",colnames(dat))] != "N"))
-    }
+    # getting rid of invalid codes
+    dat <- subset(dat, (dat[,grepl("_valid",colnames(dat))] != "N"))
     
     n <- unique(dat$bblid)
     
@@ -573,10 +586,8 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
       dat <- subset(dat, !is.na(dat[,ncol(dat)-1]))
     }
     
-    # getting rid of invalid codes, excluding disc tasks because they don't have any valid codes
-    if (test %notin% c("ddisc","edisc","rdisc")){
-      dat <- subset(dat, (dat[,grepl("_valid",colnames(dat))] != "N"))
-    }
+    # getting rid of invalid codes
+    dat <- subset(dat, (dat[,grepl("_valid",colnames(dat))] != "N"))
     
     n <- unique(dat$bblid)
     
@@ -676,10 +687,10 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   newtests <- mget(newtexts)
   
   # print both regular pairs.panels as well as drop_3sd implemented pairs.panels
-  # pdf("data/outputs/full_full/all_testretest_noPRA_someTP3_365_220803.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/all_testretest_noPRA_someTP3_365_220804.pdf",height=9,width=12)
   # for (i in 1:length(tests)) {
   #   pairs.panels(newtests[[i]] %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
-  #   pairs.panels(newtests[[i]] %>% filter(drop_3sd != 1) %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
+  #   # pairs.panels(newtests[[i]] %>% filter(drop_3sd != 1) %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
   # }
   # dev.off()
   
@@ -716,10 +727,8 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
       dat <- subset(dat, !is.na(dat[,ncol(dat)-1]))
     }
     
-    # getting rid of invalid codes, excluding disc tasks because they don't have any valid codes
-    if (test %notin% c("ddisc","edisc","rdisc")){
-      dat <- subset(dat, (dat[,grepl("_valid",colnames(dat))] != "N"))
-    }
+    # getting rid of invalid codes
+    dat <- subset(dat, (dat[,grepl("_valid",colnames(dat))] != "N"))
     
     n <- unique(dat$bblid)
     
