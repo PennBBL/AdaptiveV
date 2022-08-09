@@ -304,7 +304,16 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   
   # write.csv(adaptive_short2,"adaptiveV_athena_253_324.csv",row.names = F)
   
+  # for now (8/9/22) use available tests
+  adaptive_short <- read.csv("data/inputs/cnb_rawscores_short_tests_220809.csv")
   
+  adaptive_short1 <- adaptive_short %>% dplyr::select(bblid:datasetid_link3,CPT108.CATCPTT_TP:CPT108.CATCPTT_FP,
+                                                     CPT108.CATCPTT_TPRT:CPT108.CATCPTT_FPRT,S_AIM.AIMTOT:S_AIM.AIMTOTRT,
+                                                     GNG60.GNG60_CR,GNG60.GNG60_RTCR,S_DIGSYM.DSCOR,S_DIGSYM.DSCORRT,
+                                                     S_DIGSYM.DSMEMCR,S_DIGSYM.DSMCRRT) %>% filter(datasetid_link1 != 48930)
+  # 111789 was administered the CPT/AIM link twice, still figuring out which to keep
+  
+  adaptive_cnb1 <- left_join(adaptive_cnb,adaptive_short1,by=c("BBLID"="bblid"))
   
   # 199 unique BBLIDs in cat_dat_nodates:
   #   1) BBLID 90922, datasetid_pra 489 only has pra_d
@@ -313,7 +322,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   #   4) BBLID 22454, has one incomplete adaptive_v battery (datasetid_v 322) and one complete adaptive_v battery (datasetid_v 323) with the same pra_d info
   
   
-  dat_combined2 <- left_join(dat_combined,adaptive_cnb, by = c("bblid" = "BBLID"))    # 100079 is excluded and still trying to figure out about 23064
+  dat_combined2 <- left_join(dat_combined,adaptive_cnb1, by = c("bblid" = "BBLID"))    # 100079 is excluded and still trying to figure out about 23064
   
   # all rows that have data from bbl_study_all.csv, but not in the adaptivecnb CSVs  
   no_adaptivecnb <- dat_combined2 %>% filter(is.na(pra.1.00.d.cat_default)) # 21 rows missing (at least), 8/3/22
@@ -321,7 +330,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
 
 
 # print out CSV of combined CNB data
-write.csv(dat_combined2,"data/inputs/cnb_merged_20220803.csv",row.names = F)
+write.csv(dat_combined2,"data/inputs/cnb_merged_20220809.csv",row.names = F)
 
 
 
