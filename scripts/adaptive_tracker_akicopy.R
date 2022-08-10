@@ -307,7 +307,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   # for now (8/9/22) use available tests
   adaptive_short <- read.csv("data/inputs/cnb_rawscores_short_tests_220809.csv")
   
-  adaptive_short1 <- adaptive_short %>% dplyr::select(bblid:datasetid_link3,CPT108.CATCPTT_TP:CPT108.CATCPTT_FP,
+  adaptive_short1 <- adaptive_short %>% dplyr::select(bblid:datasetid_link3,CPT108.CATCPTT_TP:CPT108.CATCPTT_FP,CPT108.CATCPTT_TN,
                                                      CPT108.CATCPTT_TPRT:CPT108.CATCPTT_FPRT,S_AIM.AIMTOT:S_AIM.AIMTOTRT,
                                                      GNG60.GNG60_CR,GNG60.GNG60_RTCR,S_DIGSYM.DSCOR,S_DIGSYM.DSCORRT,
                                                      S_DIGSYM.DSMEMCR,S_DIGSYM.DSMCRRT) %>% filter(datasetid_link1 != 48930)
@@ -330,7 +330,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
 
 
 # print out CSV of combined CNB data
-write.csv(dat_combined2,"data/inputs/cnb_merged_20220809.csv",row.names = F)
+write.csv(dat_combined2,"data/inputs/cnb_merged_20220810.csv",row.names = F)
 
 
 
