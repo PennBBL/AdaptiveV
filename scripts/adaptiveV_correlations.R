@@ -1001,7 +1001,7 @@ demo_from_iw2 <- fullcnb_iw2 %>% dplyr::select(test_sessions.datasetid:test_sess
 
 
 
-# * plot out distribution of SMVE subscores as well as score ----
+# * * plot out distribution of SMVE subscores as well as score ----
 
 {
   # variable to keep track of whose data not to use
@@ -2260,19 +2260,10 @@ for (i in 1:length(lower_names)) {
   }
 }
 
-# get rid of bblid = 18026 ? they are being in every test individually. UPDATE: yes this is a test record
+# * Multivariate Outlier Removal ----
 
 
-
-
-
-
-###############################################################
-# x <- x[which(x$GRP == "Healthy Controls"),]               # limit to controls?
-# x <- x[which(x$GRP == "Psychosis"),]                      # limit to PS?
-# x <- x[which(x$GRP == "Mood-Anx-BP"),]                    # limit to mood?
-###############################################################
-
+# Select relevant columns for scatters ----
 
 
 temp <- x$gng_cr
@@ -2326,8 +2317,7 @@ cpt_acc <- x$cpt_ptp - x$cpt_pfp
   # dev.off()
 }
 
-
-acc <- x %>% dplyr::select(matches("_cr$|tot$|cor$|pc$|memcr$|sum$")) %>% cbind(cpt_acc)
+acc <- x %>% dplyr::select(matches("_cr$|tot$|cor$|pc$|memcr$|sum$",ignore.case = F)) %>% cbind(cpt_acc) # all acc scores from full CNB
 
 er40_cat <- ((x$er40.1.00.cat_neutral + x$er40.1.00.cat_emotive + x$er40.1.00.cat_emotive + x$er40.1.00.cat_emotive)/4)*sqrt(4)
 medf_cat <- ((x$medf.1.00.cat_same + x$medf.1.00.cat_different + x$medf.1.00.cat_different + x$medf.1.00.cat_different)/4)*sqrt(4)
@@ -2340,7 +2330,7 @@ adt_cat <- ((x$adt.1.00.cat_same + x$adt.1.00.cat_different + x$adt.1.00.cat_dif
 cpf_cat <- ((x$cpf.1.00.v1.cat_target + x$cpf.1.00.v1.cat_foil)/2)*sqrt(2)
 cpw_cat <- ((x$cpw.1.00.v1.cat_target + x$cpw.1.00.v1.cat_foil)/2)*sqrt(2)
 volt_cat <- ((x$volt.1.00.v1.cat_targets + x$volt.1.00.v1.cat_foils)/2)*sqrt(2)
-# cpt_cat <- (x$CPT108.CATCPTT_TP/36) - (x$CPT108.CATCPTL_FP/72)    not available as of now
+cpt_cat <- (x$CPT108.CATCPTT_TP/36) - (x$CPT108.CATCPTT_FP/72)    # old data (only ~170 rows)
 
 # using the "real"/fixed cpf and er40 (still n=62 only)
 er40_2_cat <- ((x$er40.2.00.cat_neutral + x$er40.2.00.cat_emotive + x$er40.2.00.cat_emotive + x$er40.2.00.cat_emotive)/4)*sqrt(4)
@@ -2353,101 +2343,99 @@ cpf_2_f <- ifelse(!is.na(x$cpf2.1.00.v2.cat_foil),x$cpf2.1.00.v2.cat_foil,x$cpf2
 
 # cpf2.1.00.v1.cat_foil is the cat_v2 (full fixed link data, )
 
-cat_acc <- x %>% dplyr::select(matches("default"))
+cat_acc <- x %>% dplyr::select(matches("default|TOT$|_CR$|DSCOR$|MEMCR",ignore.case = F)) # all CAT CNB task scores that aren't split
 
-x99 <- data.frame(x %>% dplyr::select(bblid,age_enroll,study_group,sex,proto_3,proto_4),acc,cat_acc,er40_cat,
-                  medf_cat,adt_cat,cpf_cat,cpw_cat,volt_cat,er40_2_cat,cpf_2_cat, x %>% dplyr::select(er40.1.00.cat_emotive,
-                  er40.1.00.cat_neutral,medf.1.00.cat_same,medf.1.00.cat_different,er40.2.00.cat_emotive,er40.2.00.cat_neutral,
-                  cpw.1.00.v1.cat_target,cpw.1.00.v1.cat_foil,volt.1.00.v1.cat_targets,volt.1.00.v1.cat_foils),cpf_2_t,cpf_2_f)
-x99 <- x99 %>% mutate(dscr_cat = NA,dsmemcr_cat = NA,gng_cat = NA,aim_cat = NA,cpt_cat = NA,pvrt_pc_cat = NA) %>% 
-  dplyr::select(bblid:cpt_acc,pra_cr,er40_cat,pvrt.1.00.cat_default,pvrt_pc_cat,pmat.1.00.cat_default,volt_cat,
-                cpf_cat,medf_cat,adt_cat,plot.1.00.cat_default,cpw_cat,dscr_cat,dsmemcr_cat,gng_cat,aim_cat,
-                ddisc.1.00.cat_default,rdisc.1.00.cat_default,edisc.1.00.cat_default,cpt_cat,pra.1.00.d.cat_default,
-                er40_2_cat,cpf_2_cat,er40.1.00.cat_emotive,er40.1.00.cat_neutral,medf.1.00.cat_same,
-                medf.1.00.cat_different,er40.2.00.cat_emotive,er40.2.00.cat_neutral,cpf_2_t,
-                cpf_2_f,cpw.1.00.v1.cat_target,cpw.1.00.v1.cat_foil,volt.1.00.v1.cat_targets,volt.1.00.v1.cat_foils)
+
+x99 <- data.frame(x %>% dplyr::select(bblid,age_enroll,study_group,sex,proto_3,proto_4),acc,
+                  cat_acc,er40_cat,medf_cat,adt_cat,cpf_cat,cpw_cat,volt_cat,er40_2_cat,cpf_2_cat,cpt_cat, 
+                  x %>% dplyr::select(er40.1.00.cat_emotive,er40.1.00.cat_neutral,medf.1.00.cat_same,medf.1.00.cat_different,
+                                      er40.2.00.cat_emotive,er40.2.00.cat_neutral,cpw.1.00.v1.cat_target,cpw.1.00.v1.cat_foil,
+                                      volt.1.00.v1.cat_targets,volt.1.00.v1.cat_foils),
+                  cpf_2_t,cpf_2_f)
 
 # temporarily (no QC-ing whatsoever of CAT vs full data to match un-QC-ed extralong full vs full)
 x_xl <- x99
 
 # split tasks: need to add separated memory tasks 
+{
+  temp_er40_emo <- ER40_EMO_iw %>% dplyr::select(matches("^bblid$|er40_emo.ER40_D.ER40D_EMO|er40_resp.ER40_D.ER40D_EMORTCR|SMVE")) %>% 
+    filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|ER40")),by=c("bblid" = "BBLID"))
+  qu <- quantile(temp_er40_emo$SMVE,0.05,na.rm=TRUE)
+  temp_er40_emo$er40_emo_splitSMVE <- ifelse(temp_er40_emo$SMVE > qu,temp_er40_emo$er40_emo.ER40_D.ER40D_EMO,NA)
+  temp_er40_emo$er40_emo_SMVE <- ifelse(temp_er40_emo$ER40 != 1,temp_er40_emo$er40_emo.ER40_D.ER40D_EMO,NA)
+  
+  temp_er40_neu <- ER40_NEU_iw %>% dplyr::select(matches("^bblid$|ER40_D.ER40D_NOE|ER40_D.ER40D_NOERT|SMVE")) %>% 
+    filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|ER40")),by=c("bblid" = "BBLID"))
+  qu <- quantile(temp_er40_neu$SMVE,0.05,na.rm=TRUE)
+  temp_er40_neu$er40_noe_splitSMVE <- ifelse(temp_er40_neu$SMVE > qu,temp_er40_neu$ER40_D.ER40D_NOE,NA)
+  temp_er40_neu$er40_noe_SMVE <- ifelse(temp_er40_neu$ER40 != 1,temp_er40_neu$ER40_D.ER40D_NOE,NA)
+  
+  temp_medf_dif <- MEDF_DIF_iw %>% dplyr::select(matches("^bblid$|medf_corr.MEDF36_A.MEDF36A_DIF|medf_resp.MEDF36_A.MEDF36A_DIFRT|SMVE")) %>% 
+    filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|MEDF")),by=c("bblid" = "BBLID"))
+  qu <- quantile(temp_medf_dif$SMVE,0.05,na.rm=TRUE)
+  temp_medf_dif$medf_dif_splitSMVE <- ifelse(temp_medf_dif$SMVE > qu,temp_medf_dif$medf_corr.MEDF36_A.MEDF36A_DIF,NA)
+  temp_medf_dif$medf_dif_SMVE <- ifelse(temp_medf_dif$MEDF != 1,temp_medf_dif$medf_corr.MEDF36_A.MEDF36A_DIF,NA)
+  
+  temp_medf_same <- MEDF_SAME_iw %>% dplyr::select(matches("^bblid$|MEDF36_A.MEDF36A_SAME_CR|MEDF36_A.MEDF36A_SAME_RTCR|SMVE")) %>% 
+    filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|MEDF")),by=c("bblid" = "BBLID"))
+  qu <- quantile(temp_medf_same$SMVE,0.05,na.rm=TRUE)
+  temp_medf_same$medf_same_splitSMVE <- ifelse(temp_medf_same$SMVE > qu,temp_medf_same$MEDF36_A.MEDF36A_SAME_CR,NA)
+  temp_medf_same$medf_same_SMVE <- ifelse(temp_medf_same$MEDF != 1,temp_medf_same$MEDF36_A.MEDF36A_SAME_CR,NA)
+  
+  split_er40_medf <- left_join(all_cnb %>% dplyr::select("bblid"),temp_er40_emo %>% dplyr::select(matches("bblid|er40_emo_splitSMVE|er40_emo_SMVE")),by="bblid")
+  split_er40_medf <- left_join(split_er40_medf,temp_er40_neu %>% dplyr::select(matches("bblid|er40_noe_splitSMVE|er40_noe_SMVE")),by="bblid")
+  split_er40_medf <- left_join(split_er40_medf,temp_medf_dif %>% dplyr::select(matches("bblid|medf_dif_splitSMVE|medf_dif_SMVE")),by="bblid")
+  split_er40_medf <- left_join(split_er40_medf,temp_medf_same %>% dplyr::select(matches("bblid|medf_same_splitSMVE|medf_same_SMVE")),by="bblid")
+  
+  x99_split <- left_join(x99,split_er40_medf,by="bblid")
+  
+  
+  temp_cpf_t <- CPF_targets %>% dplyr::select(matches("^bblid$|CPF_B.CPF_TP|CPF_B.CPF_TPRT|SMVE")) %>% 
+    filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|CPF")),by=c("bblid" = "BBLID"))
+  qu <- quantile(temp_cpf_t$SMVE,0.05,na.rm=TRUE)
+  temp_cpf_t$cpf_t_splitSMVE <- ifelse(temp_cpf_t$SMVE > qu,temp_cpf_t$CPF_B.CPF_TP,NA)
+  temp_cpf_t$cpf_t_SMVE <- ifelse(temp_cpf_t$CPF != 1,temp_cpf_t$CPF_B.CPF_TP,NA)
+  
+  temp_cpf_f <- CPF_foils %>% dplyr::select(matches("^bblid$|CPF_B.CPF_TN|CPF_B.CPF_TNRT|SMVE")) %>% 
+    filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|CPF")),by=c("bblid" = "BBLID"))
+  qu <- quantile(temp_cpf_f$SMVE,0.05,na.rm=TRUE)
+  temp_cpf_f$cpf_f_splitSMVE <- ifelse(temp_cpf_f$SMVE > qu,temp_cpf_f$CPF_B.CPF_TN,NA)
+  temp_cpf_f$cpf_f_SMVE <- ifelse(temp_cpf_f$CPF != 1,temp_cpf_f$CPF_B.CPF_TN,NA)
+  
+  temp_cpw_t <- CPW_targets %>% dplyr::select(matches("^bblid$|CPW_A.CPW_TP|CPW_A.CPW_TPRT|SMVE")) %>% 
+    filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|CPW")),by=c("bblid" = "BBLID"))
+  qu <- quantile(temp_cpw_t$SMVE,0.05,na.rm=TRUE)
+  temp_cpw_t$cpw_t_splitSMVE <- ifelse(temp_cpw_t$SMVE > qu,temp_cpw_t$CPW_A.CPW_TP,NA)
+  temp_cpw_t$cpw_t_SMVE <- ifelse(temp_cpw_t$CPW != 1,temp_cpw_t$CPW_A.CPW_TP,NA)
+  
+  temp_cpw_f <- CPW_foils %>% dplyr::select(matches("^bblid$|CPW_A.CPW_TN|CPW_A.CPW_TNRT|SMVE")) %>% 
+    filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|CPW")),by=c("bblid" = "BBLID"))
+  qu <- quantile(temp_cpw_f$SMVE,0.05,na.rm=TRUE)
+  temp_cpw_f$cpw_f_splitSMVE <- ifelse(temp_cpw_f$SMVE > qu,temp_cpw_f$CPW_A.CPW_TN,NA)
+  temp_cpw_f$cpw_f_SMVE <- ifelse(temp_cpw_f$CPW != 1,temp_cpw_f$CPW_A.CPW_TN,NA)
+  
+  temp_volt_t <- VOLT_targets %>% dplyr::select(matches("^bblid$|SVOLT_A.SVOLT_TP|SVOLT_A.SVOLT_TPRT|SMVE")) %>% 
+    filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|VOLT")),by=c("bblid" = "BBLID"))
+  qu <- quantile(temp_volt_t$SMVE,0.05,na.rm=TRUE)
+  temp_volt_t$volt_t_splitSMVE <- ifelse(temp_volt_t$SMVE > qu,temp_volt_t$SVOLT_A.SVOLT_TP,NA)
+  temp_volt_t$volt_t_SMVE <- ifelse(temp_volt_t$VOLT != 1,temp_volt_t$SVOLT_A.SVOLT_TP,NA)
+  
+  temp_volt_f <- VOLT_foils %>% dplyr::select(matches("^bblid$|SVOLT_A.SVOLT_TN|SVOLT_A.SVOLT_TNRT|SMVE")) %>% 
+    filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|VOLT")),by=c("bblid" = "BBLID"))
+  qu <- quantile(temp_volt_f$SMVE,0.05,na.rm=TRUE)
+  temp_volt_f$volt_f_splitSMVE <- ifelse(temp_volt_f$SMVE > qu,temp_volt_f$SVOLT_A.SVOLT_TN,NA)
+  temp_volt_f$volt_f_SMVE <- ifelse(temp_volt_f$VOLT != 1,temp_volt_f$SVOLT_A.SVOLT_TN,NA)
+  
+  split_mem <- left_join(all_cnb %>% dplyr::select("bblid"),temp_cpf_t %>% dplyr::select(matches("bblid|cpf_t_splitSMVE|cpf_t_SMVE")),by="bblid")
+  split_mem <- left_join(split_mem,temp_cpf_f %>% dplyr::select(matches("bblid|cpf_f_splitSMVE|cpf_f_SMVE")),by="bblid")
+  split_mem <- left_join(split_mem,temp_cpw_t %>% dplyr::select(matches("bblid|cpw_t_splitSMVE|cpw_t_SMVE")),by="bblid")
+  split_mem <- left_join(split_mem,temp_cpw_f %>% dplyr::select(matches("bblid|cpw_f_splitSMVE|cpw_f_SMVE")),by="bblid")
+  split_mem <- left_join(split_mem,temp_volt_t %>% dplyr::select(matches("bblid|volt_t_splitSMVE|volt_t_SMVE")),by="bblid")
+  split_mem <- left_join(split_mem,temp_volt_f %>% dplyr::select(matches("bblid|volt_f_splitSMVE|volt_f_SMVE")),by="bblid")
+  
+  x99_split <- left_join(x99_split,split_mem,by="bblid")
+}
 
-temp_er40_emo <- ER40_EMO_iw %>% dplyr::select(matches("^bblid$|er40_emo.ER40_D.ER40D_EMO|er40_resp.ER40_D.ER40D_EMORTCR|SMVE")) %>% 
-  filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|ER40")),by=c("bblid" = "BBLID"))
-qu <- quantile(temp_er40_emo$SMVE,0.05,na.rm=TRUE)
-temp_er40_emo$er40_emo_splitSMVE <- ifelse(temp_er40_emo$SMVE > qu,temp_er40_emo$er40_emo.ER40_D.ER40D_EMO,NA)
-temp_er40_emo$er40_emo_SMVE <- ifelse(temp_er40_emo$ER40 != 1,temp_er40_emo$er40_emo.ER40_D.ER40D_EMO,NA)
-
-temp_er40_neu <- ER40_NEU_iw %>% dplyr::select(matches("^bblid$|ER40_D.ER40D_NOE|ER40_D.ER40D_NOERT|SMVE")) %>% 
-  filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|ER40")),by=c("bblid" = "BBLID"))
-qu <- quantile(temp_er40_neu$SMVE,0.05,na.rm=TRUE)
-temp_er40_neu$er40_noe_splitSMVE <- ifelse(temp_er40_neu$SMVE > qu,temp_er40_neu$ER40_D.ER40D_NOE,NA)
-temp_er40_neu$er40_noe_SMVE <- ifelse(temp_er40_neu$ER40 != 1,temp_er40_neu$ER40_D.ER40D_NOE,NA)
-
-temp_medf_dif <- MEDF_DIF_iw %>% dplyr::select(matches("^bblid$|medf_corr.MEDF36_A.MEDF36A_DIF|medf_resp.MEDF36_A.MEDF36A_DIFRT|SMVE")) %>% 
-  filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|MEDF")),by=c("bblid" = "BBLID"))
-qu <- quantile(temp_medf_dif$SMVE,0.05,na.rm=TRUE)
-temp_medf_dif$medf_dif_splitSMVE <- ifelse(temp_medf_dif$SMVE > qu,temp_medf_dif$medf_corr.MEDF36_A.MEDF36A_DIF,NA)
-temp_medf_dif$medf_dif_SMVE <- ifelse(temp_medf_dif$MEDF != 1,temp_medf_dif$medf_corr.MEDF36_A.MEDF36A_DIF,NA)
-
-temp_medf_same <- MEDF_SAME_iw %>% dplyr::select(matches("^bblid$|MEDF36_A.MEDF36A_SAME_CR|MEDF36_A.MEDF36A_SAME_RTCR|SMVE")) %>% 
-  filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|MEDF")),by=c("bblid" = "BBLID"))
-qu <- quantile(temp_medf_same$SMVE,0.05,na.rm=TRUE)
-temp_medf_same$medf_same_splitSMVE <- ifelse(temp_medf_same$SMVE > qu,temp_medf_same$MEDF36_A.MEDF36A_SAME_CR,NA)
-temp_medf_same$medf_same_SMVE <- ifelse(temp_medf_same$MEDF != 1,temp_medf_same$MEDF36_A.MEDF36A_SAME_CR,NA)
-
-split_er40_medf <- left_join(all_cnb %>% dplyr::select("bblid"),temp_er40_emo %>% dplyr::select(matches("bblid|er40_emo_splitSMVE|er40_emo_SMVE")),by="bblid")
-split_er40_medf <- left_join(split_er40_medf,temp_er40_neu %>% dplyr::select(matches("bblid|er40_noe_splitSMVE|er40_noe_SMVE")),by="bblid")
-split_er40_medf <- left_join(split_er40_medf,temp_medf_dif %>% dplyr::select(matches("bblid|medf_dif_splitSMVE|medf_dif_SMVE")),by="bblid")
-split_er40_medf <- left_join(split_er40_medf,temp_medf_same %>% dplyr::select(matches("bblid|medf_same_splitSMVE|medf_same_SMVE")),by="bblid")
-
-x99_split <- left_join(x99,split_er40_medf,by="bblid")
-
-
-temp_cpf_t <- CPF_targets %>% dplyr::select(matches("^bblid$|CPF_B.CPF_TP|CPF_B.CPF_TPRT|SMVE")) %>% 
-  filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|CPF")),by=c("bblid" = "BBLID"))
-qu <- quantile(temp_cpf_t$SMVE,0.05,na.rm=TRUE)
-temp_cpf_t$cpf_t_splitSMVE <- ifelse(temp_cpf_t$SMVE > qu,temp_cpf_t$CPF_B.CPF_TP,NA)
-temp_cpf_t$cpf_t_SMVE <- ifelse(temp_cpf_t$CPF != 1,temp_cpf_t$CPF_B.CPF_TP,NA)
-
-temp_cpf_f <- CPF_foils %>% dplyr::select(matches("^bblid$|CPF_B.CPF_TN|CPF_B.CPF_TNRT|SMVE")) %>% 
-  filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|CPF")),by=c("bblid" = "BBLID"))
-qu <- quantile(temp_cpf_f$SMVE,0.05,na.rm=TRUE)
-temp_cpf_f$cpf_f_splitSMVE <- ifelse(temp_cpf_f$SMVE > qu,temp_cpf_f$CPF_B.CPF_TN,NA)
-temp_cpf_f$cpf_f_SMVE <- ifelse(temp_cpf_f$CPF != 1,temp_cpf_f$CPF_B.CPF_TN,NA)
-
-temp_cpw_t <- CPW_targets %>% dplyr::select(matches("^bblid$|CPW_A.CPW_TP|CPW_A.CPW_TPRT|SMVE")) %>% 
-  filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|CPW")),by=c("bblid" = "BBLID"))
-qu <- quantile(temp_cpw_t$SMVE,0.05,na.rm=TRUE)
-temp_cpw_t$cpw_t_splitSMVE <- ifelse(temp_cpw_t$SMVE > qu,temp_cpw_t$CPW_A.CPW_TP,NA)
-temp_cpw_t$cpw_t_SMVE <- ifelse(temp_cpw_t$CPW != 1,temp_cpw_t$CPW_A.CPW_TP,NA)
-
-temp_cpw_f <- CPW_foils %>% dplyr::select(matches("^bblid$|CPW_A.CPW_TN|CPW_A.CPW_TNRT|SMVE")) %>% 
-  filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|CPW")),by=c("bblid" = "BBLID"))
-qu <- quantile(temp_cpw_f$SMVE,0.05,na.rm=TRUE)
-temp_cpw_f$cpw_f_splitSMVE <- ifelse(temp_cpw_f$SMVE > qu,temp_cpw_f$CPW_A.CPW_TN,NA)
-temp_cpw_f$cpw_f_SMVE <- ifelse(temp_cpw_f$CPW != 1,temp_cpw_f$CPW_A.CPW_TN,NA)
-
-temp_volt_t <- VOLT_targets %>% dplyr::select(matches("^bblid$|SVOLT_A.SVOLT_TP|SVOLT_A.SVOLT_TPRT|SMVE")) %>% 
-  filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|VOLT")),by=c("bblid" = "BBLID"))
-qu <- quantile(temp_volt_t$SMVE,0.05,na.rm=TRUE)
-temp_volt_t$volt_t_splitSMVE <- ifelse(temp_volt_t$SMVE > qu,temp_volt_t$SVOLT_A.SVOLT_TP,NA)
-temp_volt_t$volt_t_SMVE <- ifelse(temp_volt_t$VOLT != 1,temp_volt_t$SVOLT_A.SVOLT_TP,NA)
-
-temp_volt_f <- VOLT_foils %>% dplyr::select(matches("^bblid$|SVOLT_A.SVOLT_TN|SVOLT_A.SVOLT_TNRT|SMVE")) %>% 
-  filter(bblid %in% all_cnb$bblid) %>% left_join(no_good %>% dplyr::select(matches("BBLID|VOLT")),by=c("bblid" = "BBLID"))
-qu <- quantile(temp_volt_f$SMVE,0.05,na.rm=TRUE)
-temp_volt_f$volt_f_splitSMVE <- ifelse(temp_volt_f$SMVE > qu,temp_volt_f$SVOLT_A.SVOLT_TN,NA)
-temp_volt_f$volt_f_SMVE <- ifelse(temp_volt_f$VOLT != 1,temp_volt_f$SVOLT_A.SVOLT_TN,NA)
-
-split_mem <- left_join(all_cnb %>% dplyr::select("bblid"),temp_cpf_t %>% dplyr::select(matches("bblid|cpf_t_splitSMVE|cpf_t_SMVE")),by="bblid")
-split_mem <- left_join(split_mem,temp_cpf_f %>% dplyr::select(matches("bblid|cpf_f_splitSMVE|cpf_f_SMVE")),by="bblid")
-split_mem <- left_join(split_mem,temp_cpw_t %>% dplyr::select(matches("bblid|cpw_t_splitSMVE|cpw_t_SMVE")),by="bblid")
-split_mem <- left_join(split_mem,temp_cpw_f %>% dplyr::select(matches("bblid|cpw_f_splitSMVE|cpw_f_SMVE")),by="bblid")
-split_mem <- left_join(split_mem,temp_volt_t %>% dplyr::select(matches("bblid|volt_t_splitSMVE|volt_t_SMVE")),by="bblid")
-split_mem <- left_join(split_mem,temp_volt_f %>% dplyr::select(matches("bblid|volt_f_splitSMVE|volt_f_SMVE")),by="bblid")
-
-x99_split <- left_join(x99_split,split_mem,by="bblid")
 
 # rapid/shortened tests missing for CAT CNB (AIM,CPT,DIGSYM,GNG,)
 # need to edit line above defining x99 when CAT shortened test are available
@@ -2458,24 +2446,10 @@ for (i in 1:(ncol(x99_split)-6)) {
   mod <- lm(x99_split[,(i+6)]~proto_3,data=x99_split,na.action=na.exclude)
   sc[,i] <- scale(residuals(mod,na.action=na.exclude))
 }
-# i will eventually want to use the code above, but for now, I have to leave out the CAT forms that don't have real scores 
-
-for (i in c(1:21,23:29,34:36,38:72)) {   # all cols except demos
-  mod <- lm(x99_split[,(i+6)]~proto_3,data=x99_split,na.action=na.exclude)
-  sc[,i] <- scale(residuals(mod,na.action=na.exclude))
-}
-
-# old stuff for reference below
-# mod <- lm(x99[,(14)]~proto_3,data=x99,na.action=na.exclude)
-# sc[,1] <- scale(residuals(mod,na.action=na.exclude))
-# for (i in 3:31) {
-#   mod <- lm(x99[,(i+13)]~proto_3,data=x99,na.action=na.exclude)
-#   sc[,i] <- scale(residuals(mod,na.action=na.exclude))
-# }
 
 colnames(sc) <- paste0(colnames(x99_split[,7:ncol(x99_split)]),"_Oreg")
 
-x <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Healthy Controls","Psychosis","Mood-Anx-BP"))
+x_all <- data.frame(x99_split,sc)
 x_TD <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Healthy Controls"))
 x_PS <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Psychosis"))
 x_MD <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Mood-Anx-BP"))
@@ -2497,65 +2471,67 @@ x_MD <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Mood-Anx-BP"))
 # * all individual tests printed out by condition ---- 
 
 # overall
-pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_ALL_bytest_220804.pdf",height=9,width=12)
-pairs.panels(x %>% dplyr::select(matches("adt_pc_Oreg|adt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x %>% dplyr::select(matches("aim_tot_Oreg|aim_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
-pairs.panels(x %>% dplyr::select(matches("cpf_cr_Oreg|cpf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x %>% dplyr::select(matches("cpf_cr_Oreg|cpf_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
-pairs.panels(x %>% dplyr::select(matches("cpf_t_SMVE_Oreg|cpf_2_t_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
-pairs.panels(x %>% dplyr::select(matches("cpf_f_SMVE_Oreg|cpf_2_f_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
-# pairs.panels(x %>% dplyr::select(matches("cpt_acc_Oreg|cpt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
-pairs.panels(x %>% dplyr::select(matches("cpw_cr_Oreg|cpw_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x %>% dplyr::select(matches("cpw_t_SMVE_Oreg|cpw.1.00.v1.cat_target_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x %>% dplyr::select(matches("cpw_f_SMVE_Oreg|cpw.1.00.v1.cat_foil_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x %>% dplyr::select(matches("ddisc_sum_Oreg|ddisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x %>% dplyr::select(matches("dscor_Oreg|dscr_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
-pairs.panels(x %>% dplyr::select(matches("edisc_sum_Oreg|edisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x %>% dplyr::select(matches("er40_cr_Oreg|er40_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x %>% dplyr::select(matches("er40_cr_Oreg|er40_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                         # new, corrected er40 (er40v2)
-pairs.panels(x %>% dplyr::select(matches("er40_emo_SMVE_Oreg|er40.2.00.cat_emotive_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, emotive items, by general SMVE
-pairs.panels(x %>% dplyr::select(matches("er40_noe_SMVE_Oreg|er40.2.00.cat_neutral_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, neutral items, by general SMVE
-# pairs.panels(x %>% dplyr::select(matches("gng_cr_Oreg|gng_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
-pairs.panels(x %>% dplyr::select(matches("medf_pc_Oreg|medf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x %>% dplyr::select(matches("medf_dif_SMVE_Oreg|medf.1.00.cat_different_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)      # medf split, dif items, by general SMVE
-pairs.panels(x %>% dplyr::select(matches("medf_same_SMVE_Oreg|medf.1.00.cat_same_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)          # medf split, same items, by general SMVE
-pairs.panels(x %>% dplyr::select(matches("plot_pc_Oreg|plot.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x %>% dplyr::select(matches("pmat_pc_Oreg|pmat.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x %>% dplyr::select(matches("pra_acc_Oreg|pra.1.00.d.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # pra
-pairs.panels(x %>% dplyr::select(matches("pvrt_cr_Oreg|pvrt.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x %>% dplyr::select(matches("rdisc_sum_Oreg|rdisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x %>% dplyr::select(matches("volt_cr_Oreg|volt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x %>% dplyr::select(matches("volt_t_SMVE_Oreg|volt.1.00.v1.cat_targets_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x %>% dplyr::select(matches("volt_f_SMVE_Oreg|volt.1.00.v1.cat_foils_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_ALL_bytest_220810.pdf",height=9,width=12)
+pairs.panels(x_all %>% dplyr::select(matches("adt_pc_Oreg|adt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("aim_tot_Oreg|S_AIM.AIMTOT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
+pairs.panels(x_all %>% dplyr::select(matches("cpf_cr_Oreg|cpf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("cpf_cr_Oreg|cpf_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
+pairs.panels(x_all %>% dplyr::select(matches("cpf_t_SMVE_Oreg|cpf_2_t_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
+pairs.panels(x_all %>% dplyr::select(matches("cpf_f_SMVE_Oreg|cpf_2_f_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
+pairs.panels(x_all %>% dplyr::select(matches("cpt_acc_Oreg|cpt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
+pairs.panels(x_all %>% dplyr::select(matches("cpw_cr_Oreg|cpw_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("cpw_t_SMVE_Oreg|cpw.1.00.v1.cat_target_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("cpw_f_SMVE_Oreg|cpw.1.00.v1.cat_foil_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("ddisc_sum_Oreg|ddisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("dscor_Oreg|S_DIGSYM.DSCOR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_all %>% dplyr::select(matches("dsmemcr_Oreg|S_DIGSYM.DSMEMCR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym mem
+pairs.panels(x_all %>% dplyr::select(matches("edisc_sum_Oreg|edisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("er40_cr_Oreg|er40_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("er40_cr_Oreg|er40_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                         # new, corrected er40 (er40v2)
+pairs.panels(x_all %>% dplyr::select(matches("er40_emo_SMVE_Oreg|er40.2.00.cat_emotive_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, emotive items, by general SMVE
+pairs.panels(x_all %>% dplyr::select(matches("er40_noe_SMVE_Oreg|er40.2.00.cat_neutral_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, neutral items, by general SMVE
+pairs.panels(x_all %>% dplyr::select(matches("gng_cr_Oreg|GNG60.GNG60_CR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
+pairs.panels(x_all %>% dplyr::select(matches("medf_pc_Oreg|medf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("medf_dif_SMVE_Oreg|medf.1.00.cat_different_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)      # medf split, dif items, by general SMVE
+pairs.panels(x_all %>% dplyr::select(matches("medf_same_SMVE_Oreg|medf.1.00.cat_same_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)          # medf split, same items, by general SMVE
+pairs.panels(x_all %>% dplyr::select(matches("plot_pc_Oreg|plot.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("pmat_pc_Oreg|pmat.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("pra_cr_Oreg|pra.1.00.d.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # pra
+pairs.panels(x_all %>% dplyr::select(matches("pvrt_cr_Oreg|pvrt.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("rdisc_sum_Oreg|rdisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("volt_cr_Oreg|volt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("volt_t_SMVE_Oreg|volt.1.00.v1.cat_targets_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("volt_f_SMVE_Oreg|volt.1.00.v1.cat_foils_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 dev.off()
 
 
 # TD
-pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_TD_bytest_220804.pdf",height=9,width=12)
+pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_TD_bytest_220810.pdf",height=9,width=12)
 pairs.panels(x_TD %>% dplyr::select(matches("adt_pc_Oreg|adt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x_TD %>% dplyr::select(matches("aim_tot_Oreg|aim_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
+pairs.panels(x_TD %>% dplyr::select(matches("aim_tot_Oreg|S_AIM.AIMTOT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
 pairs.panels(x_TD %>% dplyr::select(matches("cpf_cr_Oreg|cpf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("cpf_cr_Oreg|cpf_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
 pairs.panels(x_TD %>% dplyr::select(matches("cpf_t_SMVE_Oreg|cpf_2_t_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
 pairs.panels(x_TD %>% dplyr::select(matches("cpf_f_SMVE_Oreg|cpf_2_f_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
-# pairs.panels(x_TD %>% dplyr::select(matches("cpt_acc_Oreg|cpt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
+pairs.panels(x_TD %>% dplyr::select(matches("cpt_acc_Oreg|cpt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
 pairs.panels(x_TD %>% dplyr::select(matches("cpw_cr_Oreg|cpw_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("cpw_t_SMVE_Oreg|cpw.1.00.v1.cat_target_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("cpw_f_SMVE_Oreg|cpw.1.00.v1.cat_foil_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("ddisc_sum_Oreg|ddisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x_TD %>% dplyr::select(matches("dscor_Oreg|dscr_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_TD %>% dplyr::select(matches("dscor_Oreg|S_DIGSYM.DSCOR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_TD %>% dplyr::select(matches("dsmemcr_Oreg|S_DIGSYM.DSMEMCR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym mem
 pairs.panels(x_TD %>% dplyr::select(matches("edisc_sum_Oreg|edisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("er40_cr_Oreg|er40_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("er40_cr_Oreg|er40_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                         # new, corrected er40 (er40v2)
 pairs.panels(x_TD %>% dplyr::select(matches("er40_emo_SMVE_Oreg|er40.2.00.cat_emotive_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, emotive items, by general SMVE
 pairs.panels(x_TD %>% dplyr::select(matches("er40_noe_SMVE_Oreg|er40.2.00.cat_neutral_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, neutral items, by general SMVE
-# pairs.panels(x_TD %>% dplyr::select(matches("gng_cr_Oreg|gng_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
+pairs.panels(x_TD %>% dplyr::select(matches("gng_cr_Oreg|GNG60.GNG60_CR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
 pairs.panels(x_TD %>% dplyr::select(matches("medf_pc_Oreg|medf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("medf_dif_SMVE_Oreg|medf.1.00.cat_different_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)      # medf split, dif items, by general SMVE
 pairs.panels(x_TD %>% dplyr::select(matches("medf_same_SMVE_Oreg|medf.1.00.cat_same_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)          # medf split, same items, by general SMVE
 pairs.panels(x_TD %>% dplyr::select(matches("plot_pc_Oreg|plot.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("pmat_pc_Oreg|pmat.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x_TD %>% dplyr::select(matches("pra_acc_Oreg|pra.1.00.d.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # pra
+pairs.panels(x_TD %>% dplyr::select(matches("pra_cr_Oreg|pra.1.00.d.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # pra
 pairs.panels(x_TD %>% dplyr::select(matches("pvrt_cr_Oreg|pvrt.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("rdisc_sum_Oreg|rdisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("volt_cr_Oreg|volt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
@@ -2565,31 +2541,32 @@ dev.off()
 
 
 # PS
-pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_PS_bytest_220804.pdf",height=9,width=12)
+pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_PS_bytest_220810.pdf",height=9,width=12)
 pairs.panels(x_PS %>% dplyr::select(matches("adt_pc_Oreg|adt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x_PS %>% dplyr::select(matches("aim_tot_Oreg|aim_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
+pairs.panels(x_PS %>% dplyr::select(matches("aim_tot_Oreg|S_AIM.AIMTOT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
 pairs.panels(x_PS %>% dplyr::select(matches("cpf_cr_Oreg|cpf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_PS %>% dplyr::select(matches("cpf_cr_Oreg|cpf_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
 pairs.panels(x_PS %>% dplyr::select(matches("cpf_t_SMVE_Oreg|cpf_2_t_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
 pairs.panels(x_PS %>% dplyr::select(matches("cpf_f_SMVE_Oreg|cpf_2_f_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
-# pairs.panels(x_PS %>% dplyr::select(matches("cpt_acc_Oreg|cpt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
+pairs.panels(x_PS %>% dplyr::select(matches("cpt_acc_Oreg|cpt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
 pairs.panels(x_PS %>% dplyr::select(matches("cpw_cr_Oreg|cpw_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_PS %>% dplyr::select(matches("cpw_t_SMVE_Oreg|cpw.1.00.v1.cat_target_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_PS %>% dplyr::select(matches("cpw_f_SMVE_Oreg|cpw.1.00.v1.cat_foil_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_PS %>% dplyr::select(matches("ddisc_sum_Oreg|ddisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x_PS %>% dplyr::select(matches("dscor_Oreg|dscr_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_PS %>% dplyr::select(matches("dscor_Oreg|S_DIGSYM.DSCOR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_PS %>% dplyr::select(matches("dsmemcr_Oreg|S_DIGSYM.DSMEMCR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym mem
 pairs.panels(x_PS %>% dplyr::select(matches("edisc_sum_Oreg|edisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_PS %>% dplyr::select(matches("er40_cr_Oreg|er40_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_PS %>% dplyr::select(matches("er40_cr_Oreg|er40_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                         # new, corrected er40 (er40v2)
 pairs.panels(x_PS %>% dplyr::select(matches("er40_emo_SMVE_Oreg|er40.2.00.cat_emotive_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, emotive items, by general SMVE
 pairs.panels(x_PS %>% dplyr::select(matches("er40_noe_SMVE_Oreg|er40.2.00.cat_neutral_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, neutral items, by general SMVE
-# pairs.panels(x_PS %>% dplyr::select(matches("gng_cr_Oreg|gng_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
+pairs.panels(x_PS %>% dplyr::select(matches("gng_cr_Oreg|GNG60.GNG60_CR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
 pairs.panels(x_PS %>% dplyr::select(matches("medf_pc_Oreg|medf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_PS %>% dplyr::select(matches("medf_dif_SMVE_Oreg|medf.1.00.cat_different_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)      # medf split, dif items, by general SMVE
 pairs.panels(x_PS %>% dplyr::select(matches("medf_same_SMVE_Oreg|medf.1.00.cat_same_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)          # medf split, same items, by general SMVE
 pairs.panels(x_PS %>% dplyr::select(matches("plot_pc_Oreg|plot.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_PS %>% dplyr::select(matches("pmat_pc_Oreg|pmat.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x_PS %>% dplyr::select(matches("pra_acc_Oreg|pra.1.00.d.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # pra
+pairs.panels(x_PS %>% dplyr::select(matches("pra_cr_Oreg|pra.1.00.d.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # pra
 pairs.panels(x_PS %>% dplyr::select(matches("pvrt_cr_Oreg|pvrt.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_PS %>% dplyr::select(matches("rdisc_sum_Oreg|rdisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_PS %>% dplyr::select(matches("volt_cr_Oreg|volt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
@@ -2599,31 +2576,32 @@ dev.off()
 
 
 # MD
-pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_MD_bytest_220804.pdf",height=9,width=12)
+pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_MD_bytest_220810.pdf",height=9,width=12)
 pairs.panels(x_MD %>% dplyr::select(matches("adt_pc_Oreg|adt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x_MD %>% dplyr::select(matches("aim_tot_Oreg|aim_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
+pairs.panels(x_MD %>% dplyr::select(matches("aim_tot_Oreg|S_AIM.AIMTOT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
 pairs.panels(x_MD %>% dplyr::select(matches("cpf_cr_Oreg|cpf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_MD %>% dplyr::select(matches("cpf_cr_Oreg|cpf_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
 pairs.panels(x_MD %>% dplyr::select(matches("cpf_t_SMVE_Oreg|cpf_2_t_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
 pairs.panels(x_MD %>% dplyr::select(matches("cpf_f_SMVE_Oreg|cpf_2_f_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
-# pairs.panels(x_MD %>% dplyr::select(matches("cpt_acc_Oreg|cpt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
+pairs.panels(x_MD %>% dplyr::select(matches("cpt_acc_Oreg|cpt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
 pairs.panels(x_MD %>% dplyr::select(matches("cpw_cr_Oreg|cpw_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_MD %>% dplyr::select(matches("cpw_t_SMVE_Oreg|cpw.1.00.v1.cat_target_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_MD %>% dplyr::select(matches("cpw_f_SMVE_Oreg|cpw.1.00.v1.cat_foil_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_MD %>% dplyr::select(matches("ddisc_sum_Oreg|ddisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x_MD %>% dplyr::select(matches("dscor_Oreg|dscr_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_MD %>% dplyr::select(matches("dscor_Oreg|S_DIGSYM.DSCOR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_MD %>% dplyr::select(matches("dsmemcr_Oreg|S_DIGSYM.DSMEMCR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym mem
 pairs.panels(x_MD %>% dplyr::select(matches("edisc_sum_Oreg|edisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_MD %>% dplyr::select(matches("er40_cr_Oreg|er40_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_MD %>% dplyr::select(matches("er40_cr_Oreg|er40_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                         # new, corrected er40 (er40v2)
 pairs.panels(x_MD %>% dplyr::select(matches("er40_emo_SMVE_Oreg|er40.2.00.cat_emotive_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, emotive items, by general SMVE
 pairs.panels(x_MD %>% dplyr::select(matches("er40_noe_SMVE_Oreg|er40.2.00.cat_neutral_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, neutral items, by general SMVE
-# pairs.panels(x_MD %>% dplyr::select(matches("gng_cr_Oreg|gng_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
+pairs.panels(x_MD %>% dplyr::select(matches("gng_cr_Oreg|GNG60.GNG60_CR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
 pairs.panels(x_MD %>% dplyr::select(matches("medf_pc_Oreg|medf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_MD %>% dplyr::select(matches("medf_dif_SMVE_Oreg|medf.1.00.cat_different_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)      # medf split, dif items, by general SMVE
 pairs.panels(x_MD %>% dplyr::select(matches("medf_same_SMVE_Oreg|medf.1.00.cat_same_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)          # medf split, same items, by general SMVE
 pairs.panels(x_MD %>% dplyr::select(matches("plot_pc_Oreg|plot.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_MD %>% dplyr::select(matches("pmat_pc_Oreg|pmat.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x_MD %>% dplyr::select(matches("pra_acc_Oreg|pra.1.00.d.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # pra
+pairs.panels(x_MD %>% dplyr::select(matches("pra_cr_Oreg|pra.1.00.d.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # pra
 pairs.panels(x_MD %>% dplyr::select(matches("pvrt_cr_Oreg|pvrt.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_MD %>% dplyr::select(matches("rdisc_sum_Oreg|rdisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_MD %>% dplyr::select(matches("volt_cr_Oreg|volt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
@@ -2638,17 +2616,18 @@ dev.off()
 # overall
 pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_ALL_bytest_forXL_220803.pdf",height=9,width=12)
 pairs.panels(x_xl %>% dplyr::select(matches("adt_pc|adt_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x_xl %>% dplyr::select(matches("aim_tot|aim_cat")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
+pairs.panels(x_xl %>% dplyr::select(matches("aim_tot_Oreg|S_AIM.AIMTOT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
 pairs.panels(x_xl %>% dplyr::select(matches("cpf_cr|cpf_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_xl %>% dplyr::select(matches("cpf_cr|cpf_2_cat")),lm=TRUE,scale=TRUE,ci=TRUE)  # new, corrected cpf (cpfv2)
-# pairs.panels(x_xl %>% dplyr::select(matches("cpt_acc|cpt_cat")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
+pairs.panels(x_xl %>% dplyr::select(matches("cpt_acc_Oreg|cpt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
 pairs.panels(x_xl %>% dplyr::select(matches("cpw_cr|cpw_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_xl %>% dplyr::select(matches("ddisc_sum|ddisc.1.00.cat_default")),lm=TRUE,scale=TRUE,ci=TRUE)
-# pairs.panels(x_xl %>% dplyr::select(matches("dscor|dscr_cat")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_xl %>% dplyr::select(matches("dscor_Oreg|S_DIGSYM.DSCOR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_xl %>% dplyr::select(matches("dsmemcr_Oreg|S_DIGSYM.DSMEMCR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym mem
 pairs.panels(x_xl %>% dplyr::select(matches("edisc_sum|edisc.1.00.cat_default")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_xl %>% dplyr::select(matches("er40_cr|er40_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_xl %>% dplyr::select(matches("er40_cr|er40_2_cat")),lm=TRUE,scale=TRUE,ci=TRUE)                         # new, corrected er40 (er40v2)
-# pairs.panels(x_xl %>% dplyr::select(matches("gng_cr|gng_cat")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
+pairs.panels(x_xl %>% dplyr::select(matches("gng_cr_Oreg|GNG60.GNG60_CR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
 pairs.panels(x_xl %>% dplyr::select(matches("medf_pc|medf_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_xl %>% dplyr::select(matches("plot_pc|plot.1.00.cat_default")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_xl %>% dplyr::select(matches("pmat_pc|pmat.1.00.cat_default")),lm=TRUE,scale=TRUE,ci=TRUE)
@@ -2665,17 +2644,17 @@ rownames(adapt_XL) <- c("ADT","AIM","CPF","CPF v2","CPT","CPW","DDISC","DIGSYM",
                         "GNG","MEDF","PLOT","PMAT","PRA","PVRT","RDISC","SVOLT")
 
 adapt_XL[1,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("adt_pc")))),sum(!is.na(x_xl %>% dplyr::select(matches("adt_cat")))))
-adapt_XL[2,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("aim_tot")))),sum(!is.na(x_xl %>% dplyr::select(matches("aim_cat")))))
+adapt_XL[2,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("aim_tot")))),sum(!is.na(x_xl %>% dplyr::select(matches("S_AIM.AIMTOT")))))
 adapt_XL[3,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("cpf_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("cpf_cat")))))
 adapt_XL[4,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("cpf_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("cpf_2_cat")))))
 adapt_XL[5,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("cpt_acc")))),sum(!is.na(x_xl %>% dplyr::select(matches("cpt_cat")))))
 adapt_XL[6,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("cpw_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("cpw_cat")))))
 adapt_XL[7,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("ddisc_sum")))),sum(!is.na(x_xl %>% dplyr::select(matches("ddisc.1.00.cat_default")))))
-adapt_XL[8,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("dscor")))),sum(!is.na(x_xl %>% dplyr::select(matches("dscr_cat")))))
+adapt_XL[8,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("dscor")))),sum(!is.na(x_xl %>% dplyr::select(matches("S_DIGSYM.DSCOR")))))
 adapt_XL[9,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("edisc_sum")))),sum(!is.na(x_xl %>% dplyr::select(matches("edisc.1.00.cat_default")))))
 adapt_XL[10,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("er40_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("er40_cat")))))
 adapt_XL[11,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("er40_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("er40_2_cat")))))
-adapt_XL[12,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("gng_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("gng_cat")))))
+adapt_XL[12,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("gng_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("GNG60.GNG60_CR")))))
 adapt_XL[13,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("medf_pc")))),sum(!is.na(x_xl %>% dplyr::select(matches("medf_cat")))))
 adapt_XL[14,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("plot_pc")))),sum(!is.na(x_xl %>% dplyr::select(matches("plot.1.00.cat_default")))))
 adapt_XL[15,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("pmat_pc")))),sum(!is.na(x_xl %>% dplyr::select(matches("pmat.1.00.cat_default")))))
@@ -2689,7 +2668,7 @@ adapt_XL %>%
       col.names = "N") %>%
   kable_classic(full_width = F, html_font = "Cambria") %>%
   column_spec(1, width = "12em") %>% 
-  save_kable(file = "data/outputs/AdaptiveV_table_forXL_220804.pdf", self_contained = T)
+  save_kable(file = "data/outputs/AdaptiveV_table_220810.pdf", self_contained = T)
 
 
 
