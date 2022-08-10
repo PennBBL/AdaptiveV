@@ -50,7 +50,7 @@ library(lubridate)
 # load data ----
 
 # demos, proto order, groups, full cnb + cat cnb (missing rapid tests aka AIM, CPT, GNG, DIGSYM)
-all_cnb <- read.csv("data/inputs/cnb_merged_20220803.csv",na.strings=c(""," ","NA"))  # 272 rows as of 8/3/22
+all_cnb <- read.csv("data/inputs/cnb_merged_20220810.csv",na.strings=c(""," ","NA"))  # 272 rows as of 8/9/22
 x <- all_cnb
 
 # full CNB for itemwise DISC tasks
@@ -86,8 +86,7 @@ new_iw_ad <- new_iw_adaptive %>% filter(test_sessions_v.battery %in% c("adaptive
 # get rid of datasetid 49043, 49044, 47905, 47859, 48036, 48505 for duplicate bblid, look into bblid 104265
 new_iw_ad <- new_iw_ad %>% filter(test_sessions_v.battery_complete == 1, is.na(test_sessions_v.deleted_flag))
 
-
-# make new demos variable for new_iw?
+# make new demos variable for new_iw
 demo_new_iw <- new_iw_ad %>% dplyr::select(test_sessions.datasetid:test_sessions_v.endtime)  # 252 rows as of 8/3/22  
 
 
@@ -386,616 +385,617 @@ demo_from_iw2 <- fullcnb_iw2 %>% dplyr::select(test_sessions.datasetid:test_sess
 #   2) keep only the best quality data
 #   3) compare this with other validity measures (manual + autovalidation rules)
 
-
-# ADT
-dat <-ADT_iw[,c(grep("_CORR",colnames(ADT_iw)),grep("_TTR",colnames(ADT_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-ADT_iw <- data.frame(ADT_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(ADT_iw)[(ncol(ADT_iw)-2):ncol(ADT_iw)] <- c("PFscore1","PFscore2","SMVE")
-# no 0% or 100% so no adjustment needed
-
-
-# AIM
-
-# different method, look at distribution of scores
-
-
-# CPF
-dat <-CPF_iw[,c(grep("_CORR",colnames(CPF_iw)),grep("_TTR",colnames(CPF_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
-CPF_iw <- data.frame(CPF_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(CPF_iw)[(ncol(CPF_iw)-2):ncol(CPF_iw)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-CPF_iw$PFscore1 <- ifelse(CPF_iw$CPF_B.CPF_CR == 40, max(CPF_iw$PFscore1,na.rm = T),CPF_iw$PFscore1)
-CPF_iw$PFscore2 <- ifelse(CPF_iw$CPF_B.CPF_CR == 40, max(CPF_iw$PFscore2,na.rm = T),CPF_iw$PFscore2)
-CPF_iw$SMVE <- (0.42 * CPF_iw$outlier_score_2cut) + (0.02 * CPF_iw$acc3e) + (0.05 * CPF_iw$PFscore1) + (0.50 * CPF_iw$PFscore2)
-
-
-# CPF targets
-dat <-CPF_targets[,c(grep("_CORR",colnames(CPF_targets)),grep("_TTR",colnames(CPF_targets)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
-CPF_targets <- data.frame(CPF_targets,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(CPF_targets)[(ncol(CPF_targets)-2):ncol(CPF_targets)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-CPF_targets$PFscore1 <- ifelse(CPF_targets$CPF_B.CPF_TP == 20, max(CPF_targets$PFscore1,na.rm = T),CPF_targets$PFscore1)
-CPF_targets$PFscore2 <- ifelse(CPF_targets$CPF_B.CPF_TP == 20, max(CPF_targets$PFscore2,na.rm = T),CPF_targets$PFscore2)
-CPF_targets$SMVE <- (0.42 * CPF_targets$outlier_score_2cut) + (0.02 * CPF_targets$acc3e) + (0.05 * CPF_targets$PFscore1) + (0.50 * CPF_targets$PFscore2)
-
-
-# CPF foils
-dat <-CPF_foils[,c(grep("_CORR",colnames(CPF_foils)),grep("_TTR",colnames(CPF_foils)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
-CPF_foils <- data.frame(CPF_foils,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(CPF_foils)[(ncol(CPF_foils)-2):ncol(CPF_foils)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-CPF_foils$PFscore1 <- ifelse(CPF_foils$CPF_B.CPF_TN == 20, max(CPF_foils$PFscore1,na.rm = T),CPF_foils$PFscore1)
-CPF_foils$PFscore2 <- ifelse(CPF_foils$CPF_B.CPF_TN == 20, max(CPF_foils$PFscore2,na.rm = T),CPF_foils$PFscore2)
-CPF_foils$SMVE <- (0.42 * CPF_foils$outlier_score_2cut) + (0.02 * CPF_foils$acc3e) + (0.05 * CPF_foils$PFscore1) + (0.50 * CPF_foils$PFscore2)
-
-
-# CPT
-
-# different method, look at distribution of scores
-
-
-# CPW
-dat <-CPW_iw[,c(grep("_CORR",colnames(CPW_iw)),grep("_TTR",colnames(CPW_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
-CPW_iw <- data.frame(CPW_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(CPW_iw)[(ncol(CPW_iw)-2):ncol(CPW_iw)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-CPW_iw$PFscore1 <- ifelse(CPW_iw$CPW_A.CPW_CR == 40, max(CPW_iw$PFscore1,na.rm = T),CPW_iw$PFscore1)
-CPW_iw$PFscore2 <- ifelse(CPW_iw$CPW_A.CPW_CR == 40, max(CPW_iw$PFscore2,na.rm = T),CPW_iw$PFscore2)
-CPW_iw$SMVE <- (0.42 * CPW_iw$outlier_score_2cut) + (0.02 * CPW_iw$acc3e) + (0.05 * CPW_iw$PFscore1) + (0.50 * CPW_iw$PFscore2)
-
-
-# CPW targets
-dat <-CPW_targets[,c(grep("_CORR",colnames(CPW_targets)),grep("_TTR",colnames(CPW_targets)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
-CPW_targets <- data.frame(CPW_targets,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(CPW_targets)[(ncol(CPW_targets)-2):ncol(CPW_targets)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-CPW_targets$PFscore1 <- ifelse(CPW_targets$CPW_A.CPW_TP == 20, max(CPW_targets$PFscore1,na.rm = T),CPW_targets$PFscore1)
-CPW_targets$PFscore2 <- ifelse(CPW_targets$CPW_A.CPW_TP == 20, max(CPW_targets$PFscore2,na.rm = T),CPW_targets$PFscore2)
-CPW_targets$SMVE <- (0.42 * CPW_targets$outlier_score_2cut) + (0.02 * CPW_targets$acc3e) + (0.05 * CPW_targets$PFscore1) + (0.50 * CPW_targets$PFscore2)
-
-
-# CPW foils
-dat <-CPW_foils[,c(grep("_CORR",colnames(CPW_foils)),grep("_TTR",colnames(CPW_foils)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
-CPW_foils <- data.frame(CPW_foils,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(CPW_foils)[(ncol(CPW_foils)-2):ncol(CPW_foils)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-CPW_foils$PFscore1 <- ifelse(CPW_foils$CPW_A.CPW_TN == 20, max(CPW_foils$PFscore1,na.rm = T),CPW_foils$PFscore1)
-CPW_foils$PFscore2 <- ifelse(CPW_foils$CPW_A.CPW_TN == 20, max(CPW_foils$PFscore2,na.rm = T),CPW_foils$PFscore2)
-CPW_foils$SMVE <- (0.42 * CPW_foils$outlier_score_2cut) + (0.02 * CPW_foils$acc3e) + (0.05 * CPW_foils$PFscore1) + (0.50 * CPW_foils$PFscore2)
-
-
-# DDISC 
-dat <-DDISC_iw[,c(grep(".q_",colnames(DDISC_iw)),grep(".trr_",colnames(DDISC_iw)))]
-dat[,1:34] <- dat[,1:34]-1
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-DDISC_iw <- data.frame(DDISC_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(DDISC_iw)[(ncol(DDISC_iw)-2):ncol(DDISC_iw)] <- c("PFscore1","PFscore2","SMVE")
-# 0% and 100% scores need adjusting
-
-DDISC_iw$PFscore1 <- ifelse(DDISC_iw$ddisc_sum == 34, max(DDISC_iw$PFscore1,na.rm = T),
-                            ifelse(DDISC_iw$ddisc_sum == 0, min(DDISC_iw$PFscore1,na.rm = T),DDISC_iw$PFscore1))
-DDISC_iw$PFscore2 <- ifelse(DDISC_iw$ddisc_sum == 34, max(DDISC_iw$PFscore2,na.rm = T),
-                            ifelse(DDISC_iw$ddisc_sum == 0, min(DDISC_iw$PFscore2,na.rm = T),DDISC_iw$PFscore2))
-DDISC_iw$SMVE <- (0.34 * DDISC_iw$outlier_score_2cut) + (0 * DDISC_iw$acc3e) + (0.22 * DDISC_iw$PFscore1) + (0.44 * DDISC_iw$PFscore2)
-# still 1 row with no SMVE because of missing itemwise
-
-
-# DIGSYM
-
-# different method, look at distribution of scores
-
-
-# EDISC 
-dat <-EDISC_iw[,c(grep("_resp",colnames(EDISC_iw)),grep("_ttr",colnames(EDISC_iw)))]
-dat[,1:34] <- dat[,1:34]-1
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-EDISC_iw <- data.frame(EDISC_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(EDISC_iw)[(ncol(EDISC_iw)-2):ncol(EDISC_iw)] <- c("PFscore1","PFscore2","SMVE")
-# 0% and 100% scores need adjusting
-
-EDISC_iw$PFscore1 <- ifelse(EDISC_iw$edisc_sum == 34, max(EDISC_iw$PFscore1,na.rm = T),
-                           ifelse(EDISC_iw$edisc_sum == 0, min(EDISC_iw$PFscore1,na.rm = T),EDISC_iw$PFscore1))
-EDISC_iw$PFscore2 <- ifelse(EDISC_iw$edisc_sum == 34, max(EDISC_iw$PFscore2,na.rm = T),
-                           ifelse(EDISC_iw$edisc_sum == 0, min(EDISC_iw$PFscore2,na.rm = T),EDISC_iw$PFscore2))
-EDISC_iw$SMVE <- (0.34 * EDISC_iw$outlier_score_2cut) + (0 * EDISC_iw$acc3e) + (0.22 * EDISC_iw$PFscore1) + (0.44 * EDISC_iw$PFscore2)
-# still 2 rows with no SMVE because of missing itemwise
-
-
-# ER40
-dat <-ER40_iw[,c(grep("_CORR",colnames(ER40_iw)),grep("_TTR",colnames(ER40_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-ER40_iw <- data.frame(ER40_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(ER40_iw)[(ncol(ER40_iw)-2):ncol(ER40_iw)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-ER40_iw$PFscore1 <- ifelse(ER40_iw$ER40_D.ER40D_CR == 40, max(ER40_iw$PFscore1,na.rm = T),ER40_iw$PFscore1)
-ER40_iw$PFscore2 <- ifelse(ER40_iw$ER40_D.ER40D_CR == 40, max(ER40_iw$PFscore2,na.rm = T),ER40_iw$PFscore2)
-ER40_iw$SMVE <- (0.34 * ER40_iw$outlier_score_2cut) + (0 * ER40_iw$acc3e) + (0.22 * ER40_iw$PFscore1) + (0.44 * ER40_iw$PFscore2)
-
-
-# separated ER40, emotive
-dat <-ER40_EMO_iw[,c(grep("_CORR",colnames(ER40_EMO_iw)),grep("_TTR",colnames(ER40_EMO_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-ER40_EMO_iw <- data.frame(ER40_EMO_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(ER40_EMO_iw)[(ncol(ER40_EMO_iw)-2):ncol(ER40_EMO_iw)] <- c("PFscore1","PFscore2","SMVE")
-# both 0% and 100% scores need adjusting
-
-ER40_EMO_iw$PFscore1 <- ifelse(ER40_EMO_iw$er40_emo.ER40_D.ER40D_EMO == 0, min(ER40_EMO_iw$PFscore1,na.rm = T),
-                               ifelse(ER40_EMO_iw$er40_emo.ER40_D.ER40D_EMO == 32, max(ER40_EMO_iw$PFscore1,na.rm = T),ER40_EMO_iw$PFscore1))
-ER40_EMO_iw$PFscore2 <- ifelse(ER40_EMO_iw$er40_emo.ER40_D.ER40D_EMO == 0, min(ER40_EMO_iw$PFscore2,na.rm = T),
-                               ifelse(ER40_EMO_iw$er40_emo.ER40_D.ER40D_EMO == 32, max(ER40_EMO_iw$PFscore2,na.rm = T),ER40_EMO_iw$PFscore2))
-ER40_EMO_iw$SMVE <- (0.34 * ER40_EMO_iw$outlier_score_2cut) + (0 * ER40_EMO_iw$acc3e) + (0.22 * ER40_EMO_iw$PFscore1) + (0.44 * ER40_EMO_iw$PFscore2)
-
-
-# separated ER40, neutral
-dat <-ER40_NEU_iw[,c(grep("_CORR",colnames(ER40_NEU_iw)),grep("_TTR",colnames(ER40_NEU_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-ER40_NEU_iw <- data.frame(ER40_NEU_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(ER40_NEU_iw)[(ncol(ER40_NEU_iw)-2):ncol(ER40_NEU_iw)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-ER40_NEU_iw$PFscore1 <- ifelse(ER40_NEU_iw$ER40_D.ER40D_NOE == 8, max(ER40_NEU_iw$PFscore1,na.rm = T),ER40_NEU_iw$PFscore1)
-ER40_NEU_iw$PFscore2 <- ifelse(ER40_NEU_iw$ER40_D.ER40D_NOE == 8, max(ER40_NEU_iw$PFscore2,na.rm = T),ER40_NEU_iw$PFscore2)
-ER40_NEU_iw$SMVE <- (0.34 * ER40_NEU_iw$outlier_score_2cut) + (0 * ER40_NEU_iw$acc3e) + (0.22 * ER40_NEU_iw$PFscore1) + (0.44 * ER40_NEU_iw$PFscore2)
-
-
-
-# GNG
-
-# different method, look at distribution of scores
-
-
-# MEDF
-dat <-MEDF_iw[,c(grep("_CORR",colnames(MEDF_iw)),grep("_TTR",colnames(MEDF_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-MEDF_iw <- data.frame(MEDF_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(MEDF_iw)[(ncol(MEDF_iw)-2):ncol(MEDF_iw)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-MEDF_iw$PFscore1 <- ifelse(MEDF_iw$MEDF36_A.MEDF36A_PC == 100, max(MEDF_iw$PFscore1,na.rm = T),MEDF_iw$PFscore1)
-MEDF_iw$PFscore2 <- ifelse(MEDF_iw$MEDF36_A.MEDF36A_PC == 100, max(MEDF_iw$PFscore2,na.rm = T),MEDF_iw$PFscore2)
-MEDF_iw$SMVE <- (0.34 * MEDF_iw$outlier_score_2cut) + (0 * MEDF_iw$acc3e) + (0.22 * MEDF_iw$PFscore1) + (0.44 * MEDF_iw$PFscore2)
-
-# separated MEDF, different
-dat <-MEDF_DIF_iw[,c(grep("_CORR",colnames(MEDF_DIF_iw)),grep("_TTR",colnames(MEDF_DIF_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-MEDF_DIF_iw <- data.frame(MEDF_DIF_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(MEDF_DIF_iw)[(ncol(MEDF_DIF_iw)-2):ncol(MEDF_DIF_iw)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-MEDF_DIF_iw$PFscore1 <- ifelse(MEDF_DIF_iw$medf_corr.MEDF36_A.MEDF36A_DIF == 32, max(MEDF_DIF_iw$PFscore1,na.rm = T),MEDF_DIF_iw$PFscore1)
-MEDF_DIF_iw$PFscore2 <- ifelse(MEDF_DIF_iw$medf_corr.MEDF36_A.MEDF36A_DIF == 32, max(MEDF_DIF_iw$PFscore2,na.rm = T),MEDF_DIF_iw$PFscore2)
-MEDF_DIF_iw$SMVE <- (0.34 * MEDF_DIF_iw$outlier_score_2cut) + (0 * MEDF_DIF_iw$acc3e) + (0.22 * MEDF_DIF_iw$PFscore1) + (0.44 * MEDF_DIF_iw$PFscore2)
-
-# separated MEDF, same
-dat <-MEDF_SAME_iw[,c(grep("_CORR",colnames(MEDF_SAME_iw)),grep("_TTR",colnames(MEDF_SAME_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-MEDF_SAME_iw <- data.frame(MEDF_SAME_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(MEDF_SAME_iw)[(ncol(MEDF_SAME_iw)-2):ncol(MEDF_SAME_iw)] <- c("PFscore1","PFscore2","SMVE")
-# both 0% and 100% scores need adjusting
-
-MEDF_SAME_iw$PFscore1 <- ifelse(MEDF_SAME_iw$MEDF36_A.MEDF36A_SAME_CR == 0, min(MEDF_SAME_iw$PFscore1,na.rm = T),
-                                ifelse(MEDF_SAME_iw$MEDF36_A.MEDF36A_SAME_CR == 4, max(MEDF_SAME_iw$PFscore1,na.rm = T),MEDF_SAME_iw$PFscore1))
-MEDF_SAME_iw$PFscore2 <- ifelse(MEDF_SAME_iw$MEDF36_A.MEDF36A_SAME_CR == 0, min(MEDF_SAME_iw$PFscore2,na.rm = T),
-                                ifelse(MEDF_SAME_iw$MEDF36_A.MEDF36A_SAME_CR == 4, max(MEDF_SAME_iw$PFscore2,na.rm = T),MEDF_SAME_iw$PFscore2))
-MEDF_SAME_iw$SMVE <- (0.34 * MEDF_SAME_iw$outlier_score_2cut) + (0 * MEDF_SAME_iw$acc3e) + (0.22 * MEDF_SAME_iw$PFscore1) + (0.44 * MEDF_SAME_iw$PFscore2)
-
-
-# PMAT
-dat <-PMAT_iw[,c(grep("_CORR",colnames(PMAT_iw)),grep("_TTR",colnames(PMAT_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-PMAT_iw <- data.frame(PMAT_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(PMAT_iw)[(ncol(PMAT_iw)-2):ncol(PMAT_iw)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-PMAT_iw$PFscore1 <- ifelse(PMAT_iw$PMAT24_A.PMAT24_A_PC == 100, max(PMAT_iw$PFscore1,na.rm = T),PMAT_iw$PFscore1)
-PMAT_iw$PFscore2 <- ifelse(PMAT_iw$PMAT24_A.PMAT24_A_PC == 100, max(PMAT_iw$PFscore2,na.rm = T),PMAT_iw$PFscore2)
-PMAT_iw$SMVE <- (0.34 * PMAT_iw$outlier_score_2cut) + (0 * PMAT_iw$acc3e) + (0.22 * PMAT_iw$PFscore1) + (0.44 * PMAT_iw$PFscore2)
-
-
-# PLOT
-dat <-PLOT_iw[,c(grep("_CORR",colnames(PLOT_iw)),grep("_RT",colnames(PLOT_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-PLOT_iw <- data.frame(PLOT_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(PLOT_iw)[(ncol(PLOT_iw)-2):ncol(PLOT_iw)] <- c("PFscore1","PFscore2","SMVE")
-# 0% and 100% scores need adjusting
-
-PLOT_iw$PFscore1 <- ifelse(PLOT_iw$VSPLOT15.VSPLOT15_PC == 100, max(PLOT_iw$PFscore1,na.rm = T),
-                            ifelse(PLOT_iw$VSPLOT15.VSPLOT15_PC == 0, min(PLOT_iw$PFscore1,na.rm = T),PLOT_iw$PFscore1))
-PLOT_iw$PFscore2 <- ifelse(PLOT_iw$VSPLOT15.VSPLOT15_PC == 100, max(PLOT_iw$PFscore2,na.rm = T),
-                            ifelse(PLOT_iw$VSPLOT15.VSPLOT15_PC == 0, min(PLOT_iw$PFscore2,na.rm = T),PLOT_iw$PFscore2))
-PLOT_iw$SMVE <- (0.34 * PLOT_iw$outlier_score_2cut) + (0 * PLOT_iw$acc3e) + (0.22 * PLOT_iw$PFscore1) + (0.44 * PLOT_iw$PFscore2)
-
-
-# PRA - no RT data, no SMVE
-
-
-# PVRT
-dat <-PVRT_iw[,c(grep("_CORR",colnames(PVRT_iw)),grep("_TTR",colnames(PVRT_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-PVRT_iw <- data.frame(PVRT_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(PVRT_iw)[(ncol(PVRT_iw)-2):ncol(PVRT_iw)] <- c("PFscore1","PFscore2","SMVE")
-# 0% and 100% scores need adjusting
-
-PVRT_iw$PFscore1 <- ifelse(PVRT_iw$SPVRT_A.SPVRTA_PC == 100, max(PVRT_iw$PFscore1,na.rm = T),
-                           ifelse(PVRT_iw$SPVRT_A.SPVRTA_PC == 0, min(PVRT_iw$PFscore1,na.rm = T),PVRT_iw$PFscore1))
-PVRT_iw$PFscore2 <- ifelse(PVRT_iw$SPVRT_A.SPVRTA_PC == 100, max(PVRT_iw$PFscore2,na.rm = T),
-                           ifelse(PVRT_iw$SPVRT_A.SPVRTA_PC == 0, min(PVRT_iw$PFscore2,na.rm = T),PVRT_iw$PFscore2))
-PVRT_iw$SMVE <- (0.34 * PVRT_iw$outlier_score_2cut) + (0 * PVRT_iw$acc3e) + (0.22 * PVRT_iw$PFscore1) + (0.44 * PVRT_iw$PFscore2)
-
-
-# RDISC 
-dat <- RDISC_iw
-dat <-dat[,c(grep(".q_",colnames(dat)),grep(".trr_",colnames(dat)))]
-dat[,1:41] <- dat[,1:41]-1
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
-RDISC_iw <- data.frame(RDISC_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(RDISC_iw)[(ncol(RDISC_iw)-2):ncol(RDISC_iw)] <- c("PFscore1","PFscore2","SMVE")
-# 0% and 100% scores need adjusting
-
-RDISC_iw$PFscore1 <- ifelse(RDISC_iw$rdisc_sum == 41, max(RDISC_iw$PFscore1,na.rm = T),
-                            ifelse(RDISC_iw$rdisc_sum == 0, min(RDISC_iw$PFscore1,na.rm = T),RDISC_iw$PFscore1))
-RDISC_iw$PFscore2 <- ifelse(RDISC_iw$rdisc_sum == 41, max(RDISC_iw$PFscore2,na.rm = T),
-                            ifelse(RDISC_iw$rdisc_sum == 0, min(RDISC_iw$PFscore2,na.rm = T),RDISC_iw$PFscore2))
-RDISC_iw$SMVE <- (0.34 * RDISC_iw$outlier_score_2cut) + (0 * RDISC_iw$acc3e) + (0.22 * RDISC_iw$PFscore1) + (0.44 * RDISC_iw$PFscore2)
-# still 1 row with no SMVE because of missing itemwise
-
-
-# VOLT
-dat <-VOLT_iw[,c(grep("_CORR",colnames(VOLT_iw)),grep("_TTR",colnames(VOLT_iw)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
-VOLT_iw <- data.frame(VOLT_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(VOLT_iw)[(ncol(VOLT_iw)-2):ncol(VOLT_iw)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-VOLT_iw$PFscore1 <- ifelse(VOLT_iw$SVOLT_A.SVOLT_CR == 20, max(VOLT_iw$PFscore1,na.rm = T),VOLT_iw$PFscore1)
-VOLT_iw$PFscore2 <- ifelse(VOLT_iw$SVOLT_A.SVOLT_CR == 20, max(VOLT_iw$PFscore2,na.rm = T),VOLT_iw$PFscore2)
-VOLT_iw$SMVE <- (0.42 * VOLT_iw$outlier_score_2cut) + (0.02 * VOLT_iw$acc3e) + (0.05 * VOLT_iw$PFscore1) + (0.50 * VOLT_iw$PFscore2)
-
-
-# VOLT targets
-dat <-VOLT_targets[,c(grep("_CORR",colnames(VOLT_targets)),grep("_TTR",colnames(VOLT_targets)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
-VOLT_targets <- data.frame(VOLT_targets,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(VOLT_targets)[(ncol(VOLT_targets)-2):ncol(VOLT_targets)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-VOLT_targets$PFscore1 <- ifelse(VOLT_targets$SVOLT_A.SVOLT_TP == 10, max(VOLT_targets$PFscore1,na.rm = T),VOLT_targets$PFscore1)
-VOLT_targets$PFscore2 <- ifelse(VOLT_targets$SVOLT_A.SVOLT_TP == 10, max(VOLT_targets$PFscore2,na.rm = T),VOLT_targets$PFscore2)
-VOLT_targets$SMVE <- (0.42 * VOLT_targets$outlier_score_2cut) + (0.02 * VOLT_targets$acc3e) + (0.05 * VOLT_targets$PFscore1) + (0.50 * VOLT_targets$PFscore2)
-
-
-# VOLT foils
-dat <-VOLT_foils[,c(grep("_CORR",colnames(VOLT_foils)),grep("_TTR",colnames(VOLT_foils)))]
-items <- ncol(dat)/2
-dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
-res <- matrix(NA,dim(dat)[1],items)
-for (j in 1:items) {
-  mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
-  res[,j] <- scale(residuals(mod,na.action=na.exclude))}
-res2 <- res
-res2[abs(res2) < 2] <- 0
-res2[abs(res2) > 2] <- 1
-outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
-dat2 <- dat[,1:items]
-acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
-pfit1 <- r.pbis(dat2)$PFscores
-pfit2 <- E.KB(dat2)$PFscores
-sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
-VOLT_foils <- data.frame(VOLT_foils,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
-names(VOLT_foils)[(ncol(VOLT_foils)-2):ncol(VOLT_foils)] <- c("PFscore1","PFscore2","SMVE")
-# no 0%, but 100% scores need adjusting
-
-VOLT_foils$PFscore1 <- ifelse(VOLT_foils$SVOLT_A.SVOLT_TN == 10, max(VOLT_foils$PFscore1,na.rm = T),VOLT_foils$PFscore1)
-VOLT_foils$PFscore2 <- ifelse(VOLT_foils$SVOLT_A.SVOLT_TN == 10, max(VOLT_foils$PFscore2,na.rm = T),VOLT_foils$PFscore2)
-VOLT_foils$SMVE <- (0.42 * VOLT_foils$outlier_score_2cut) + (0.02 * VOLT_foils$acc3e) + (0.05 * VOLT_foils$PFscore1) + (0.50 * VOLT_foils$PFscore2)
+{
+  # ADT
+  dat <-ADT_iw[,c(grep("_CORR",colnames(ADT_iw)),grep("_TTR",colnames(ADT_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  ADT_iw <- data.frame(ADT_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(ADT_iw)[(ncol(ADT_iw)-2):ncol(ADT_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0% or 100% so no adjustment needed
+  
+  
+  # AIM
+  
+  # different method, look at distribution of scores
+  
+  
+  # CPF
+  dat <-CPF_iw[,c(grep("_CORR",colnames(CPF_iw)),grep("_TTR",colnames(CPF_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+  CPF_iw <- data.frame(CPF_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(CPF_iw)[(ncol(CPF_iw)-2):ncol(CPF_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  CPF_iw$PFscore1 <- ifelse(CPF_iw$CPF_B.CPF_CR == 40, max(CPF_iw$PFscore1,na.rm = T),CPF_iw$PFscore1)
+  CPF_iw$PFscore2 <- ifelse(CPF_iw$CPF_B.CPF_CR == 40, max(CPF_iw$PFscore2,na.rm = T),CPF_iw$PFscore2)
+  CPF_iw$SMVE <- (0.42 * CPF_iw$outlier_score_2cut) + (0.02 * CPF_iw$acc3e) + (0.05 * CPF_iw$PFscore1) + (0.50 * CPF_iw$PFscore2)
+  
+  
+  # CPF targets
+  dat <-CPF_targets[,c(grep("_CORR",colnames(CPF_targets)),grep("_TTR",colnames(CPF_targets)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+  CPF_targets <- data.frame(CPF_targets,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(CPF_targets)[(ncol(CPF_targets)-2):ncol(CPF_targets)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  CPF_targets$PFscore1 <- ifelse(CPF_targets$CPF_B.CPF_TP == 20, max(CPF_targets$PFscore1,na.rm = T),CPF_targets$PFscore1)
+  CPF_targets$PFscore2 <- ifelse(CPF_targets$CPF_B.CPF_TP == 20, max(CPF_targets$PFscore2,na.rm = T),CPF_targets$PFscore2)
+  CPF_targets$SMVE <- (0.42 * CPF_targets$outlier_score_2cut) + (0.02 * CPF_targets$acc3e) + (0.05 * CPF_targets$PFscore1) + (0.50 * CPF_targets$PFscore2)
+  
+  
+  # CPF foils
+  dat <-CPF_foils[,c(grep("_CORR",colnames(CPF_foils)),grep("_TTR",colnames(CPF_foils)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+  CPF_foils <- data.frame(CPF_foils,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(CPF_foils)[(ncol(CPF_foils)-2):ncol(CPF_foils)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  CPF_foils$PFscore1 <- ifelse(CPF_foils$CPF_B.CPF_TN == 20, max(CPF_foils$PFscore1,na.rm = T),CPF_foils$PFscore1)
+  CPF_foils$PFscore2 <- ifelse(CPF_foils$CPF_B.CPF_TN == 20, max(CPF_foils$PFscore2,na.rm = T),CPF_foils$PFscore2)
+  CPF_foils$SMVE <- (0.42 * CPF_foils$outlier_score_2cut) + (0.02 * CPF_foils$acc3e) + (0.05 * CPF_foils$PFscore1) + (0.50 * CPF_foils$PFscore2)
+  
+  
+  # CPT
+  
+  # different method, look at distribution of scores
+  
+  
+  # CPW
+  dat <-CPW_iw[,c(grep("_CORR",colnames(CPW_iw)),grep("_TTR",colnames(CPW_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+  CPW_iw <- data.frame(CPW_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(CPW_iw)[(ncol(CPW_iw)-2):ncol(CPW_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  CPW_iw$PFscore1 <- ifelse(CPW_iw$CPW_A.CPW_CR == 40, max(CPW_iw$PFscore1,na.rm = T),CPW_iw$PFscore1)
+  CPW_iw$PFscore2 <- ifelse(CPW_iw$CPW_A.CPW_CR == 40, max(CPW_iw$PFscore2,na.rm = T),CPW_iw$PFscore2)
+  CPW_iw$SMVE <- (0.42 * CPW_iw$outlier_score_2cut) + (0.02 * CPW_iw$acc3e) + (0.05 * CPW_iw$PFscore1) + (0.50 * CPW_iw$PFscore2)
+  
+  
+  # CPW targets
+  dat <-CPW_targets[,c(grep("_CORR",colnames(CPW_targets)),grep("_TTR",colnames(CPW_targets)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+  CPW_targets <- data.frame(CPW_targets,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(CPW_targets)[(ncol(CPW_targets)-2):ncol(CPW_targets)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  CPW_targets$PFscore1 <- ifelse(CPW_targets$CPW_A.CPW_TP == 20, max(CPW_targets$PFscore1,na.rm = T),CPW_targets$PFscore1)
+  CPW_targets$PFscore2 <- ifelse(CPW_targets$CPW_A.CPW_TP == 20, max(CPW_targets$PFscore2,na.rm = T),CPW_targets$PFscore2)
+  CPW_targets$SMVE <- (0.42 * CPW_targets$outlier_score_2cut) + (0.02 * CPW_targets$acc3e) + (0.05 * CPW_targets$PFscore1) + (0.50 * CPW_targets$PFscore2)
+  
+  
+  # CPW foils
+  dat <-CPW_foils[,c(grep("_CORR",colnames(CPW_foils)),grep("_TTR",colnames(CPW_foils)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+  CPW_foils <- data.frame(CPW_foils,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(CPW_foils)[(ncol(CPW_foils)-2):ncol(CPW_foils)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  CPW_foils$PFscore1 <- ifelse(CPW_foils$CPW_A.CPW_TN == 20, max(CPW_foils$PFscore1,na.rm = T),CPW_foils$PFscore1)
+  CPW_foils$PFscore2 <- ifelse(CPW_foils$CPW_A.CPW_TN == 20, max(CPW_foils$PFscore2,na.rm = T),CPW_foils$PFscore2)
+  CPW_foils$SMVE <- (0.42 * CPW_foils$outlier_score_2cut) + (0.02 * CPW_foils$acc3e) + (0.05 * CPW_foils$PFscore1) + (0.50 * CPW_foils$PFscore2)
+  
+  
+  # DDISC 
+  dat <-DDISC_iw[,c(grep(".q_",colnames(DDISC_iw)),grep(".trr_",colnames(DDISC_iw)))]
+  dat[,1:34] <- dat[,1:34]-1
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  DDISC_iw <- data.frame(DDISC_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(DDISC_iw)[(ncol(DDISC_iw)-2):ncol(DDISC_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # 0% and 100% scores need adjusting
+  
+  DDISC_iw$PFscore1 <- ifelse(DDISC_iw$ddisc_sum == 34, max(DDISC_iw$PFscore1,na.rm = T),
+                              ifelse(DDISC_iw$ddisc_sum == 0, min(DDISC_iw$PFscore1,na.rm = T),DDISC_iw$PFscore1))
+  DDISC_iw$PFscore2 <- ifelse(DDISC_iw$ddisc_sum == 34, max(DDISC_iw$PFscore2,na.rm = T),
+                              ifelse(DDISC_iw$ddisc_sum == 0, min(DDISC_iw$PFscore2,na.rm = T),DDISC_iw$PFscore2))
+  DDISC_iw$SMVE <- (0.34 * DDISC_iw$outlier_score_2cut) + (0 * DDISC_iw$acc3e) + (0.22 * DDISC_iw$PFscore1) + (0.44 * DDISC_iw$PFscore2)
+  # still 1 row with no SMVE because of missing itemwise
+  
+  
+  # DIGSYM
+  
+  # different method, look at distribution of scores
+  
+  
+  # EDISC 
+  dat <-EDISC_iw[,c(grep("_resp",colnames(EDISC_iw)),grep("_ttr",colnames(EDISC_iw)))]
+  dat[,1:34] <- dat[,1:34]-1
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  EDISC_iw <- data.frame(EDISC_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(EDISC_iw)[(ncol(EDISC_iw)-2):ncol(EDISC_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # 0% and 100% scores need adjusting
+  
+  EDISC_iw$PFscore1 <- ifelse(EDISC_iw$edisc_sum == 34, max(EDISC_iw$PFscore1,na.rm = T),
+                              ifelse(EDISC_iw$edisc_sum == 0, min(EDISC_iw$PFscore1,na.rm = T),EDISC_iw$PFscore1))
+  EDISC_iw$PFscore2 <- ifelse(EDISC_iw$edisc_sum == 34, max(EDISC_iw$PFscore2,na.rm = T),
+                              ifelse(EDISC_iw$edisc_sum == 0, min(EDISC_iw$PFscore2,na.rm = T),EDISC_iw$PFscore2))
+  EDISC_iw$SMVE <- (0.34 * EDISC_iw$outlier_score_2cut) + (0 * EDISC_iw$acc3e) + (0.22 * EDISC_iw$PFscore1) + (0.44 * EDISC_iw$PFscore2)
+  # still 2 rows with no SMVE because of missing itemwise
+  
+  
+  # ER40
+  dat <-ER40_iw[,c(grep("_CORR",colnames(ER40_iw)),grep("_TTR",colnames(ER40_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  ER40_iw <- data.frame(ER40_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(ER40_iw)[(ncol(ER40_iw)-2):ncol(ER40_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  ER40_iw$PFscore1 <- ifelse(ER40_iw$ER40_D.ER40D_CR == 40, max(ER40_iw$PFscore1,na.rm = T),ER40_iw$PFscore1)
+  ER40_iw$PFscore2 <- ifelse(ER40_iw$ER40_D.ER40D_CR == 40, max(ER40_iw$PFscore2,na.rm = T),ER40_iw$PFscore2)
+  ER40_iw$SMVE <- (0.34 * ER40_iw$outlier_score_2cut) + (0 * ER40_iw$acc3e) + (0.22 * ER40_iw$PFscore1) + (0.44 * ER40_iw$PFscore2)
+  
+  
+  # separated ER40, emotive
+  dat <-ER40_EMO_iw[,c(grep("_CORR",colnames(ER40_EMO_iw)),grep("_TTR",colnames(ER40_EMO_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  ER40_EMO_iw <- data.frame(ER40_EMO_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(ER40_EMO_iw)[(ncol(ER40_EMO_iw)-2):ncol(ER40_EMO_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # both 0% and 100% scores need adjusting
+  
+  ER40_EMO_iw$PFscore1 <- ifelse(ER40_EMO_iw$er40_emo.ER40_D.ER40D_EMO == 0, min(ER40_EMO_iw$PFscore1,na.rm = T),
+                                 ifelse(ER40_EMO_iw$er40_emo.ER40_D.ER40D_EMO == 32, max(ER40_EMO_iw$PFscore1,na.rm = T),ER40_EMO_iw$PFscore1))
+  ER40_EMO_iw$PFscore2 <- ifelse(ER40_EMO_iw$er40_emo.ER40_D.ER40D_EMO == 0, min(ER40_EMO_iw$PFscore2,na.rm = T),
+                                 ifelse(ER40_EMO_iw$er40_emo.ER40_D.ER40D_EMO == 32, max(ER40_EMO_iw$PFscore2,na.rm = T),ER40_EMO_iw$PFscore2))
+  ER40_EMO_iw$SMVE <- (0.34 * ER40_EMO_iw$outlier_score_2cut) + (0 * ER40_EMO_iw$acc3e) + (0.22 * ER40_EMO_iw$PFscore1) + (0.44 * ER40_EMO_iw$PFscore2)
+  
+  
+  # separated ER40, neutral
+  dat <-ER40_NEU_iw[,c(grep("_CORR",colnames(ER40_NEU_iw)),grep("_TTR",colnames(ER40_NEU_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  ER40_NEU_iw <- data.frame(ER40_NEU_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(ER40_NEU_iw)[(ncol(ER40_NEU_iw)-2):ncol(ER40_NEU_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  ER40_NEU_iw$PFscore1 <- ifelse(ER40_NEU_iw$ER40_D.ER40D_NOE == 8, max(ER40_NEU_iw$PFscore1,na.rm = T),ER40_NEU_iw$PFscore1)
+  ER40_NEU_iw$PFscore2 <- ifelse(ER40_NEU_iw$ER40_D.ER40D_NOE == 8, max(ER40_NEU_iw$PFscore2,na.rm = T),ER40_NEU_iw$PFscore2)
+  ER40_NEU_iw$SMVE <- (0.34 * ER40_NEU_iw$outlier_score_2cut) + (0 * ER40_NEU_iw$acc3e) + (0.22 * ER40_NEU_iw$PFscore1) + (0.44 * ER40_NEU_iw$PFscore2)
+  
+  
+  
+  # GNG
+  
+  # different method, look at distribution of scores
+  
+  
+  # MEDF
+  dat <-MEDF_iw[,c(grep("_CORR",colnames(MEDF_iw)),grep("_TTR",colnames(MEDF_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  MEDF_iw <- data.frame(MEDF_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(MEDF_iw)[(ncol(MEDF_iw)-2):ncol(MEDF_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  MEDF_iw$PFscore1 <- ifelse(MEDF_iw$MEDF36_A.MEDF36A_PC == 100, max(MEDF_iw$PFscore1,na.rm = T),MEDF_iw$PFscore1)
+  MEDF_iw$PFscore2 <- ifelse(MEDF_iw$MEDF36_A.MEDF36A_PC == 100, max(MEDF_iw$PFscore2,na.rm = T),MEDF_iw$PFscore2)
+  MEDF_iw$SMVE <- (0.34 * MEDF_iw$outlier_score_2cut) + (0 * MEDF_iw$acc3e) + (0.22 * MEDF_iw$PFscore1) + (0.44 * MEDF_iw$PFscore2)
+  
+  # separated MEDF, different
+  dat <-MEDF_DIF_iw[,c(grep("_CORR",colnames(MEDF_DIF_iw)),grep("_TTR",colnames(MEDF_DIF_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  MEDF_DIF_iw <- data.frame(MEDF_DIF_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(MEDF_DIF_iw)[(ncol(MEDF_DIF_iw)-2):ncol(MEDF_DIF_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  MEDF_DIF_iw$PFscore1 <- ifelse(MEDF_DIF_iw$medf_corr.MEDF36_A.MEDF36A_DIF == 32, max(MEDF_DIF_iw$PFscore1,na.rm = T),MEDF_DIF_iw$PFscore1)
+  MEDF_DIF_iw$PFscore2 <- ifelse(MEDF_DIF_iw$medf_corr.MEDF36_A.MEDF36A_DIF == 32, max(MEDF_DIF_iw$PFscore2,na.rm = T),MEDF_DIF_iw$PFscore2)
+  MEDF_DIF_iw$SMVE <- (0.34 * MEDF_DIF_iw$outlier_score_2cut) + (0 * MEDF_DIF_iw$acc3e) + (0.22 * MEDF_DIF_iw$PFscore1) + (0.44 * MEDF_DIF_iw$PFscore2)
+  
+  # separated MEDF, same
+  dat <-MEDF_SAME_iw[,c(grep("_CORR",colnames(MEDF_SAME_iw)),grep("_TTR",colnames(MEDF_SAME_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  MEDF_SAME_iw <- data.frame(MEDF_SAME_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(MEDF_SAME_iw)[(ncol(MEDF_SAME_iw)-2):ncol(MEDF_SAME_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # both 0% and 100% scores need adjusting
+  
+  MEDF_SAME_iw$PFscore1 <- ifelse(MEDF_SAME_iw$MEDF36_A.MEDF36A_SAME_CR == 0, min(MEDF_SAME_iw$PFscore1,na.rm = T),
+                                  ifelse(MEDF_SAME_iw$MEDF36_A.MEDF36A_SAME_CR == 4, max(MEDF_SAME_iw$PFscore1,na.rm = T),MEDF_SAME_iw$PFscore1))
+  MEDF_SAME_iw$PFscore2 <- ifelse(MEDF_SAME_iw$MEDF36_A.MEDF36A_SAME_CR == 0, min(MEDF_SAME_iw$PFscore2,na.rm = T),
+                                  ifelse(MEDF_SAME_iw$MEDF36_A.MEDF36A_SAME_CR == 4, max(MEDF_SAME_iw$PFscore2,na.rm = T),MEDF_SAME_iw$PFscore2))
+  MEDF_SAME_iw$SMVE <- (0.34 * MEDF_SAME_iw$outlier_score_2cut) + (0 * MEDF_SAME_iw$acc3e) + (0.22 * MEDF_SAME_iw$PFscore1) + (0.44 * MEDF_SAME_iw$PFscore2)
+  
+  
+  # PMAT
+  dat <-PMAT_iw[,c(grep("_CORR",colnames(PMAT_iw)),grep("_TTR",colnames(PMAT_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  PMAT_iw <- data.frame(PMAT_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(PMAT_iw)[(ncol(PMAT_iw)-2):ncol(PMAT_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  PMAT_iw$PFscore1 <- ifelse(PMAT_iw$PMAT24_A.PMAT24_A_PC == 100, max(PMAT_iw$PFscore1,na.rm = T),PMAT_iw$PFscore1)
+  PMAT_iw$PFscore2 <- ifelse(PMAT_iw$PMAT24_A.PMAT24_A_PC == 100, max(PMAT_iw$PFscore2,na.rm = T),PMAT_iw$PFscore2)
+  PMAT_iw$SMVE <- (0.34 * PMAT_iw$outlier_score_2cut) + (0 * PMAT_iw$acc3e) + (0.22 * PMAT_iw$PFscore1) + (0.44 * PMAT_iw$PFscore2)
+  
+  
+  # PLOT
+  dat <-PLOT_iw[,c(grep("_CORR",colnames(PLOT_iw)),grep("_RT",colnames(PLOT_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  PLOT_iw <- data.frame(PLOT_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(PLOT_iw)[(ncol(PLOT_iw)-2):ncol(PLOT_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # 0% and 100% scores need adjusting
+  
+  PLOT_iw$PFscore1 <- ifelse(PLOT_iw$VSPLOT15.VSPLOT15_PC == 100, max(PLOT_iw$PFscore1,na.rm = T),
+                             ifelse(PLOT_iw$VSPLOT15.VSPLOT15_PC == 0, min(PLOT_iw$PFscore1,na.rm = T),PLOT_iw$PFscore1))
+  PLOT_iw$PFscore2 <- ifelse(PLOT_iw$VSPLOT15.VSPLOT15_PC == 100, max(PLOT_iw$PFscore2,na.rm = T),
+                             ifelse(PLOT_iw$VSPLOT15.VSPLOT15_PC == 0, min(PLOT_iw$PFscore2,na.rm = T),PLOT_iw$PFscore2))
+  PLOT_iw$SMVE <- (0.34 * PLOT_iw$outlier_score_2cut) + (0 * PLOT_iw$acc3e) + (0.22 * PLOT_iw$PFscore1) + (0.44 * PLOT_iw$PFscore2)
+  
+  
+  # PRA - no RT data, no SMVE
+  
+  
+  # PVRT
+  dat <-PVRT_iw[,c(grep("_CORR",colnames(PVRT_iw)),grep("_TTR",colnames(PVRT_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  PVRT_iw <- data.frame(PVRT_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(PVRT_iw)[(ncol(PVRT_iw)-2):ncol(PVRT_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # 0% and 100% scores need adjusting
+  
+  PVRT_iw$PFscore1 <- ifelse(PVRT_iw$SPVRT_A.SPVRTA_PC == 100, max(PVRT_iw$PFscore1,na.rm = T),
+                             ifelse(PVRT_iw$SPVRT_A.SPVRTA_PC == 0, min(PVRT_iw$PFscore1,na.rm = T),PVRT_iw$PFscore1))
+  PVRT_iw$PFscore2 <- ifelse(PVRT_iw$SPVRT_A.SPVRTA_PC == 100, max(PVRT_iw$PFscore2,na.rm = T),
+                             ifelse(PVRT_iw$SPVRT_A.SPVRTA_PC == 0, min(PVRT_iw$PFscore2,na.rm = T),PVRT_iw$PFscore2))
+  PVRT_iw$SMVE <- (0.34 * PVRT_iw$outlier_score_2cut) + (0 * PVRT_iw$acc3e) + (0.22 * PVRT_iw$PFscore1) + (0.44 * PVRT_iw$PFscore2)
+  
+  
+  # RDISC 
+  dat <- RDISC_iw
+  dat <-dat[,c(grep(".q_",colnames(dat)),grep(".trr_",colnames(dat)))]
+  dat[,1:41] <- dat[,1:41]-1
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.34*outlier_score_2cut) + (0*acc3e) + (0.22*pfit1) + (0.44*pfit2)
+  RDISC_iw <- data.frame(RDISC_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(RDISC_iw)[(ncol(RDISC_iw)-2):ncol(RDISC_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # 0% and 100% scores need adjusting
+  
+  RDISC_iw$PFscore1 <- ifelse(RDISC_iw$rdisc_sum == 41, max(RDISC_iw$PFscore1,na.rm = T),
+                              ifelse(RDISC_iw$rdisc_sum == 0, min(RDISC_iw$PFscore1,na.rm = T),RDISC_iw$PFscore1))
+  RDISC_iw$PFscore2 <- ifelse(RDISC_iw$rdisc_sum == 41, max(RDISC_iw$PFscore2,na.rm = T),
+                              ifelse(RDISC_iw$rdisc_sum == 0, min(RDISC_iw$PFscore2,na.rm = T),RDISC_iw$PFscore2))
+  RDISC_iw$SMVE <- (0.34 * RDISC_iw$outlier_score_2cut) + (0 * RDISC_iw$acc3e) + (0.22 * RDISC_iw$PFscore1) + (0.44 * RDISC_iw$PFscore2)
+  # still 1 row with no SMVE because of missing itemwise
+  
+  
+  # VOLT
+  dat <-VOLT_iw[,c(grep("_CORR",colnames(VOLT_iw)),grep("_TTR",colnames(VOLT_iw)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+  VOLT_iw <- data.frame(VOLT_iw,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(VOLT_iw)[(ncol(VOLT_iw)-2):ncol(VOLT_iw)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  VOLT_iw$PFscore1 <- ifelse(VOLT_iw$SVOLT_A.SVOLT_CR == 20, max(VOLT_iw$PFscore1,na.rm = T),VOLT_iw$PFscore1)
+  VOLT_iw$PFscore2 <- ifelse(VOLT_iw$SVOLT_A.SVOLT_CR == 20, max(VOLT_iw$PFscore2,na.rm = T),VOLT_iw$PFscore2)
+  VOLT_iw$SMVE <- (0.42 * VOLT_iw$outlier_score_2cut) + (0.02 * VOLT_iw$acc3e) + (0.05 * VOLT_iw$PFscore1) + (0.50 * VOLT_iw$PFscore2)
+  
+  
+  # VOLT targets
+  dat <-VOLT_targets[,c(grep("_CORR",colnames(VOLT_targets)),grep("_TTR",colnames(VOLT_targets)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+  VOLT_targets <- data.frame(VOLT_targets,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(VOLT_targets)[(ncol(VOLT_targets)-2):ncol(VOLT_targets)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  VOLT_targets$PFscore1 <- ifelse(VOLT_targets$SVOLT_A.SVOLT_TP == 10, max(VOLT_targets$PFscore1,na.rm = T),VOLT_targets$PFscore1)
+  VOLT_targets$PFscore2 <- ifelse(VOLT_targets$SVOLT_A.SVOLT_TP == 10, max(VOLT_targets$PFscore2,na.rm = T),VOLT_targets$PFscore2)
+  VOLT_targets$SMVE <- (0.42 * VOLT_targets$outlier_score_2cut) + (0.02 * VOLT_targets$acc3e) + (0.05 * VOLT_targets$PFscore1) + (0.50 * VOLT_targets$PFscore2)
+  
+  
+  # VOLT foils
+  dat <-VOLT_foils[,c(grep("_CORR",colnames(VOLT_foils)),grep("_TTR",colnames(VOLT_foils)))]
+  items <- ncol(dat)/2
+  dat[,(items+1):(2*items)] <- log(dat[,(items+1):(2*items)])
+  res <- matrix(NA,dim(dat)[1],items)
+  for (j in 1:items) {
+    mod <- lm(dat[,(j+items)]~dat[,j],data=dat,na.action=na.exclude)
+    res[,j] <- scale(residuals(mod,na.action=na.exclude))}
+  res2 <- res
+  res2[abs(res2) < 2] <- 0
+  res2[abs(res2) > 2] <- 1
+  outlier_score_2cut <- 1 - rowMeans(res2,na.rm=TRUE)
+  dat2 <- dat[,1:items]
+  acc3e <- rowMeans(dat2[,colMeans(dat2,na.rm=TRUE) >= min(tail(sort(colMeans(dat2,na.rm=TRUE)),3))])
+  pfit1 <- r.pbis(dat2)$PFscores
+  pfit2 <- E.KB(dat2)$PFscores
+  sc <- (0.42*outlier_score_2cut) + (0.02*acc3e) + (0.05*pfit1) + (0.50*pfit2)
+  VOLT_foils <- data.frame(VOLT_foils,outlier_score_2cut,acc3e,pfit1,pfit2,sc)
+  names(VOLT_foils)[(ncol(VOLT_foils)-2):ncol(VOLT_foils)] <- c("PFscore1","PFscore2","SMVE")
+  # no 0%, but 100% scores need adjusting
+  
+  VOLT_foils$PFscore1 <- ifelse(VOLT_foils$SVOLT_A.SVOLT_TN == 10, max(VOLT_foils$PFscore1,na.rm = T),VOLT_foils$PFscore1)
+  VOLT_foils$PFscore2 <- ifelse(VOLT_foils$SVOLT_A.SVOLT_TN == 10, max(VOLT_foils$PFscore2,na.rm = T),VOLT_foils$PFscore2)
+  VOLT_foils$SMVE <- (0.42 * VOLT_foils$outlier_score_2cut) + (0.02 * VOLT_foils$acc3e) + (0.05 * VOLT_foils$PFscore1) + (0.50 * VOLT_foils$PFscore2)
+}
 
 
 
@@ -1003,1227 +1003,1229 @@ VOLT_foils$SMVE <- (0.42 * VOLT_foils$outlier_score_2cut) + (0.02 * VOLT_foils$a
 
 # * plot out distribution of SMVE subscores as well as score ----
 
-# variable to keep track of whose data not to use
-no_good <- data.frame(BBLID = demo_new_iw$bblid,ADT = NA,AIM = NA,CPF = NA,
-                      CPT = NA,CPW = NA,DDISC = NA,DIGSYM = NA,EDISC = NA,
-                      ER40 = NA,GNG = NA,MEDF = NA,PLOT = NA,PMAT = NA,
-                      PRA = NA,PVRT = NA,RDISC = NA,VOLT = NA)
-
-# ADT distribution of performance validity
-dat <- ADT_iw
-n_tot <- dim(dat)[1]
-qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-
-data_left <- dat[which(dat$SMVE > qu),]  # 225 left
-n_left <- dim(data_left)[1]
-
 {
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    geom_hline(yintercept = qu) +
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SMVE Distribution for full-form ADT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                           x = "", y = "SMVE") + 
-    # scale_color_manual(values = wes_palette("Darjeeling1",n=1)) + scale_fill_manual(values = wes_palette("Darjeeling1",n=1)) +
-    # scale_y_continuous(breaks = seq(0,175000,25000)) +
-    coord_flip() 
+  # variable to keep track of whose data not to use
+  no_good <- data.frame(BBLID = demo_new_iw$bblid,ADT = NA,AIM = NA,CPF = NA,
+                        CPT = NA,CPW = NA,DDISC = NA,DIGSYM = NA,EDISC = NA,
+                        ER40 = NA,GNG = NA,MEDF = NA,PLOT = NA,PMAT = NA,
+                        PRA = NA,PVRT = NA,RDISC = NA,VOLT = NA)
   
-  # pdf("data/outputs/ADT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
+  # ADT distribution of performance validity
+  dat <- ADT_iw
+  n_tot <- dim(dat)[1]
+  qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
+  
+  data_left <- dat[which(dat$SMVE > qu),]  # 225 left
+  n_left <- dim(data_left)[1]
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      geom_hline(yintercept = qu) +
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SMVE Distribution for full-form ADT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                             x = "", y = "SMVE") + 
+      # scale_color_manual(values = wes_palette("Darjeeling1",n=1)) + scale_fill_manual(values = wes_palette("Darjeeling1",n=1)) +
+      # scale_y_continuous(breaks = seq(0,175000,25000)) +
+      coord_flip() 
+    
+    # pdf("data/outputs/ADT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+  }
+  
+  smve_sum <- data.frame(cutoff = qu,n = n_left)
+  no_good[,2] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
+  
+  
+  # AIM distribution of performance
+  dat <- AIM_iw
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = AIM.AIMTOT)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "AIM.TOT Distribution for full-form AIM",
+                             x = "", y = "TOTAL CORRECT") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/AIM_TOT_dist_6Jul22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+    
+    
+    my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = AIM.AIMTOTRT)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "AIM.TOTRT Distribution for full-form AIM",
+                             x = "", y = "TOTRT") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/AIM_TOTRT_dist_6Jul22.pdf",height = 7,width = 10)
+    # my_plot1
+    # dev.off()
+  }
+  
+  # get rid of bottom outlier, AIMTOT < 40
+  bad_aim <- dat %>% filter(AIM.AIMTOT < 40) %>% pull(bblid)
+  no_good[,3] <- ifelse(no_good$BBLID %in% bad_aim,1,0)
+  
+  
+  # CPF distribution of performance validity
+  dat <- CPF_iw
+  n_tot <- dim(dat)[1]
+  qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
+  
+  data_left <- dat[which(dat$SMVE > qu),]  # 185 left
+  n_left <- dim(data_left)[1]
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      geom_hline(yintercept = qu) +
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SMVE Distribution for full-form CPF", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                             x = "", y = "SMVE") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/CPF_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+  }
+  
+  smve_sum[3,] <- data.frame(cutoff = qu,n = n_left)
+  no_good[,4] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
+  
+  
+  # CPT distribution of performance
+  dat <- CPT_iw
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SPCPTNL.SCPL_TP)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SPCPTNL.SCPL_TP Distribution for full-form CPT",
+                             x = "", y = "TOTAL CORRECT") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/rapid_dist/CPT_TP_dist_6Jul22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+    
+    
+    my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SPCPTNL.SCPL_TPRT)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SPCPTNL.SCPL_TPRT Distribution for full-form CPT",
+                             x = "", y = "TOTRT") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/rapid_dist/CPT_TPRT_dist_6Jul22.pdf",height = 7,width = 10)
+    # my_plot1
+    # dev.off()
+  }
+  
+  # for LRNR, need to reorder everything by trial first
+  CPT_new_order <- data.frame(bblid = dat$bblid, dat$SPCPTNL.SCPL_TP,dat$SPCPTNL.SCPL_TPRT,dat[,grepl("TRIAL",colnames(dat))|grepl("RESP",colnames(dat))])
+  
+  for (i in 1:nrow(CPT_new_order)) {
+    row <- CPT_new_order[i,4:363]
+    
+    row_t <- row %>% dplyr::select(matches("TRIAL"))
+    row_r <- row %>% dplyr::select(matches("RESP"))
+    
+    CPT_new_order[i,grepl("RESP",colnames(CPT_new_order))] <- row_r[,order(row_t)]
+  }
+  
+  CPT_iw$SPCPTNL.SCPT_LRNR <- count_LRNR(CPT_new_order)
+  dat <- CPT_iw
+  
+  # one extreme outlier, code below removes that (LRNR = 25)
+  {
+    my_plot2 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SPCPTNL.SCPT_LRNR)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SPCPTNL.SCPT_LRNR Distribution for full-form CPT",
+                             x = "", y = "LRNR") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/rapid_dist/CPT_LRNR_dist_noext_220720.pdf",height = 7,width = 10)
+    # my_plot2
+    # dev.off()
+  }
+  
+  bad_cpt <- dat %>% filter(SPCPTNL.SCPT_LRNR == 25) %>% pull(bblid)
+  no_good[,5] <- ifelse(no_good$BBLID %in% bad_cpt,1,0)
+  
+  
+  # CPW distribution of performance validity
+  dat <- CPW_iw
+  n_tot <- dim(dat)[1]
+  qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
+  
+  data_left <- dat[which(dat$SMVE > qu),]  # 185 left
+  n_left <- dim(data_left)[1]
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      geom_hline(yintercept = qu) +
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SMVE Distribution for full-form CPW", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                             x = "", y = "SMVE") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/CPW_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+  }
+  
+  smve_sum[5,] <- data.frame(cutoff = qu,n = n_left)
+  no_good[,6] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
+  
+  
+  # DDISC distribution of performance validity
+  dat <- DDISC_iw
+  n_tot <- dim(dat)[1]
+  qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
+  
+  data_left <- dat[which(dat$SMVE > qu),]  # 230 left
+  n_left <- dim(data_left)[1]
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions.siteid, y = SMVE)) +
+      ggdist::stat_halfeye(
+        adjust = .5,
+        width = .6,
+        justification = -.2,
+        .width = 0,
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) +
+      geom_boxplot(
+        width = .12,
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5,
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  +
+      geom_hline(yintercept = qu) +
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SMVE Distribution for full-form DDISC", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                             x = "", y = "SMVE") +
+      coord_flip()
+    
+    # pdf("data/outputs/DDISC_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+  }
+  
+  smve_sum[6,] <- data.frame(cutoff = qu,n = n_left)
+  no_good[,7] <- ifelse(no_good$BBLID %in% data_left$BBLID,0,1)
+  
+  
+  # DIGSYM distribution of performance 
+  dat <- DIGSYM_iw
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSCOR)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "DIGSYM.DSCOR Distribution for full-form DIGSYM",
+                             x = "", y = "TOTAL CORRECT") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/rapid_dist/DS_COR_dist_6Jul22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+    
+    
+    my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSCORRT)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "DIGSYM.DSCORRT Distribution for full-form DIGSYM",
+                             x = "", y = "COR RT") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/rapid_dist/DS_CORRT_dist_6Jul22.pdf",height = 7,width = 10)
+    # my_plot1
+    # dev.off()
+    
+    my_plot2 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DS_TP)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "DIGSYM.DS_TP Distribution for full-form DIGSYM",
+                             x = "", y = "TOTAL CORRECT") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/rapid_dist/DS_TP_dist_6Jul22.pdf",height = 7,width = 10)
+    # my_plot2
+    # dev.off()
+    
+    
+    my_plot3 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DS_TPRT)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "DIGSYM.DS_TPRT Distribution for full-form DIGSYM",
+                             x = "", y = "TPRT") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/rapid_dist/DS_TPRT_dist_6Jul22.pdf",height = 7,width = 10)
+    # my_plot3
+    # dev.off()
+    
+    my_plot4 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSMEMCR)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "DIGSYM.DSMEMCR Distribution for full-form DIGSYM",
+                             x = "", y = "TOTAL CORRECT (memory)") + 
+      scale_y_continuous(breaks=seq(0, 10, 1)) +
+      coord_flip() 
+    
+    # pdf("data/outputs/rapid_dist/DS_MEMCR_dist_6Jul22.pdf",height = 7,width = 10)
+    # my_plot4
+    # dev.off()
+    
+    
+    my_plot5 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSMCRRT)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "DIGSYM.DSMCRRT Distribution for full-form DIGSYM",
+                             x = "", y = "COR RT (memory)") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/rapid_dist/DS_MCRRT_dist_6Jul22.pdf",height = 7,width = 10)
+    # my_plot5
+    # dev.off()
+  }
+  
+  bad_ds <- dat %>% filter(DIGSYM.DSCOR > 90) %>% pull(bblid)
+  no_good[,8] <- ifelse(no_good$BBLID %in% bad_ds,1,0)
+  
+  
+  # EDISC distribution of performance validity
+  dat <- EDISC_iw
+  n_tot <- dim(dat)[1]
+  qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
+  
+  data_left <- dat[which(dat$SMVE > qu),]  # 229 left
+  n_left <- dim(data_left)[1]
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions.siteid, y = SMVE)) +
+      ggdist::stat_halfeye(
+        adjust = .5,
+        width = .6,
+        justification = -.2,
+        .width = 0,
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) +
+      geom_boxplot(
+        width = .12,
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5,
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  +
+      geom_hline(yintercept = qu) +
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SMVE Distribution for full-form EDISC", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                             x = "", y = "SMVE") +
+      coord_flip()
+    
+    # pdf("data/outputs/EDISC_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+  }
+  
+  smve_sum[8,] <- data.frame(cutoff = qu,n = n_left)
+  no_good[,9] <- ifelse(no_good$BBLID %in% data_left$BBLID,0,1)
+  
+  
+  # ER40 distribution of performance validity
+  dat <- ER40_iw
+  n_tot <- dim(dat)[1]
+  qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
+  
+  data_left <- dat[which(dat$SMVE > qu),]  # 225 left
+  n_left <- dim(data_left)[1]
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
+      ggdist::stat_halfeye(
+        adjust = .5,
+        width = .6,
+        justification = -.2,
+        .width = 0,
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) +
+      geom_boxplot(
+        width = .12,
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5,
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  +
+      geom_hline(yintercept = qu) +
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SMVE Distribution for full-form ER40", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                             x = "", y = "SMVE") +
+      coord_flip()
+    
+    # pdf("data/outputs/ER40_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+  }
+  
+  smve_sum[9,] <- data.frame(cutoff = qu,n = n_left)
+  no_good[,10] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
+  
+  
+  # GNG distribution of performance 
+  dat <- GNG_iw
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = GNG150.GNG150_CR)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "GNG150.GNG150_CR Distribution for full-form GNG",
+                             x = "", y = "TOTAL CORRECT") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/rapid_dist/GNG_CR_dist_6Jul22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+    
+    
+    my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = GNG150.GNG150_RTCR)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "GNG150.GNG150_RTCR Distribution for full-form DIGSYM",
+                             x = "", y = "COR RT") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/rapid_dist/GNG_RTCR_dist_6Jul22.pdf",height = 7,width = 10)
+    # my_plot1
+    # dev.off()
+  }
+  
+  # looking at LRNR
+  GNG_iw$GNG150.GNG150_LRNR <- count_LRNR(dat)
+  dat <- GNG_iw
+  
+  # one extreme outlier, code below removes that (LRNR = 150)
+  {
+    my_plot2 <- ggplot(dat %>% filter(GNG150.GNG150_LRNR<150), aes(x = test_sessions_v.battery_complete, y = GNG150.GNG150_LRNR)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "GNG150.GNG150_LRNR Distribution for full-form GNG",
+                             x = "", y = "LRNR") + 
+      coord_flip() 
+    
+    # pdf("data/outputs/rapid_dist/GNG_LRNR_dist_noext_8Jul22.pdf",height = 7,width = 10)
+    # my_plot2
+    # dev.off()
+  }
+  
+  bad_gng <- dat %>% filter(GNG150.GNG150_LRNR == 150) %>% pull(bblid)
+  no_good[,11] <- ifelse(no_good$BBLID %in% bad_gng,1,0)
+  
+  
+  # MEDF distribution of performance validity
+  dat <- MEDF_iw
+  n_tot <- dim(dat)[1]
+  qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
+  
+  data_left <- dat[which(dat$SMVE > qu),]  # 225 left
+  n_left <- dim(data_left)[1]
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
+      ggdist::stat_halfeye(
+        adjust = .5,
+        width = .6,
+        justification = -.2,
+        .width = 0,
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) +
+      geom_boxplot(
+        width = .12,
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5,
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  +
+      geom_hline(yintercept = qu) +
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SMVE Distribution for full-form MEDF", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                             x = "", y = "SMVE") +
+      coord_flip()
+    
+    # pdf("data/outputs/MEDF_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+  }
+  
+  smve_sum[11,] <- data.frame(cutoff = qu,n = n_left)
+  no_good[,12] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
+  
+  
+  # PLOT distribution of performance validity
+  dat <- PLOT_iw
+  n_tot <- dim(dat)[1]
+  qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
+  
+  data_left <- dat[which(dat$SMVE > qu),]  # 225 left
+  n_left <- dim(data_left)[1]
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
+      ggdist::stat_halfeye(
+        adjust = .5,
+        width = .6,
+        justification = -.2,
+        .width = 0,
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) +
+      geom_boxplot(
+        width = .12,
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5,
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  +
+      geom_hline(yintercept = qu) +
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SMVE Distribution for full-form PLOT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                             x = "", y = "SMVE") +
+      coord_flip()
+    
+    # pdf("data/outputs/PLOT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+  }
+  
+  smve_sum[12,] <- data.frame(cutoff = qu,n = n_left)
+  no_good[,13] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
+  
+  
+  # PMAT distribution of performance validity
+  dat <- PMAT_iw
+  n_tot <- dim(dat)[1]
+  qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
+  
+  data_left <- dat[which(dat$SMVE > qu),]  # 225 left
+  n_left <- dim(data_left)[1]
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
+      ggdist::stat_halfeye(
+        adjust = .5,
+        width = .6,
+        justification = -.2,
+        .width = 0,
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) +
+      geom_boxplot(
+        width = .12,
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5,
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  +
+      geom_hline(yintercept = qu) +
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SMVE Distribution for full-form PMAT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                             x = "", y = "SMVE") +
+      coord_flip()
+    
+    # pdf("data/outputs/PMAT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+  }
+  
+  smve_sum[13,] <- data.frame(cutoff = qu,n = n_left)
+  no_good[,14] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
+  
+  
+  # PRA distribution of performance validity
+  # no clear QC method yet
+  
+  
+  # PVRT distribution of performance validity
+  dat <- PVRT_iw
+  n_tot <- dim(dat)[1]
+  qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
+  
+  data_left <- dat[which(dat$SMVE > qu),]  # 225 left
+  n_left <- dim(data_left)[1]
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
+      ggdist::stat_halfeye(
+        adjust = .5,
+        width = .6,
+        justification = -.2,
+        .width = 0,
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) +
+      geom_boxplot(
+        width = .12,
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5,
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  +
+      geom_hline(yintercept = qu) +
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SMVE Distribution for full-form PVRT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                             x = "", y = "SMVE") +
+      coord_flip()
+    
+    # pdf("data/outputs/PVRT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+  }
+  
+  smve_sum[15,] <- data.frame(cutoff = qu,n = n_left)
+  no_good[,16] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
+  
+  
+  # RDISC distribution of performance validity
+  dat <- RDISC_iw
+  n_tot <- dim(dat)[1]
+  qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
+  
+  data_left <- dat[which(dat$SMVE > qu),]  # 230 left
+  n_left <- dim(data_left)[1]
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions.siteid, y = SMVE)) +
+      ggdist::stat_halfeye(
+        adjust = .5,
+        width = .6,
+        justification = -.2,
+        .width = 0,
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) +
+      geom_boxplot(
+        width = .12,
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5,
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  +
+      geom_hline(yintercept = qu) +
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SMVE Distribution for full-form RDISC", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                             x = "", y = "SMVE") +
+      coord_flip()
+    
+    # pdf("data/outputs/RDISC_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+  }
+  
+  smve_sum[16,] <- data.frame(cutoff = qu,n = n_left)
+  no_good[,17] <- ifelse(no_good$BBLID %in% data_left$BBLID,0,1)
+  
+  
+  # VOLT distribution of performance validity
+  dat <- VOLT_iw
+  n_tot <- dim(dat)[1]
+  qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
+  
+  data_left <- dat[which(dat$SMVE > qu),]  # 225 left
+  n_left <- dim(data_left)[1]
+  
+  {
+    my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
+      ggdist::stat_halfeye(
+        adjust = .5,
+        width = .6,
+        justification = -.2,
+        .width = 0,
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) +
+      geom_boxplot(
+        width = .12,
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5,
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  +
+      geom_hline(yintercept = qu) +
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = "SMVE Distribution for full-form VOLT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
+                             x = "", y = "SMVE") +
+      coord_flip()
+    
+    # pdf("data/outputs/VOLT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
+    # my_plot
+    # dev.off()
+  }
+  
+  smve_sum[17,] <- data.frame(cutoff = qu,n = n_left)
+  no_good[,18] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
 }
-
-smve_sum <- data.frame(cutoff = qu,n = n_left)
-no_good[,2] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
-
-
-# AIM distribution of performance
-dat <- AIM_iw
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = AIM.AIMTOT)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "AIM.TOT Distribution for full-form AIM",
-                           x = "", y = "TOTAL CORRECT") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/AIM_TOT_dist_6Jul22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-  
-  
-  my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = AIM.AIMTOTRT)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "AIM.TOTRT Distribution for full-form AIM",
-                           x = "", y = "TOTRT") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/AIM_TOTRT_dist_6Jul22.pdf",height = 7,width = 10)
-  # my_plot1
-  # dev.off()
-}
-
-# get rid of bottom outlier, AIMTOT < 40
-bad_aim <- dat %>% filter(AIM.AIMTOT < 40) %>% pull(bblid)
-no_good[,3] <- ifelse(no_good$BBLID %in% bad_aim,1,0)
-
-
-# CPF distribution of performance validity
-dat <- CPF_iw
-n_tot <- dim(dat)[1]
-qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-
-data_left <- dat[which(dat$SMVE > qu),]  # 185 left
-n_left <- dim(data_left)[1]
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    geom_hline(yintercept = qu) +
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SMVE Distribution for full-form CPF", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                           x = "", y = "SMVE") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/CPF_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-}
-
-smve_sum[3,] <- data.frame(cutoff = qu,n = n_left)
-no_good[,4] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
-
-
-# CPT distribution of performance
-dat <- CPT_iw
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SPCPTNL.SCPL_TP)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SPCPTNL.SCPL_TP Distribution for full-form CPT",
-                           x = "", y = "TOTAL CORRECT") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/rapid_dist/CPT_TP_dist_6Jul22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-  
-  
-  my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SPCPTNL.SCPL_TPRT)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SPCPTNL.SCPL_TPRT Distribution for full-form CPT",
-                           x = "", y = "TOTRT") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/rapid_dist/CPT_TPRT_dist_6Jul22.pdf",height = 7,width = 10)
-  # my_plot1
-  # dev.off()
-}
-
-# for LRNR, need to reorder everything by trial first
-CPT_new_order <- data.frame(bblid = dat$bblid, dat$SPCPTNL.SCPL_TP,dat$SPCPTNL.SCPL_TPRT,dat[,grepl("TRIAL",colnames(dat))|grepl("RESP",colnames(dat))])
-
-for (i in 1:nrow(CPT_new_order)) {
-  row <- CPT_new_order[i,4:363]
-  
-  row_t <- row %>% dplyr::select(matches("TRIAL"))
-  row_r <- row %>% dplyr::select(matches("RESP"))
-  
-  CPT_new_order[i,grepl("RESP",colnames(CPT_new_order))] <- row_r[,order(row_t)]
-}
-
-CPT_iw$SPCPTNL.SCPT_LRNR <- count_LRNR(CPT_new_order)
-dat <- CPT_iw
-
-# one extreme outlier, code below removes that (LRNR = 25)
-{
-  my_plot2 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SPCPTNL.SCPT_LRNR)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SPCPTNL.SCPT_LRNR Distribution for full-form CPT",
-                           x = "", y = "LRNR") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/rapid_dist/CPT_LRNR_dist_noext_220720.pdf",height = 7,width = 10)
-  # my_plot2
-  # dev.off()
-}
-
-bad_cpt <- dat %>% filter(SPCPTNL.SCPT_LRNR == 25) %>% pull(bblid)
-no_good[,5] <- ifelse(no_good$BBLID %in% bad_cpt,1,0)
-
-
-# CPW distribution of performance validity
-dat <- CPW_iw
-n_tot <- dim(dat)[1]
-qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-
-data_left <- dat[which(dat$SMVE > qu),]  # 185 left
-n_left <- dim(data_left)[1]
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    geom_hline(yintercept = qu) +
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SMVE Distribution for full-form CPW", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                           x = "", y = "SMVE") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/CPW_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-}
-
-smve_sum[5,] <- data.frame(cutoff = qu,n = n_left)
-no_good[,6] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
-
-
-# DDISC distribution of performance validity
-dat <- DDISC_iw
-n_tot <- dim(dat)[1]
-qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-
-data_left <- dat[which(dat$SMVE > qu),]  # 230 left
-n_left <- dim(data_left)[1]
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions.siteid, y = SMVE)) +
-    ggdist::stat_halfeye(
-      adjust = .5,
-      width = .6,
-      justification = -.2,
-      .width = 0,
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) +
-    geom_boxplot(
-      width = .12,
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5,
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  +
-    geom_hline(yintercept = qu) +
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SMVE Distribution for full-form DDISC", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                           x = "", y = "SMVE") +
-    coord_flip()
-  
-  # pdf("data/outputs/DDISC_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-}
-
-smve_sum[6,] <- data.frame(cutoff = qu,n = n_left)
-no_good[,7] <- ifelse(no_good$BBLID %in% data_left$BBLID,0,1)
-
-
-# DIGSYM distribution of performance 
-dat <- DIGSYM_iw
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSCOR)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "DIGSYM.DSCOR Distribution for full-form DIGSYM",
-                           x = "", y = "TOTAL CORRECT") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/rapid_dist/DS_COR_dist_6Jul22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-  
-  
-  my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSCORRT)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "DIGSYM.DSCORRT Distribution for full-form DIGSYM",
-                           x = "", y = "COR RT") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/rapid_dist/DS_CORRT_dist_6Jul22.pdf",height = 7,width = 10)
-  # my_plot1
-  # dev.off()
-  
-  my_plot2 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DS_TP)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "DIGSYM.DS_TP Distribution for full-form DIGSYM",
-                           x = "", y = "TOTAL CORRECT") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/rapid_dist/DS_TP_dist_6Jul22.pdf",height = 7,width = 10)
-  # my_plot2
-  # dev.off()
-  
-  
-  my_plot3 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DS_TPRT)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "DIGSYM.DS_TPRT Distribution for full-form DIGSYM",
-                           x = "", y = "TPRT") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/rapid_dist/DS_TPRT_dist_6Jul22.pdf",height = 7,width = 10)
-  # my_plot3
-  # dev.off()
-  
-  my_plot4 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSMEMCR)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "DIGSYM.DSMEMCR Distribution for full-form DIGSYM",
-                           x = "", y = "TOTAL CORRECT (memory)") + 
-    scale_y_continuous(breaks=seq(0, 10, 1)) +
-    coord_flip() 
-  
-  # pdf("data/outputs/rapid_dist/DS_MEMCR_dist_6Jul22.pdf",height = 7,width = 10)
-  # my_plot4
-  # dev.off()
-  
-  
-  my_plot5 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = DIGSYM.DSMCRRT)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "DIGSYM.DSMCRRT Distribution for full-form DIGSYM",
-                           x = "", y = "COR RT (memory)") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/rapid_dist/DS_MCRRT_dist_6Jul22.pdf",height = 7,width = 10)
-  # my_plot5
-  # dev.off()
-}
-
-bad_ds <- dat %>% filter(DIGSYM.DSCOR > 90) %>% pull(bblid)
-no_good[,8] <- ifelse(no_good$BBLID %in% bad_ds,1,0)
-
-
-# EDISC distribution of performance validity
-dat <- EDISC_iw
-n_tot <- dim(dat)[1]
-qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-
-data_left <- dat[which(dat$SMVE > qu),]  # 229 left
-n_left <- dim(data_left)[1]
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions.siteid, y = SMVE)) +
-    ggdist::stat_halfeye(
-      adjust = .5,
-      width = .6,
-      justification = -.2,
-      .width = 0,
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) +
-    geom_boxplot(
-      width = .12,
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5,
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  +
-    geom_hline(yintercept = qu) +
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SMVE Distribution for full-form EDISC", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                           x = "", y = "SMVE") +
-    coord_flip()
-  
-  # pdf("data/outputs/EDISC_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-}
-
-smve_sum[8,] <- data.frame(cutoff = qu,n = n_left)
-no_good[,9] <- ifelse(no_good$BBLID %in% data_left$BBLID,0,1)
-
-
-# ER40 distribution of performance validity
-dat <- ER40_iw
-n_tot <- dim(dat)[1]
-qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-
-data_left <- dat[which(dat$SMVE > qu),]  # 225 left
-n_left <- dim(data_left)[1]
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-    ggdist::stat_halfeye(
-      adjust = .5,
-      width = .6,
-      justification = -.2,
-      .width = 0,
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) +
-    geom_boxplot(
-      width = .12,
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5,
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  +
-    geom_hline(yintercept = qu) +
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SMVE Distribution for full-form ER40", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                           x = "", y = "SMVE") +
-    coord_flip()
-  
-  # pdf("data/outputs/ER40_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-}
-
-smve_sum[9,] <- data.frame(cutoff = qu,n = n_left)
-no_good[,10] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
-
-
-# GNG distribution of performance 
-dat <- GNG_iw
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = GNG150.GNG150_CR)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "GNG150.GNG150_CR Distribution for full-form GNG",
-                           x = "", y = "TOTAL CORRECT") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/rapid_dist/GNG_CR_dist_6Jul22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-  
-  
-  my_plot1 <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = GNG150.GNG150_RTCR)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "GNG150.GNG150_RTCR Distribution for full-form DIGSYM",
-                           x = "", y = "COR RT") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/rapid_dist/GNG_RTCR_dist_6Jul22.pdf",height = 7,width = 10)
-  # my_plot1
-  # dev.off()
-}
-
-# looking at LRNR
-GNG_iw$GNG150.GNG150_LRNR <- count_LRNR(dat)
-dat <- GNG_iw
-
-# one extreme outlier, code below removes that (LRNR = 150)
-{
-  my_plot2 <- ggplot(dat %>% filter(GNG150.GNG150_LRNR<150), aes(x = test_sessions_v.battery_complete, y = GNG150.GNG150_LRNR)) + 
-    ggdist::stat_halfeye(
-      adjust = .5, 
-      width = .6,
-      justification = -.2, 
-      .width = 0, 
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) + 
-    geom_boxplot(
-      width = .12, 
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5, 
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  + 
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "GNG150.GNG150_LRNR Distribution for full-form GNG",
-                           x = "", y = "LRNR") + 
-    coord_flip() 
-  
-  # pdf("data/outputs/rapid_dist/GNG_LRNR_dist_noext_8Jul22.pdf",height = 7,width = 10)
-  # my_plot2
-  # dev.off()
-}
-
-bad_gng <- dat %>% filter(GNG150.GNG150_LRNR == 150) %>% pull(bblid)
-no_good[,11] <- ifelse(no_good$BBLID %in% bad_gng,1,0)
-
-
-# MEDF distribution of performance validity
-dat <- MEDF_iw
-n_tot <- dim(dat)[1]
-qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-
-data_left <- dat[which(dat$SMVE > qu),]  # 225 left
-n_left <- dim(data_left)[1]
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-    ggdist::stat_halfeye(
-      adjust = .5,
-      width = .6,
-      justification = -.2,
-      .width = 0,
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) +
-    geom_boxplot(
-      width = .12,
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5,
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  +
-    geom_hline(yintercept = qu) +
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SMVE Distribution for full-form MEDF", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                           x = "", y = "SMVE") +
-    coord_flip()
-  
-  # pdf("data/outputs/MEDF_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-}
-
-smve_sum[11,] <- data.frame(cutoff = qu,n = n_left)
-no_good[,12] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
-
-
-# PLOT distribution of performance validity
-dat <- PLOT_iw
-n_tot <- dim(dat)[1]
-qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-
-data_left <- dat[which(dat$SMVE > qu),]  # 225 left
-n_left <- dim(data_left)[1]
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-    ggdist::stat_halfeye(
-      adjust = .5,
-      width = .6,
-      justification = -.2,
-      .width = 0,
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) +
-    geom_boxplot(
-      width = .12,
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5,
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  +
-    geom_hline(yintercept = qu) +
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SMVE Distribution for full-form PLOT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                           x = "", y = "SMVE") +
-    coord_flip()
-  
-  # pdf("data/outputs/PLOT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-}
-
-smve_sum[12,] <- data.frame(cutoff = qu,n = n_left)
-no_good[,13] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
-
-
-# PMAT distribution of performance validity
-dat <- PMAT_iw
-n_tot <- dim(dat)[1]
-qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-
-data_left <- dat[which(dat$SMVE > qu),]  # 225 left
-n_left <- dim(data_left)[1]
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-    ggdist::stat_halfeye(
-      adjust = .5,
-      width = .6,
-      justification = -.2,
-      .width = 0,
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) +
-    geom_boxplot(
-      width = .12,
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5,
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  +
-    geom_hline(yintercept = qu) +
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SMVE Distribution for full-form PMAT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                           x = "", y = "SMVE") +
-    coord_flip()
-  
-  # pdf("data/outputs/PMAT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-}
-
-smve_sum[13,] <- data.frame(cutoff = qu,n = n_left)
-no_good[,14] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
-
-
-# PRA distribution of performance validity
-# no clear QC method yet
-
-
-# PVRT distribution of performance validity
-dat <- PVRT_iw
-n_tot <- dim(dat)[1]
-qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-
-data_left <- dat[which(dat$SMVE > qu),]  # 225 left
-n_left <- dim(data_left)[1]
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-    ggdist::stat_halfeye(
-      adjust = .5,
-      width = .6,
-      justification = -.2,
-      .width = 0,
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) +
-    geom_boxplot(
-      width = .12,
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5,
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  +
-    geom_hline(yintercept = qu) +
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SMVE Distribution for full-form PVRT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                           x = "", y = "SMVE") +
-    coord_flip()
-  
-  # pdf("data/outputs/PVRT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-}
-
-smve_sum[15,] <- data.frame(cutoff = qu,n = n_left)
-no_good[,16] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
-
-
-# RDISC distribution of performance validity
-dat <- RDISC_iw
-n_tot <- dim(dat)[1]
-qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-
-data_left <- dat[which(dat$SMVE > qu),]  # 230 left
-n_left <- dim(data_left)[1]
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions.siteid, y = SMVE)) +
-    ggdist::stat_halfeye(
-      adjust = .5,
-      width = .6,
-      justification = -.2,
-      .width = 0,
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) +
-    geom_boxplot(
-      width = .12,
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5,
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  +
-    geom_hline(yintercept = qu) +
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SMVE Distribution for full-form RDISC", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                           x = "", y = "SMVE") +
-    coord_flip()
-  
-  # pdf("data/outputs/RDISC_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-}
-
-smve_sum[16,] <- data.frame(cutoff = qu,n = n_left)
-no_good[,17] <- ifelse(no_good$BBLID %in% data_left$BBLID,0,1)
-
-
-# VOLT distribution of performance validity
-dat <- VOLT_iw
-n_tot <- dim(dat)[1]
-qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
-
-data_left <- dat[which(dat$SMVE > qu),]  # 225 left
-n_left <- dim(data_left)[1]
-
-{
-  my_plot <- ggplot(dat, aes(x = test_sessions_v.battery_complete, y = SMVE)) +
-    ggdist::stat_halfeye(
-      adjust = .5,
-      width = .6,
-      justification = -.2,
-      .width = 0,
-      point_colour = NA,
-      alpha = 0.8,
-      fill  = "aquamarine3"
-    ) +
-    geom_boxplot(
-      width = .12,
-      outlier.color = NA, ## `outlier.shape = NA` works as well
-      alpha = 0.5,
-      color = "aquamarine3"
-    ) +
-    geom_point(
-      size = .5,
-      alpha = 0.3,
-      position = position_jitternudge(
-        jitter.width = .1,
-        jitter.height = 0,
-        nudge.x = -.2,
-        nudge.y = 0,
-        seed = 1
-      ),
-      color = "aquamarine3"
-    )  +
-    geom_hline(yintercept = qu) +
-    coord_cartesian(xlim = c(1.2, NA)) +
-    theme_minimal() + labs(title = "SMVE Distribution for full-form VOLT", caption = paste("n =",dim(dat)[1], "and", n_left, "rows left after removing bottom 5%"),
-                           x = "", y = "SMVE") +
-    coord_flip()
-  
-  # pdf("data/outputs/VOLT_SMVE_dist_26Jun22.pdf",height = 7,width = 10)
-  # my_plot
-  # dev.off()
-}
-
-smve_sum[17,] <- data.frame(cutoff = qu,n = n_left)
-no_good[,18] <- ifelse(no_good$BBLID %in% data_left$bblid,0,1)
 
 
 rownames(smve_sum) <- c("ADT","AIM","CPF","CPT","CPW","DDISC","DIGSYM","EDISC","ER40",
@@ -2247,13 +2249,12 @@ lower_names <- tolower(c("ADT","AIM","CPF","CPT","CPW","DDISC","DIGSYM","EDISC",
 
 xx <- all_cnb
 x <- left_join(xx,no_good[,1:18],by=c("bblid"="BBLID"))
-
+# 1:18 of x are demos, 19:91 are full CNB, 92:137 are CAT CNB, 138:154 are no_good
 
 for (i in 1:length(lower_names)) {
   tname <- lower_names[i]
-  
   for (j in 1:nrow(x)) {
-    if (!is.na(x[j,i+119]) & x[j,i+119] == 1) {
+    if (!is.na(x[j,i+137]) & x[j,i+137] == 1) {   # need to update this number everytime more columns are added to all_cnb
       x[j,grepl(tname,colnames(x))] <- NA
     }
   }
