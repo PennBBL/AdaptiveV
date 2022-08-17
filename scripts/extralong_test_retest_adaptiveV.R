@@ -1036,11 +1036,11 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
                                                                                                  dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
                                                                                                  new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
   
-  cpf_dat_a_2mon <- new_cpf_dat_a %>% filter(new_diffdays <= 60)   # group 1.a, n = 25
-  cpf_dat_a_2more <- new_cpf_dat_a %>% filter(new_diffdays > 60)   # group 2.a, n = 155
+  cpf_dat_a_2mon <- new_cpf_dat_a %>% filter(new_diffdays <= 120)   # group 1.a, n = 25 (60d), 31 (90d), 33 (120d)
+  cpf_dat_a_2more <- new_cpf_dat_a %>% filter(new_diffdays > 120)   # group 2.a, n = 155 (60d), 149 (90d), 147 (120d)
   
   # print scatters
-  # pdf("data/outputs/full_full/CPF_A_60d_220808.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPF_A_120d_220812.pdf",height=9,width=12)
   # pairs.panels(cpf_dat_a_2mon %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(cpf_dat_a_2more %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
@@ -1068,21 +1068,21 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
                                                                                                  dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
                                                                                                  new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
   
-  cpf_dat_b_2mon <- new_cpf_dat_b %>% filter(new_diffdays <= 60)   # group 1.b, n = 11
-  cpf_dat_b_2more <- new_cpf_dat_b %>% filter(new_diffdays > 60)   # group 2.b, n = 355
+  cpf_dat_b_2mon <- new_cpf_dat_b %>% filter(new_diffdays <= 120)   # group 1.b, n = 11 (60d), 14 (90d), 18 (120d)
+  cpf_dat_b_2more <- new_cpf_dat_b %>% filter(new_diffdays > 120)   # group 2.b, n = 355 (60d), 352 (90d), 348 (120d) 
   
   # print scatters
-  # pdf("data/outputs/full_full/CPF_B_60d_220808.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPF_B_120d_220812.pdf",height=9,width=12)
   # pairs.panels(cpf_dat_b_2mon %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(cpf_dat_b_2more %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
 
   # combining forms
-  cpf_dat_same_2mon <- rbind(cpf_dat_a_2mon,cpf_dat_b_2mon)
-  cpf_dat_same_2more <- rbind(cpf_dat_a_2more,cpf_dat_b_2more)
+  cpf_dat_same_2mon <- rbind(cpf_dat_a_2mon,cpf_dat_b_2mon)    # n = 36 (60d), 45 (90d), 51 (120d)
+  cpf_dat_same_2more <- rbind(cpf_dat_a_2more,cpf_dat_b_2more) # n = 510 (60d), 501 (90d), 495 (120d)
   
   # print scatters
-  # pdf("data/outputs/full_full/CPF_same_60d_220808.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPF_same_120d_220812.pdf",height=9,width=12)
   # pairs.panels(cpf_dat_same_2mon %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(cpf_dat_same_2more %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
@@ -1111,11 +1111,11 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   
   new_cpf_dat_dif <- new_cpf_dat %>% filter(cpf_genus_t1 != cpf_genus_t2)
   
-  new_cpf_dat_dif_2mon <- new_cpf_dat_dif %>% filter(new_diffdays <= 60)   # group 3, n = 30
-  new_cpf_dat_dif_2more <- new_cpf_dat_dif %>% filter(new_diffdays > 60)   # group 4, n = 236
+  new_cpf_dat_dif_2mon <- new_cpf_dat_dif %>% filter(new_diffdays <= 120)   # group 3, n = 30 (60d), 34 (90d), 38 (120d)
+  new_cpf_dat_dif_2more <- new_cpf_dat_dif %>% filter(new_diffdays > 120)   # group 4, n = 236 (60d), 232 (90d), 228 (120d)
   
   # print scatters
-  # pdf("data/outputs/full_full/CPF_dif_60d_220808.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPF_dif_120d_220812.pdf",height=9,width=12)
   # pairs.panels(new_cpf_dat_dif_2mon %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(new_cpf_dat_dif_2more %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
@@ -1156,11 +1156,11 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
                                                                                                  dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
                                                                                                  new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
   
-  cpw_dat_a_2mon <- new_cpw_dat_a %>% filter(new_diffdays <= 60)   # group 1.a, n = 21
-  cpw_dat_a_2more <- new_cpw_dat_a %>% filter(new_diffdays > 60)   # group 2.a, n = 147
+  cpw_dat_a_2mon <- new_cpw_dat_a %>% filter(new_diffdays <= 120)   # group 1.a, n = 21 (60d), 28 (90d), 30 (120d)
+  cpw_dat_a_2more <- new_cpw_dat_a %>% filter(new_diffdays > 120)   # group 2.a, n = 147 (60d), 140 (90d), 138 (120d)
   
   # print scatters
-  # pdf("data/outputs/full_full/CPW_A_60d_220808.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPW_A_120d_220812.pdf",height=9,width=12)
   # pairs.panels(cpw_dat_a_2mon %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(cpw_dat_a_2more %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
@@ -1188,8 +1188,8 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
                                                                                                  dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
                                                                                                  new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
   
-  cpw_dat_ka_2mon <- new_cpw_dat_ka %>% filter(new_diffdays <= 60)   # group 1.b, n = 0
-  cpw_dat_ka_2more <- new_cpw_dat_ka %>% filter(new_diffdays > 60)   # group 2.b, n = 398
+  cpw_dat_ka_2mon <- new_cpw_dat_ka %>% filter(new_diffdays <= 90)   # group 1.b, n = 0 (90d),
+  cpw_dat_ka_2more <- new_cpw_dat_ka %>% filter(new_diffdays > 90)   # group 2.b, n = 398 (90d),
   
   # print scatters
   # pdf("data/outputs/full_full/CPW_KA_60d_220808.pdf",height=9,width=12)
@@ -1202,7 +1202,7 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   cpw_dat_same_2more <- rbind(cpw_dat_a_2more,cpw_dat_ka_2more)
   
   # print scatters
-  # pdf("data/outputs/full_full/CPW_same_60d_220808.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPW_same_90d_220810.pdf",height=9,width=12)
   # pairs.panels(cpw_dat_same_2mon %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(cpw_dat_same_2more %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
@@ -1232,19 +1232,286 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   
   new_cpw_dat_dif <- new_cpw_dat %>% filter(cpw_genus_t1 != cpw_genus_t2)
   
-  new_cpw_dat_dif_2mon <- new_cpw_dat_dif %>% filter(new_diffdays <= 60)   # group 3, n = 15
-  new_cpw_dat_dif_2more <- new_cpw_dat_dif %>% filter(new_diffdays > 60)   # group 4, n = 91
+  new_cpw_dat_dif_2mon <- new_cpw_dat_dif %>% filter(new_diffdays <= 90)   # group 3, n = 21
+  new_cpw_dat_dif_2more <- new_cpw_dat_dif %>% filter(new_diffdays > 90)   # group 4, n = 85
   
   # print scatters
-  # pdf("data/outputs/full_full/CPW_dif_60d_220808.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPW_dif_90d_220810.pdf",height=9,width=12)
   # pairs.panels(new_cpw_dat_dif_2mon %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(new_cpw_dat_dif_2more %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
 }
 
 
+# same thing but with VOLT, only one version
+# try usingsecondmmethod to increase N
+{
+  volt_dat <- extralong_repeat %>% dplyr::select(matches("volt")) %>% cbind(demos,.) %>% 
+    filter(test_sessions_v.age %in% 18:35)
+  volt_dat <- subset(volt_dat, !is.na(volt_dat[,ncol(volt_dat)]))
+  
+  # getting rid of invalid codes
+  volt_dat <- subset(volt_dat, (volt_dat[,grepl("_valid",colnames(volt_dat))] != "N"))
+  
+  # working with CPW A first
+  temp <- volt_dat %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),]    # this has the first instances of each unique bblid
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  volt_dat_t1 <- volt_dat %>% filter(combo %in% t.first$combo)  # first time point of anyone who has taken CPW A
+  volt_dat_tn <- volt_dat %>% filter(combo %notin% t.first$combo)
+  
+  temp <- volt_dat_tn %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),] 
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  volt_dat_t2 <- volt_dat_tn %>% filter(combo %in% t.first$combo)  # second time point of anyone who has taken CPW A
+  
+  names(volt_dat_t1)[21:ncol(volt_dat_t1)] <- paste(names(volt_dat_t1)[21:ncol(volt_dat_t1)],"t1",sep="_")
+  names(volt_dat_t2)[c(9,19:ncol(volt_dat_t2))] <- paste(names(volt_dat_t2)[c(9,19:ncol(volt_dat_t2))],"t2",sep="_")
+  
+  new_volt_dat <- left_join(volt_dat_t1,volt_dat_t2[c(5,9,19:ncol(volt_dat_t2))],by="bblid")
+  new_volt_dat <- subset(new_volt_dat, !is.na(new_volt_dat[,ncol(new_volt_dat)])) %>% mutate(dotest_t1 = as.numeric(ymd(test_sessions_v.dotest)),
+                                                                                                 dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
+                                                                                                 new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
+  
+  volt_dat_2mon <- new_volt_dat %>% filter(new_diffdays <= 90)   # group 1, n = 11
+  volt_dat_2more <- new_volt_dat %>% filter(new_diffdays > 90)   # group 2, n = 474
+  
+  # print scatters
+  pdf("data/outputs/full_full/VOLT_same_90d_220810.pdf",height=9,width=12)
+  pairs.panels(volt_dat_2mon %>% dplyr::select(matches("volt_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+  pairs.panels(volt_dat_2more %>% dplyr::select(matches("volt_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+  dev.off()
+}
 
 
+
+# trying a different method to increase N
+{
+  cpf_dat <- extralong_repeat %>% dplyr::select(matches("cpf")) %>% cbind(demos,.) %>% 
+    filter(test_sessions_v.age %in% 18:35) %>% arrange(bblid,test_sessions_v.dotest)
+  cpf_dat <- subset(cpf_dat, !is.na(cpf_dat[,ncol(cpf_dat)]))
+  
+  cpf_dat$days <- as.numeric(ymd(cpf_dat$test_sessions_v.dotest))
+  
+  # difference between timepoints in days
+  for (i in 2:nrow(cpf_dat)) {
+    cpf_dat$diffdays[i] <- cpf_dat$days[i] - cpf_dat$days[i-1]
+  }
+  
+  temp <- cpf_dat %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),]    # this has the first instances of each unique bblid
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  cpf_dat$combo <- paste(as.character(cpf_dat$bblid),as.character(cpf_dat$test_sessions_v.dotest),sep="_")
+  cpf_dat$diffdays <- ifelse(cpf_dat$combo %in% t.first$combo,0,cpf_dat$diffdays)
+  
+  # getting rid of invalid codes
+  cpf_dat <- subset(cpf_dat, (cpf_dat[,grepl("_valid",colnames(cpf_dat))] != "N"))
+  
+  cpf_dat_60 <- cpf_dat %>% filter(diffdays <= 60 & diffdays > 0)
+  cpf_dat_90 <- cpf_dat %>% filter(diffdays <= 90 & diffdays > 0)
+  
+  # for cpf_dat_60, i need to make sure that each person w diffdays > 0 has a previous time point to compare to
+  # idea: restrict above code (cpf_dat_60 <- cpf_dat %>% filter(diffdays <= 60)) to cpf_dat_60 <- cpf_dat %>% filter(diffdays <= 60 & diffdays > 0)
+  
+  bbl60 <- cpf_dat_60 %>% pull(bblid) %>% unique()
+  cpf_dat_60big <- cpf_dat %>% filter(bblid %in% bbl60) %>% arrange(bblid,test_sessions_v.dotest)
+  
+  # keep all rows with diffdays in (0,60]
+  cpf_dat_60big$keep <- ifelse(cpf_dat_60big$diffdays <= 60 & cpf_dat_60big$diffdays > 0,1,0)
+  
+  # keep all rows that serve as t1 for all points of interest identified above
+  for (i in 1:(nrow(cpf_dat_60big)-1)) {
+    if (cpf_dat_60big[i+1,"keep"] == 1){
+      cpf_dat_60big[i,"keep"] <- 1
+    }
+  }
+  
+  cpf_dat_60 <- cpf_dat_60big %>% filter(keep == 1) %>% dplyr::select(!matches("keep|^days"))
+  
+  dat <- cpf_dat_60
+  
+  cpf_dat_a <- dat %>% filter(cpf_genus == "cpf_a")
+  cpf_dat_b <- dat %>% filter(cpf_genus == "cpf_b")
+  
+  # working with CPF A first
+  temp <- cpf_dat_a %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),]    # this has the first instances of each unique bblid
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  cpf_dat_a_t1 <- cpf_dat_a %>% filter(combo %in% t.first$combo)  # first time point of anyone who has taken CPF A
+  cpf_dat_a_tn <- cpf_dat_a %>% filter(combo %notin% t.first$combo)
+  
+  temp <- cpf_dat_a_tn %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),] 
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  cpf_dat_a_t2 <- cpf_dat_a_tn %>% filter(combo %in% t.first$combo)  # second time point of anyone who has taken CPF A
+  
+  names(cpf_dat_a_t1)[21:ncol(cpf_dat_a_t1)] <- paste(names(cpf_dat_a_t1)[21:ncol(cpf_dat_a_t1)],"t1",sep="_")
+  names(cpf_dat_a_t2)[c(9,19:ncol(cpf_dat_a_t2))] <- paste(names(cpf_dat_a_t2)[c(9,19:ncol(cpf_dat_a_t2))],"t2",sep="_")
+  
+  new_cpf_dat_a <- left_join(cpf_dat_a_t1,cpf_dat_a_t2[c(5,9,19:ncol(cpf_dat_a_t2))],by="bblid")
+  new_cpf_dat_a <- subset(new_cpf_dat_a, !is.na(new_cpf_dat_a[,ncol(new_cpf_dat_a)])) %>% mutate(dotest_t1 = as.numeric(ymd(test_sessions_v.dotest)),
+                                                                                                 dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
+                                                                                                 new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
+  
+  cpf_dat_a_2mon <- new_cpf_dat_a %>% filter(new_diffdays <= 60)   # group 1.a, n = 32
+  
+  # print scatters
+  # pdf("data/outputs/full_full/CPF_A_90d_220810.pdf",height=9,width=12)
+  # pairs.panels(cpf_dat_a_2mon %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # dev.off()
+  
+  
+  # same thing for CPF B
+  temp <- cpf_dat_b %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),]    # this has the first instances of each unique bblid
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  cpf_dat_b_t1 <- cpf_dat_b %>% filter(combo %in% t.first$combo)  # first time point of anyone who has taken CPF A
+  cpf_dat_b_tn <- cpf_dat_b %>% filter(combo %notin% t.first$combo)
+  
+  temp <- cpf_dat_b_tn %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),] 
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  cpf_dat_b_t2 <- cpf_dat_b_tn %>% filter(combo %in% t.first$combo)  # second time point of anyone who has taken CPF A
+  
+  names(cpf_dat_b_t1)[21:ncol(cpf_dat_b_t1)] <- paste(names(cpf_dat_b_t1)[21:ncol(cpf_dat_b_t1)],"t1",sep="_")
+  names(cpf_dat_b_t2)[c(9,19:ncol(cpf_dat_b_t2))] <- paste(names(cpf_dat_b_t2)[c(9,19:ncol(cpf_dat_b_t2))],"t2",sep="_")
+  
+  new_cpf_dat_b <- left_join(cpf_dat_b_t1,cpf_dat_b_t2[c(5,9,19:ncol(cpf_dat_b_t2))],by="bblid")
+  new_cpf_dat_b <- subset(new_cpf_dat_b, !is.na(new_cpf_dat_b[,ncol(new_cpf_dat_b)])) %>% mutate(dotest_t1 = as.numeric(ymd(test_sessions_v.dotest)),
+                                                                                                 dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
+                                                                                                 new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
+  
+  cpf_dat_b_2mon <- new_cpf_dat_b %>% filter(new_diffdays <= 60)   # group 1.b, n = 18
+  
+  # print scatters
+  # pdf("data/outputs/full_full/CPF_B_90d_220810.pdf",height=9,width=12)
+  # pairs.panels(cpf_dat_b_2mon %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # dev.off()
+  
+  # combining forms
+  cpf_dat_same_2mon <- rbind(cpf_dat_a_2mon,cpf_dat_b_2mon)    # n = 50
+  
+  # print scatters
+  pdf("data/outputs/full_full/CPF_same_60d_220811.pdf",height=9,width=12)
+  pairs.panels(cpf_dat_same_2mon %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+  dev.off()
+  
+  
+  # same > 60 day diff
+  {
+    cpf_dat <- extralong_repeat %>% dplyr::select(matches("cpf")) %>% cbind(demos,.) %>% 
+      filter(test_sessions_v.age %in% 18:35)
+    cpf_dat <- subset(cpf_dat, !is.na(cpf_dat[,ncol(cpf_dat)]))
+    
+    # getting rid of invalid codes
+    cpf_dat <- subset(cpf_dat, (cpf_dat[,grepl("_valid",colnames(cpf_dat))] != "N"))
+    
+    cpf_dat_a <- cpf_dat %>% filter(cpf_genus == "cpf_a")
+    cpf_dat_b <- cpf_dat %>% filter(cpf_genus == "cpf_b")
+    
+    # working with CPF A first
+    temp <- cpf_dat_a %>% dplyr::select("bblid","test_sessions_v.dotest")
+    t.first <- temp[match(unique(temp$bblid), temp$bblid),]    # this has the first instances of each unique bblid
+    t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+    
+    cpf_dat_a_t1 <- cpf_dat_a %>% filter(combo %in% t.first$combo)  # first time point of anyone who has taken CPF A
+    cpf_dat_a_tn <- cpf_dat_a %>% filter(combo %notin% t.first$combo)
+    
+    temp <- cpf_dat_a_tn %>% dplyr::select("bblid","test_sessions_v.dotest")
+    t.first <- temp[match(unique(temp$bblid), temp$bblid),] 
+    t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+    
+    cpf_dat_a_t2 <- cpf_dat_a_tn %>% filter(combo %in% t.first$combo)  # second time point of anyone who has taken CPF A
+    
+    names(cpf_dat_a_t1)[21:ncol(cpf_dat_a_t1)] <- paste(names(cpf_dat_a_t1)[21:ncol(cpf_dat_a_t1)],"t1",sep="_")
+    names(cpf_dat_a_t2)[c(9,19:ncol(cpf_dat_a_t2))] <- paste(names(cpf_dat_a_t2)[c(9,19:ncol(cpf_dat_a_t2))],"t2",sep="_")
+    
+    new_cpf_dat_a <- left_join(cpf_dat_a_t1,cpf_dat_a_t2[c(5,9,19:ncol(cpf_dat_a_t2))],by="bblid")
+    new_cpf_dat_a <- subset(new_cpf_dat_a, !is.na(new_cpf_dat_a[,ncol(new_cpf_dat_a)])) %>% mutate(dotest_t1 = as.numeric(ymd(test_sessions_v.dotest)),
+                                                                                                   dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
+                                                                                                   new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
+    
+    cpf_dat_a_2more <- new_cpf_dat_a %>% filter(new_diffdays > 60)   # group 2.a, n = 149
+    
+    # print scatters
+    # pdf("data/outputs/full_full/CPF_A_60d_220810.pdf",height=9,width=12)
+    # pairs.panels(cpf_dat_a_2more %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+    # dev.off()
+    
+    
+    # same thing for CPF B
+    temp <- cpf_dat_b %>% dplyr::select("bblid","test_sessions_v.dotest")
+    t.first <- temp[match(unique(temp$bblid), temp$bblid),]    # this has the first instances of each unique bblid
+    t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+    
+    cpf_dat_b_t1 <- cpf_dat_b %>% filter(combo %in% t.first$combo)  # first time point of anyone who has taken CPF A
+    cpf_dat_b_tn <- cpf_dat_b %>% filter(combo %notin% t.first$combo)
+    
+    temp <- cpf_dat_b_tn %>% dplyr::select("bblid","test_sessions_v.dotest")
+    t.first <- temp[match(unique(temp$bblid), temp$bblid),] 
+    t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+    
+    cpf_dat_b_t2 <- cpf_dat_b_tn %>% filter(combo %in% t.first$combo)  # second time point of anyone who has taken CPF A
+    
+    names(cpf_dat_b_t1)[21:ncol(cpf_dat_b_t1)] <- paste(names(cpf_dat_b_t1)[21:ncol(cpf_dat_b_t1)],"t1",sep="_")
+    names(cpf_dat_b_t2)[c(9,19:ncol(cpf_dat_b_t2))] <- paste(names(cpf_dat_b_t2)[c(9,19:ncol(cpf_dat_b_t2))],"t2",sep="_")
+    
+    new_cpf_dat_b <- left_join(cpf_dat_b_t1,cpf_dat_b_t2[c(5,9,19:ncol(cpf_dat_b_t2))],by="bblid")
+    new_cpf_dat_b <- subset(new_cpf_dat_b, !is.na(new_cpf_dat_b[,ncol(new_cpf_dat_b)])) %>% mutate(dotest_t1 = as.numeric(ymd(test_sessions_v.dotest)),
+                                                                                                   dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
+                                                                                                   new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
+    
+    cpf_dat_b_2more <- new_cpf_dat_b %>% filter(new_diffdays > 60)   # group 2.b, n = 352
+    
+    # print scatters
+    # pdf("data/outputs/full_full/CPF_B_60d_220810.pdf",height=9,width=12)
+    # pairs.panels(cpf_dat_b_2more %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+    # dev.off()
+    
+    # combining forms
+    cpf_dat_same_2more <- rbind(cpf_dat_a_2more,cpf_dat_b_2more) # n = 501
+  }
+  
+  # different forms
+  temp <- cpf_dat %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),]    # this has the first instances of each unique bblid
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  cpf_dat_t1 <- cpf_dat %>% filter(combo %in% t.first$combo)  # first time point of anyone who has taken CPF A
+  cpf_dat_tn <- cpf_dat %>% filter(combo %notin% t.first$combo)
+  
+  temp <- cpf_dat_tn %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),] 
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  cpf_dat_t2 <- cpf_dat_tn %>% filter(combo %in% t.first$combo)  # second time point of anyone who has taken CPF A
+  
+  names(cpf_dat_t1)[21:ncol(cpf_dat_t1)] <- paste(names(cpf_dat_t1)[21:ncol(cpf_dat_t1)],"t1",sep="_")
+  names(cpf_dat_t2)[c(9,19:ncol(cpf_dat_t2))] <- paste(names(cpf_dat_t2)[c(9,19:ncol(cpf_dat_t2))],"t2",sep="_")
+  
+  new_cpf_dat <- left_join(cpf_dat_t1,cpf_dat_t2[c(5,9,19:ncol(cpf_dat_t2))],by="bblid")
+  new_cpf_dat <- subset(new_cpf_dat, !is.na(new_cpf_dat[,ncol(new_cpf_dat)])) %>% mutate(dotest_t1 = as.numeric(ymd(test_sessions_v.dotest)),
+                                                                                         dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
+                                                                                         new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
+  
+  new_cpf_dat_dif <- new_cpf_dat %>% filter(cpf_genus_t1 != cpf_genus_t2)
+  
+  new_cpf_dat_dif_2mon <- new_cpf_dat_dif %>% filter(new_diffdays <= 60)   # group 3, n = 34
+  new_cpf_dat_dif_2more <- new_cpf_dat_dif %>% filter(new_diffdays > 60)   # group 4, n = 232
+  
+  # print scatters
+  # pdf("data/outputs/full_full/CPF_dif_60d_220810.pdf",height=9,width=12)
+  # pairs.panels(new_cpf_dat_dif_2mon %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # pairs.panels(new_cpf_dat_dif_2more %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # dev.off()
+}
 
 
 
