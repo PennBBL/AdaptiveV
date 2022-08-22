@@ -50,11 +50,11 @@ library(lubridate)
 # load data ----
 
 # demos, proto order, groups, full cnb + cat cnb (missing rapid tests aka AIM, CPT, GNG, DIGSYM)
-all_cnb <- read.csv("data/inputs/cnb_merged_20220810.csv",na.strings=c(""," ","NA"))  # 272 rows as of 8/9/22
+all_cnb <- read.csv("data/inputs/cnb_merged/cnb_merged_20220810.csv",na.strings=c(""," ","NA"))  # 272 rows as of 8/9/22
 x <- all_cnb
 
 # full CNB for itemwise DISC tasks
-f_cnb <- read.csv("data/inputs/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv",na.strings=c(""," ","NA"))
+f_cnb <- read.csv("data/inputs/cnb/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv",na.strings=c(""," ","NA"))
 f_cnb <- f_cnb %>% filter(test_sessions_v.battery %in% c("adaptive_v_battery_v0","adaptive_v_battery_v1","adaptive_v_battery_v2"),test_sessions.bblid.clean>9999)
 demo_f_cnb <- f_cnb %>% dplyr::select(datasetid_platform:test_sessions.bblid.clean,test_sessions_v.age:test_sessions_v.endtime) %>% 
   rename(BBLID = test_sessions.bblid.clean)  # 262 rows as of 8/3/22
@@ -73,7 +73,7 @@ demo_f_cnb <- f_cnb %>% dplyr::select(datasetid_platform:test_sessions.bblid.cle
 }
 
 # new IW dataset from 7/13/22
-new_iw <- read.csv("data/inputs/athena_195_360.csv",na.strings=c(""," ","NA"))
+new_iw <- read.csv("data/inputs/cnb/athena_195_360.csv",na.strings=c(""," ","NA"))
 new_iw_adaptive <- new_iw %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% 
   filter(test_sessions_v.battery %in% c("adaptive_v_battery_v1","adaptive_v_battery_v2","cat_adaptive_v_battery_link1","cat_adaptive_v_battery_link3"),
          bblid > 9999) %>% arrange(bblid) %>% 
@@ -3228,6 +3228,102 @@ dat_icc <- x_MD %>% dplyr::select(volt_cr_scaled_Oreg,volt_cat_Oreg)
 dat_icc <- dat_icc[which(rowSums(is.na(dat_icc))==0),]   # keeping only rows that have scores for both full and CAT
 icc(dat_icc,type="agreement",model="twoway")
 
+
+
+
+
+
+
+
+# for XL comparison (specifically looking at memory tasks) ----
+
+all_cnb2 <- all_cnb %>% mutate(dotest = as.Date(dotest,format = "%Y-%m-%d"),date_pra = as.Date(date_pra,format = "%Y-%m-%d"))
+
+all_cnb2$dotest_num <- as.numeric(ymd(all_cnb2$dotest))
+all_cnb2$date_pra_num <- as.numeric(ymd(all_cnb2$date_pra))
+all_cnb2$date_diff <- abs(all_cnb2$dotest_num - all_cnb2$date_pra_num)
+
+# quick distribution plot of date_diff
+{
+  dat <- all_cnb2 %>% mutate(same = 1)
+  my_plot <- ggplot(dat, aes(x = same, y = date_diff)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    geom_hline(yintercept = 7) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "Distribution of differences in CAT-full CNB test dates", caption = paste("n =",dim(dat %>% filter(date_diff <= 7))[1], "CAT/full tests <= 7 days apart;", "n =",dim(dat %>% filter(date_diff > 7))[1], "more than a week apart"),
+                           x = "", y = "Difference (days)") + 
+    # scale_color_manual(values = wes_palette("Darjeeling1",n=1)) + scale_fill_manual(values = wes_palette("Darjeeling1",n=1)) +
+    # scale_y_continuous(breaks = seq(0,175000,25000)) +
+    coord_flip() 
+  
+  # pdf("data/outputs/CAT-full_diffdays_dist_220822.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
+
+# split into <= 7d and > 7d difference, memory tasks only
+mem_week <- all_cnb2 %>% filter(date_diff <= 7) %>% dplyr::select(bblid:dotest,volt_genus:cpf_w_rtcr,cpw_genus:cpw_w_rtcr,cpf.1.00.v1.cat_target:cpf.1.00.v1.cat_foil,cpw.1.00.v1.cat_target:cpw.1.00.v1.cat_foil,
+                                                                  volt.1.00.v1.cat_targets:volt.1.00.v1.cat_foils,cpf2.1.00.v2.cat_target:cpf2.1.00.v2.cat_foil,cpf2.1.00.v1.cat_target:cpf2.1.00.v1.cat_foil) # n=148 as of 8/22/22
+mem_week$cpf_v2_target <- ifelse(!is.na(mem_week$cpf2.1.00.v1.cat_target),mem_week$cpf2.1.00.v1.cat_target,mem_week$cpf2.1.00.v2.cat_target)
+mem_week$cpf_v2_foil <- ifelse(!is.na(mem_week$cpf2.1.00.v1.cat_foil),mem_week$cpf2.1.00.v1.cat_foil,mem_week$cpf2.1.00.v2.cat_foil)
+
+mem_week <- mem_week %>% mutate(cpf_cat = ((cpf.1.00.v1.cat_target + cpf.1.00.v1.cat_foil)/2)*sqrt(2),
+                                cpf2_cat = ((cpf_v2_target + cpf_v2_foil)/2)*sqrt(2),
+                                cpw_cat = ((cpw.1.00.v1.cat_target + cpw.1.00.v1.cat_foil)/2)*sqrt(2),
+                                volt_cat = ((volt.1.00.v1.cat_targets + volt.1.00.v1.cat_foils)/2)*sqrt(2))
+
+mem_more <- all_cnb2 %>% filter(date_diff > 7) %>% dplyr::select(bblid:dotest,volt_genus:cpf_w_rtcr,cpw_genus:cpw_w_rtcr,cpf.1.00.v1.cat_target:cpf.1.00.v1.cat_foil,cpw.1.00.v1.cat_target:cpw.1.00.v1.cat_foil,
+                                                               volt.1.00.v1.cat_targets:volt.1.00.v1.cat_foils,cpf2.1.00.v2.cat_target:cpf2.1.00.v2.cat_foil,cpf2.1.00.v1.cat_target:cpf2.1.00.v1.cat_foil) # n=101 as of 8/22/22
+mem_more$cpf_v2_target <- ifelse(!is.na(mem_more$cpf2.1.00.v1.cat_target),mem_more$cpf2.1.00.v1.cat_target,mem_more$cpf2.1.00.v2.cat_target)
+mem_more$cpf_v2_foil <- ifelse(!is.na(mem_more$cpf2.1.00.v1.cat_foil),mem_more$cpf2.1.00.v1.cat_foil,mem_more$cpf2.1.00.v2.cat_foil)
+
+mem_more <- mem_more %>% mutate(cpf_cat = ((cpf.1.00.v1.cat_target + cpf.1.00.v1.cat_foil)/2)*sqrt(2),
+                                cpf2_cat = ((cpf_v2_target + cpf_v2_foil)/2)*sqrt(2),
+                                cpw_cat = ((cpw.1.00.v1.cat_target + cpw.1.00.v1.cat_foil)/2)*sqrt(2),
+                                volt_cat = ((volt.1.00.v1.cat_targets + volt.1.00.v1.cat_foils)/2)*sqrt(2))
+
+
+# scatters for testing within a week 
+pdf("data/outputs/scatters/CAT-full_diffdays_scatters_week_220822.pdf",height=9,width=12)
+pairs.panels(mem_week %>% dplyr::select(matches("cpf_cr|cpf_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(mem_week %>% dplyr::select(matches("cpf_cr|cpf2_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(mem_week %>% dplyr::select(matches("cpw_cr|cpw_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(mem_week %>% dplyr::select(matches("volt_cr|volt_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+dev.off()
+
+# scatters for testing more than a week apart
+pdf("data/outputs/scatters/CAT-full_diffdays_scatters_overweek_220822.pdf",height=9,width=12)
+pairs.panels(mem_more %>% dplyr::select(matches("cpf_cr|cpf_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(mem_more %>% dplyr::select(matches("cpf_cr|cpf2_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(mem_more %>% dplyr::select(matches("cpw_cr|cpw_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(mem_more %>% dplyr::select(matches("volt_cr|volt_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+dev.off()
 
 
 
