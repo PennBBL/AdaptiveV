@@ -19,7 +19,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
 
 # Study Enroll ----
 {
-  studyAll<-read.csv("data/inputs/bbl_study_all.csv", comment.char="#")  # 300 rows of unique bblid as of 8/3/22
+  studyAll<-read.csv("data/inputs/cnb/bbl_study_all.csv", comment.char="#")  # 300 rows of unique bblid as of 8/3/22
  
   #pull out adaptive enrolled subjects
   studyEnroll<-studyAll%>%
@@ -36,7 +36,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   
   
   # adding protocol order from what used to be adaptive_study_data_group_order_oracle.csv
-  group_order <- read.csv("data/inputs/adaptive.csv")
+  group_order <- read.csv("data/inputs/cnb/adaptive.csv")
   # remove 22015, 22412, 22680, 23217, 91919, 94144, 112083, 119527 because they've been removed from study; 
   # 22139 is a duplicate for 20871; 
   # 23064 should exist, problem unresolved (apparently should be the same person as 23179).
@@ -67,7 +67,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
 
 #Demographics ----
 {
-  demo <- read.csv("data/inputs/subjectvisitsall_v.csv")   # still the same as most updated, 7/27/22
+  demo <- read.csv("data/inputs/cnb/subjectvisitsall_v.csv")   # still the same as most updated, 7/27/22
 
   names(demo)<-tolower(names(demo))
   
@@ -117,7 +117,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
 #CNB ----
 
 {
-  cnb <- read.csv("data/inputs/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv") 
+  cnb <- read.csv("data/inputs/cnb/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv") 
   
   cnb1 <- cnb %>%
     dplyr::select(matches("datasetid_platform|test_sessions.datasetid|siteid|bblid.clean|age|battery|dotest|gng|cpf|medf|pvrt|er40|cpt|cpw|aim|adt|plot|volt|pmat|digsym|dscor|dsmemcr|dscorrt|dsmcrrt|KDDISC|KRDISC|EDISC"))
@@ -157,7 +157,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   
   
   # adding PRA from iw
-  for_pra <- read.csv("data/inputs/athena_195_360.csv",na.strings=c(""," ","NA"))
+  for_pra <- read.csv("data/inputs/cnb/athena_195_360.csv",na.strings=c(""," ","NA"))
   
   PRA_iw <- for_pra %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% arrange(bblid) %>% 
     filter(test_sessions.siteid == "adaptive_v",test_sessions_v.battery == "PRA_D", bblid > 9999,!is.na(test_sessions_v.battery_complete)) %>% 
@@ -195,10 +195,10 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
 #Adaptive CNB ----
 
 {
-  adaptive_v2 <- read_csv("data/inputs/CNB_CAT_session_adaptive_v2_20220721_144825.csv")
-  adaptive_v <- read_csv("data/inputs/CNB_CAT_session_adaptive_v_20220428_125332.csv")
-  adaptive_cpfv2_er40v2 <- read_csv("data/inputs/CNB_CAT_session_adaptive_v_cpfv2_er40v2_20220721_144812.csv")
-  adaptive_prad <- read_csv("data/inputs/CNB_CAT_session_pra-d_20220721_144821.csv")
+  adaptive_v2 <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v2_20220721_144825.csv")
+  adaptive_v <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v_20220428_125332.csv")
+  adaptive_cpfv2_er40v2 <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v_cpfv2_er40v2_20220721_144812.csv")
+  adaptive_prad <- read_csv("data/inputs/cnb/CNB_CAT_session_pra-d_20220721_144821.csv")
   
   adaptive_v2 <- rename(adaptive_v2, Dataset.ID = 1) %>% 
     mutate(version = "adaptive_cnb_V2")
@@ -289,7 +289,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   
   
   # testing out new CAT CNB short tests  -- still looks missing for now? 8/3/22
-  adaptive_short <- read_csv("data/inputs/athena_253_324.csv")
+  adaptive_short <- read_csv("data/inputs/cnb/athena_253_324.csv")
   
   adaptive_short1 <- adaptive_short %>% filter(test_sessions_v.battery == "cat_adaptive_v_battery_link1") %>% 
     dplyr::select(matches("test_sessions|aim|cpt|digsym|^ds|gng"))
@@ -305,7 +305,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   # write.csv(adaptive_short2,"adaptiveV_athena_253_324.csv",row.names = F)
   
   # for now (8/9/22) use available tests
-  adaptive_short <- read.csv("data/inputs/cnb_rawscores_short_tests_220809.csv")
+  adaptive_short <- read.csv("data/inputs/cnb/cnb_rawscores_short_tests_220809.csv")
   
   adaptive_short1 <- adaptive_short %>% dplyr::select(bblid:datasetid_link3,CPT108.CATCPTT_TP:CPT108.CATCPTT_FP,CPT108.CATCPTT_TN,
                                                      CPT108.CATCPTT_TPRT:CPT108.CATCPTT_FPRT,S_AIM.AIMTOT:S_AIM.AIMTOTRT,
@@ -330,7 +330,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
 
 
 # print out CSV of combined CNB data
-write.csv(dat_combined2,"data/inputs/cnb_merged_20220810.csv",row.names = F)
+write.csv(dat_combined2,"data/inputs/cnb_merged/cnb_merged_20220810.csv",row.names = F)
 
 
 
