@@ -23,7 +23,7 @@ library(lubridate)
 
 # load CSVs and create dataset ----
 
-XL <- read.csv("data/inputs/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv")  #29895 rows , 8/4/22
+XL <- read.csv("data/inputs/cnb/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv")  #29895 rows , 8/4/22
 extralong <- XL %>% filter(test_sessions.bblid.clean>9999) %>% rename(bblid = test_sessions.bblid.clean)  # 16093 rows
 # extralong <- XL %>% filter(test_sessions.bblid.clean>9999,test_sessions.siteid != "adaptive_v") %>% rename(bblid = test_sessions.bblid.clean)
 
@@ -83,8 +83,8 @@ repeats_only <- extralong_repeat %>% filter(diffdays > 0) %>% mutate(constant = 
 
 
 # PRA from itemwise
-for_pra <- read.csv("data/inputs/athena_195_360.csv",na.strings=c(""," ","NA"))
-for_pra2 <-  read.csv("data/inputs/athena_253_324.csv",na.strings=c(""," ","NA"))
+for_pra <- read.csv("data/inputs/cnb/athena_195_360.csv",na.strings=c(""," ","NA"))
+for_pra2 <-  read.csv("data/inputs/cnb/athena_253_324.csv",na.strings=c(""," ","NA"))
 
 PRA_iw1 <- for_pra %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% arrange(bblid) %>% 
   filter(bblid > 9999,!is.na(PRA_D.PRADWORDCR)) %>% 
@@ -104,7 +104,7 @@ PRA_iw2_tomerge <- PRA_iw2 %>% dplyr::select(bblid,test_sessions.datasetid:test_
 
 # athena_254_360 <- read.csv("data/inputs/athena_254_360_220713.csv",na.strings=c(""," ","NA")) # PRA cols, but empty
 # athena_3360_1878 <- read.csv("data/inputs/athena_3360_1878.csv",na.strings=c(""," ","NA")) # no PRA cols
-athena_3360_2096 <- read.csv("data/inputs/athena_3360_2096_220713.csv",na.strings=c(""," ","NA"))
+athena_3360_2096 <- read.csv("data/inputs/cnb/athena_3360_2096_220713.csv",na.strings=c(""," ","NA"))
 
 PRA_iw3 <- athena_3360_2096 %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% arrange(bblid) %>% 
   filter(bblid > 9999,!is.na(PRA_D.PRADWORDCR)) %>% 
@@ -1040,7 +1040,7 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   cpf_dat_a_2more <- new_cpf_dat_a %>% filter(new_diffdays > 120)   # group 2.a, n = 155 (60d), 149 (90d), 147 (120d)
   
   # print scatters
-  # pdf("data/outputs/full_full/CPF_A_120d_220812.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPF_A_120d_220820.pdf",height=9,width=12)
   # pairs.panels(cpf_dat_a_2mon %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(cpf_dat_a_2more %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
@@ -1072,7 +1072,7 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   cpf_dat_b_2more <- new_cpf_dat_b %>% filter(new_diffdays > 120)   # group 2.b, n = 355 (60d), 352 (90d), 348 (120d) 
   
   # print scatters
-  # pdf("data/outputs/full_full/CPF_B_120d_220812.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPF_B_120d_220820.pdf",height=9,width=12)
   # pairs.panels(cpf_dat_b_2mon %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(cpf_dat_b_2more %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
@@ -1082,7 +1082,7 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   cpf_dat_same_2more <- rbind(cpf_dat_a_2more,cpf_dat_b_2more) # n = 510 (60d), 501 (90d), 495 (120d)
   
   # print scatters
-  # pdf("data/outputs/full_full/CPF_same_120d_220812.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPF_same_120d_220820.pdf",height=9,width=12)
   # pairs.panels(cpf_dat_same_2mon %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(cpf_dat_same_2more %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
@@ -1115,7 +1115,7 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   new_cpf_dat_dif_2more <- new_cpf_dat_dif %>% filter(new_diffdays > 120)   # group 4, n = 236 (60d), 232 (90d), 228 (120d)
   
   # print scatters
-  # pdf("data/outputs/full_full/CPF_dif_120d_220812.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPF_dif_120d_220820.pdf",height=9,width=12)
   # pairs.panels(new_cpf_dat_dif_2mon %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(new_cpf_dat_dif_2more %>% dplyr::select(matches("cpf_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
@@ -1160,7 +1160,7 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   cpw_dat_a_2more <- new_cpw_dat_a %>% filter(new_diffdays > 120)   # group 2.a, n = 147 (60d), 140 (90d), 138 (120d)
   
   # print scatters
-  # pdf("data/outputs/full_full/CPW_A_120d_220812.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPW_A_120d_220820.pdf",height=9,width=12)
   # pairs.panels(cpw_dat_a_2mon %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(cpw_dat_a_2more %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
@@ -1188,8 +1188,8 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
                                                                                                  dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
                                                                                                  new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
   
-  cpw_dat_ka_2mon <- new_cpw_dat_ka %>% filter(new_diffdays <= 90)   # group 1.b, n = 0 (90d),
-  cpw_dat_ka_2more <- new_cpw_dat_ka %>% filter(new_diffdays > 90)   # group 2.b, n = 398 (90d),
+  cpw_dat_ka_2mon <- new_cpw_dat_ka %>% filter(new_diffdays <= 120)   # group 1.b, n = 0 (60d), 0 (90d), 0 (120d)
+  cpw_dat_ka_2more <- new_cpw_dat_ka %>% filter(new_diffdays > 120)   # group 2.b, n = 398 (60d), 398 (90d), 398 (120d)
   
   # print scatters
   # pdf("data/outputs/full_full/CPW_KA_60d_220808.pdf",height=9,width=12)
@@ -1198,11 +1198,11 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   # dev.off()
   
   # combining forms
-  cpw_dat_same_2mon <- rbind(cpw_dat_a_2mon,cpw_dat_ka_2mon)
-  cpw_dat_same_2more <- rbind(cpw_dat_a_2more,cpw_dat_ka_2more)
+  cpw_dat_same_2mon <- rbind(cpw_dat_a_2mon,cpw_dat_ka_2mon)      # group 1, n = 21 (60d), 28 (90d), 30 (120d)
+  cpw_dat_same_2more <- rbind(cpw_dat_a_2more,cpw_dat_ka_2more)   # group 2, n = 545 (60d), 538 (90d), 536 (120d)
   
   # print scatters
-  # pdf("data/outputs/full_full/CPW_same_90d_220810.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPW_same_120d_220820.pdf",height=9,width=12)
   # pairs.panels(cpw_dat_same_2mon %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(cpw_dat_same_2more %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
@@ -1232,11 +1232,11 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   
   new_cpw_dat_dif <- new_cpw_dat %>% filter(cpw_genus_t1 != cpw_genus_t2)
   
-  new_cpw_dat_dif_2mon <- new_cpw_dat_dif %>% filter(new_diffdays <= 90)   # group 3, n = 21
-  new_cpw_dat_dif_2more <- new_cpw_dat_dif %>% filter(new_diffdays > 90)   # group 4, n = 85
+  new_cpw_dat_dif_2mon <- new_cpw_dat_dif %>% filter(new_diffdays <= 120)   # group 3, n = 15 (60d), 21 (90d), 28 (120d)
+  new_cpw_dat_dif_2more <- new_cpw_dat_dif %>% filter(new_diffdays > 120)   # group 4, n = 91 (60d), 85 (90d), 78 (120d)
   
   # print scatters
-  # pdf("data/outputs/full_full/CPW_dif_90d_220810.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPW_dif_120d_220820.pdf",height=9,width=12)
   # pairs.panels(new_cpw_dat_dif_2mon %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(new_cpw_dat_dif_2more %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
@@ -1275,14 +1275,14 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
                                                                                                  dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
                                                                                                  new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
   
-  volt_dat_2mon <- new_volt_dat %>% filter(new_diffdays <= 90)   # group 1, n = 11
-  volt_dat_2more <- new_volt_dat %>% filter(new_diffdays > 90)   # group 2, n = 474
+  volt_dat_2mon <- new_volt_dat %>% filter(new_diffdays <= 120)   # group 1, n = 9 (60d), 11 (90d), 14 (120d)
+  volt_dat_2more <- new_volt_dat %>% filter(new_diffdays > 120)   # group 2, n = 476 (60d), 474 (90d), 471 (120d)
   
   # print scatters
-  pdf("data/outputs/full_full/VOLT_same_90d_220810.pdf",height=9,width=12)
-  pairs.panels(volt_dat_2mon %>% dplyr::select(matches("volt_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
-  pairs.panels(volt_dat_2more %>% dplyr::select(matches("volt_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
-  dev.off()
+  # pdf("data/outputs/full_full/VOLT_same_120d_220820.pdf",height=9,width=12)
+  # pairs.panels(volt_dat_2mon %>% dplyr::select(matches("volt_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # pairs.panels(volt_dat_2more %>% dplyr::select(matches("volt_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # dev.off()
 }
 
 
