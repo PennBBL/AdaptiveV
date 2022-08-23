@@ -592,6 +592,10 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
     new_dat <- subset(new_dat, !is.na(new_dat[,ncol(new_dat)])) %>% mutate(dotest_t1 = as.numeric(ymd(test_sessions_v.dotest)),
                                                                            dotest_t2 = as.numeric(ymd(test_sessions_v.dotest_t2)),
                                                                            new_diffdays = dotest_t2 - dotest_t1) %>% arrange(new_diffdays)
+    # remove extreme outlier for CPW
+    if (test == "cpw"){
+      new_dat <- new_dat %>% filter(cpw_cr_t1 > 15)
+    }
     
     assign(paste0("new_",test),new_dat)
   }
@@ -1232,11 +1236,12 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   
   new_cpw_dat_dif <- new_cpw_dat %>% filter(cpw_genus_t1 != cpw_genus_t2)
   
-  new_cpw_dat_dif_2mon <- new_cpw_dat_dif %>% filter(new_diffdays <= 120)   # group 3, n = 15 (60d), 21 (90d), 28 (120d)
+  new_cpw_dat_dif_2mon <- new_cpw_dat_dif %>% filter(new_diffdays <= 120) %>%    # group 3, n = 15 (60d), 21 (90d), 28 (120d)
+    filter(cpw_cr_t1 > 15)
   new_cpw_dat_dif_2more <- new_cpw_dat_dif %>% filter(new_diffdays > 120)   # group 4, n = 91 (60d), 85 (90d), 78 (120d)
   
   # print scatters
-  # pdf("data/outputs/full_full/CPW_dif_120d_220820.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/CPW_dif_120d_220822.pdf",height=9,width=12)
   # pairs.panels(new_cpw_dat_dif_2mon %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # pairs.panels(new_cpw_dat_dif_2more %>% dplyr::select(matches("cpw_cr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
   # dev.off()
