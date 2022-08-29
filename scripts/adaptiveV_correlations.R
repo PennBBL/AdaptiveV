@@ -3357,10 +3357,10 @@ adaptive_v2 <- adaptive_v2 %>% mutate(BBLID=as.numeric(`BBL ID`)) %>% rename(tes
   volt_v2 <- adaptive_v2 %>% filter(testcode == "volt-1.00-v1-cat")
   
   # extracting only memory tests from adaptive_v
-  mem_v <- adaptive_v %>% filter(testcode %in% c("cpf-1.00-v1-cat","cpw-1.00-v1-cat","volt-1.00-v1-cat"),datasetid_v != 322,BBLID != 90158)
-  cpf_v <- adaptive_v %>% filter(testcode == "cpf-1.00-v1-cat",datasetid_v != 322,BBLID != 90158)
-  cpw_v <- adaptive_v %>% filter(testcode == "cpw-1.00-v1-cat",datasetid_v != 322,BBLID != 90158)
-  volt_v <- adaptive_v %>% filter(testcode == "volt-1.00-v1-cat",datasetid_v != 322,BBLID != 90158)
+  mem_v <- adaptive_v %>% filter(testcode %in% c("cpf-1.00-v1-cat","cpw-1.00-v1-cat","volt-1.00-v1-cat"),datasetid_v != 322,BBLID %notin% c(90158,22591))
+  cpf_v <- adaptive_v %>% filter(testcode == "cpf-1.00-v1-cat",datasetid_v != 322,BBLID %notin% c(90158,22591))
+  cpw_v <- adaptive_v %>% filter(testcode == "cpw-1.00-v1-cat",datasetid_v != 322,BBLID %notin% c(90158,22591))
+  volt_v <- adaptive_v %>% filter(testcode == "volt-1.00-v1-cat",datasetid_v != 322,BBLID %notin% c(90158,22591))
   # datasetid 322 is not complete, use 323 only
   # CAT CNB for 90158 was too glitchy (first time aka datasetid 542 got stuck at CPW, second time aka datasetid 543 got stuck at ER40)
   
@@ -3691,10 +3691,19 @@ rdisc_v2 <- adaptive_v2 %>% filter(testcode == "rdisc-1.00-cat")
 volt_v2 <- adaptive_v2 %>% filter(testcode == "volt-1.00-v1-cat")
 
 # extracting only memory tests from adaptive_v
-mem_v <- adaptive_v %>% filter(testcode %in% c("cpf-1.00-v1-cat","cpw-1.00-v1-cat","volt-1.00-v1-cat"),datasetid_v != 322,BBLID != 90158)
-cpf_v <- adaptive_v %>% filter(testcode == "cpf-1.00-v1-cat",datasetid_v != 322,BBLID != 90158)
-cpw_v <- adaptive_v %>% filter(testcode == "cpw-1.00-v1-cat",datasetid_v != 322,BBLID != 90158)
-volt_v <- adaptive_v %>% filter(testcode == "volt-1.00-v1-cat",datasetid_v != 322,BBLID != 90158)
+# 22591 has less rows than others, 
+adt_v <- adaptive_v %>% filter(testcode == "adt-1.00-cat")
+cpf2_v <- adaptive_v %>% filter(testcode == "cpf-1.00-v1-cat")
+cpw_v <- adaptive_v %>% filter(testcode == "cpw-1.00-v1-cat")
+ddisc_v <- adaptive_v %>% filter(testcode == "ddisc-1.00-cat")
+edisc_v <- adaptive_v %>% filter(testcode == "edisc-1.00-cat")
+er40_v <- adaptive_v %>% filter(testcode == "er40-1.00-cat")
+medf_v <- adaptive_v %>% filter(testcode == "medf-1.00-cat")
+plot_v <- adaptive_v %>% filter(testcode == "plot-1.00-cat")
+pmat_v <- adaptive_v %>% filter(testcode == "pmat-1.00-cat")
+pvrt_v <- adaptive_v %>% filter(testcode == "pvrt-1.00-cat")
+rdisc_v <- adaptive_v %>% filter(testcode == "rdisc-1.00-cat")
+volt_v <- adaptive_v %>% filter(testcode == "volt-1.00-v1-cat")
 # datasetid 322 is not complete, use 323 only
 # CAT CNB for 90158 was too glitchy (first time aka datasetid 542 got stuck at CPW, second time aka datasetid 543 got stuck at ER40)
 
