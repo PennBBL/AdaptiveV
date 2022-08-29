@@ -405,3 +405,21 @@ tracker3<- left_join(tracker2,phenome_subset, by = "bblid")
 tracker6 = data.frame(lapply(tracker5, as.character), stringsAsFactors=FALSE)
 write.csv(tracker6,"C:/Users/Mrugank/Desktop/Adaptive_V/adaptive_tracker1.csv", row.names = FALSE)
 
+
+
+
+
+
+# extra
+
+# full GOA records to check, initial QA with Ally
+common_interview <- read.csv("data/inputs/goa/axis_common_interview_220829.csv") %>%
+  dplyr::select(bblid,assessment, interview_complete, interview_complete_date, interview_complete_notes)%>%
+  filter(assessment == 'PNC GOASSESS(GAF Mod)' )
+
+tocheck <- common_interview %>% filter(is.na(interview_complete) | interview_complete == 0) %>% 
+  arrange(interview_complete,bblid)
+
+write.csv(tocheck,"data/outputs/fullGOA_tocheck.csv",row.names = F)
+
+
