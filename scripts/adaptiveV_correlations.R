@@ -37,6 +37,7 @@ count_LRNR <- function(x){
 library(psych)
 library(qgraph)
 library(dplyr)
+library(tidyr)
 library(PerFit)
 library(ggplot2)
 library(ggdist)
@@ -45,6 +46,7 @@ library(kableExtra)
 library(matrixStats)
 library(irr)
 library(lubridate)
+library(readr)
 
 
 # load data ----
@@ -89,11 +91,11 @@ new_iw_ad <- new_iw_ad %>% filter(test_sessions_v.battery_complete == 1, is.na(t
 # make new demos variable for new_iw
 demo_new_iw <- new_iw_ad %>% dplyr::select(test_sessions.datasetid:test_sessions_v.endtime)  # 252 rows as of 8/3/22  
 
-
-demo_from_iw1 <- fullcnb_iw1 %>% dplyr::select(test_sessions.datasetid:test_sessions_v.endtime)
-demo_from_iw2 <- fullcnb_iw2 %>% dplyr::select(test_sessions.datasetid:test_sessions_v.endtime)
-
-
+# old stuff
+{
+  demo_from_iw1 <- fullcnb_iw1 %>% dplyr::select(test_sessions.datasetid:test_sessions_v.endtime)
+  demo_from_iw2 <- fullcnb_iw2 %>% dplyr::select(test_sessions.datasetid:test_sessions_v.endtime)
+}
 
 # for old_iw
 {
@@ -3288,42 +3290,436 @@ all_cnb2$date_diff <- abs(all_cnb2$dotest_num - all_cnb2$date_pra_num)
 }
 
 # split into <= 7d and > 7d difference, memory tasks only
-mem_week <- all_cnb2 %>% filter(date_diff <= 7) %>% dplyr::select(bblid:dotest,volt_genus:cpf_w_rtcr,cpw_genus:cpw_w_rtcr,cpf.1.00.v1.cat_target:cpf.1.00.v1.cat_foil,cpw.1.00.v1.cat_target:cpw.1.00.v1.cat_foil,
-                                                                  volt.1.00.v1.cat_targets:volt.1.00.v1.cat_foils,cpf2.1.00.v2.cat_target:cpf2.1.00.v2.cat_foil,cpf2.1.00.v1.cat_target:cpf2.1.00.v1.cat_foil) # n=148 as of 8/22/22
-mem_week$cpf_v2_target <- ifelse(!is.na(mem_week$cpf2.1.00.v1.cat_target),mem_week$cpf2.1.00.v1.cat_target,mem_week$cpf2.1.00.v2.cat_target)
-mem_week$cpf_v2_foil <- ifelse(!is.na(mem_week$cpf2.1.00.v1.cat_foil),mem_week$cpf2.1.00.v1.cat_foil,mem_week$cpf2.1.00.v2.cat_foil)
+{
+  mem_week <- all_cnb2 %>% filter(date_diff <= 7) %>% dplyr::select(bblid:dotest,volt_genus:cpf_w_rtcr,cpw_genus:cpw_w_rtcr,cpf.1.00.v1.cat_target:cpf.1.00.v1.cat_foil,cpw.1.00.v1.cat_target:cpw.1.00.v1.cat_foil,
+                                                                    volt.1.00.v1.cat_targets:volt.1.00.v1.cat_foils,cpf2.1.00.v2.cat_target:cpf2.1.00.v2.cat_foil,cpf2.1.00.v1.cat_target:cpf2.1.00.v1.cat_foil) # n=148 as of 8/22/22
+  mem_week$cpf_v2_target <- ifelse(!is.na(mem_week$cpf2.1.00.v1.cat_target),mem_week$cpf2.1.00.v1.cat_target,mem_week$cpf2.1.00.v2.cat_target)
+  mem_week$cpf_v2_foil <- ifelse(!is.na(mem_week$cpf2.1.00.v1.cat_foil),mem_week$cpf2.1.00.v1.cat_foil,mem_week$cpf2.1.00.v2.cat_foil)
+  
+  mem_week <- mem_week %>% mutate(cpf_cat = ((cpf.1.00.v1.cat_target + cpf.1.00.v1.cat_foil)/2)*sqrt(2),
+                                  cpf2_cat = ((cpf_v2_target + cpf_v2_foil)/2)*sqrt(2),
+                                  cpw_cat = ((cpw.1.00.v1.cat_target + cpw.1.00.v1.cat_foil)/2)*sqrt(2),
+                                  volt_cat = ((volt.1.00.v1.cat_targets + volt.1.00.v1.cat_foils)/2)*sqrt(2))
+  
+  mem_more <- all_cnb2 %>% filter(date_diff > 7) %>% dplyr::select(bblid:dotest,volt_genus:cpf_w_rtcr,cpw_genus:cpw_w_rtcr,cpf.1.00.v1.cat_target:cpf.1.00.v1.cat_foil,cpw.1.00.v1.cat_target:cpw.1.00.v1.cat_foil,
+                                                                   volt.1.00.v1.cat_targets:volt.1.00.v1.cat_foils,cpf2.1.00.v2.cat_target:cpf2.1.00.v2.cat_foil,cpf2.1.00.v1.cat_target:cpf2.1.00.v1.cat_foil) # n=101 as of 8/22/22
+  mem_more$cpf_v2_target <- ifelse(!is.na(mem_more$cpf2.1.00.v1.cat_target),mem_more$cpf2.1.00.v1.cat_target,mem_more$cpf2.1.00.v2.cat_target)
+  mem_more$cpf_v2_foil <- ifelse(!is.na(mem_more$cpf2.1.00.v1.cat_foil),mem_more$cpf2.1.00.v1.cat_foil,mem_more$cpf2.1.00.v2.cat_foil)
+  
+  mem_more <- mem_more %>% mutate(cpf_cat = ((cpf.1.00.v1.cat_target + cpf.1.00.v1.cat_foil)/2)*sqrt(2),
+                                  cpf2_cat = ((cpf_v2_target + cpf_v2_foil)/2)*sqrt(2),
+                                  cpw_cat = ((cpw.1.00.v1.cat_target + cpw.1.00.v1.cat_foil)/2)*sqrt(2),
+                                  volt_cat = ((volt.1.00.v1.cat_targets + volt.1.00.v1.cat_foils)/2)*sqrt(2))
+  
+  
+  # scatters for testing within a week 
+  # pdf("data/outputs/scatters/CAT-full_diffdays_scatters_week_220822.pdf",height=9,width=12)
+  # pairs.panels(mem_week %>% dplyr::select(matches("cpf_cr|cpf_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # pairs.panels(mem_week %>% dplyr::select(matches("cpf_cr|cpf2_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # pairs.panels(mem_week %>% dplyr::select(matches("cpw_cr|cpw_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # pairs.panels(mem_week %>% dplyr::select(matches("volt_cr|volt_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # dev.off()
+  
+  # scatters for testing more than a week apart
+  # pdf("data/outputs/scatters/CAT-full_diffdays_scatters_overweek_220822.pdf",height=9,width=12)
+  # pairs.panels(mem_more %>% dplyr::select(matches("cpf_cr|cpf_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # pairs.panels(mem_more %>% dplyr::select(matches("cpf_cr|cpf2_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # pairs.panels(mem_more %>% dplyr::select(matches("cpw_cr|cpw_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # pairs.panels(mem_more %>% dplyr::select(matches("volt_cr|volt_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # dev.off()
+}
 
-mem_week <- mem_week %>% mutate(cpf_cat = ((cpf.1.00.v1.cat_target + cpf.1.00.v1.cat_foil)/2)*sqrt(2),
-                                cpf2_cat = ((cpf_v2_target + cpf_v2_foil)/2)*sqrt(2),
-                                cpw_cat = ((cpw.1.00.v1.cat_target + cpw.1.00.v1.cat_foil)/2)*sqrt(2),
-                                volt_cat = ((volt.1.00.v1.cat_targets + volt.1.00.v1.cat_foils)/2)*sqrt(2))
 
-mem_more <- all_cnb2 %>% filter(date_diff > 7) %>% dplyr::select(bblid:dotest,volt_genus:cpf_w_rtcr,cpw_genus:cpw_w_rtcr,cpf.1.00.v1.cat_target:cpf.1.00.v1.cat_foil,cpw.1.00.v1.cat_target:cpw.1.00.v1.cat_foil,
-                                                               volt.1.00.v1.cat_targets:volt.1.00.v1.cat_foils,cpf2.1.00.v2.cat_target:cpf2.1.00.v2.cat_foil,cpf2.1.00.v1.cat_target:cpf2.1.00.v1.cat_foil) # n=101 as of 8/22/22
-mem_more$cpf_v2_target <- ifelse(!is.na(mem_more$cpf2.1.00.v1.cat_target),mem_more$cpf2.1.00.v1.cat_target,mem_more$cpf2.1.00.v2.cat_target)
-mem_more$cpf_v2_foil <- ifelse(!is.na(mem_more$cpf2.1.00.v1.cat_foil),mem_more$cpf2.1.00.v1.cat_foil,mem_more$cpf2.1.00.v2.cat_foil)
+# distribution of raw RT for AdaptiveV memory tasks (another possible method of QA)
+adaptive_v2 <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v2_20220721_144825.csv")
+adaptive_v <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v_20220428_125332.csv")
+adaptive_cpfv2_er40v2 <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v_cpfv2_er40v2_20220721_144812.csv")
 
-mem_more <- mem_more %>% mutate(cpf_cat = ((cpf.1.00.v1.cat_target + cpf.1.00.v1.cat_foil)/2)*sqrt(2),
-                                cpf2_cat = ((cpf_v2_target + cpf_v2_foil)/2)*sqrt(2),
-                                cpw_cat = ((cpw.1.00.v1.cat_target + cpw.1.00.v1.cat_foil)/2)*sqrt(2),
-                                volt_cat = ((volt.1.00.v1.cat_targets + volt.1.00.v1.cat_foils)/2)*sqrt(2))
+adaptive_v2 <- rename(adaptive_v2, Dataset.ID = 1) %>% 
+  mutate(version = "adaptive_cnb_V2")
+adaptive_v <- rename(adaptive_v, Dataset.ID = 1) %>% 
+  mutate(version = "adaptive_cnb_V")
+adaptive_cpfv2_er40v2 <- rename(adaptive_cpfv2_er40v2, Dataset.ID = 1) %>% 
+  mutate(version = "adaptive_cnb_V2_cpf_er40")
+
+adaptive_cpfv2_er40v2 <- adaptive_cpfv2_er40v2 %>% mutate(BBLID=as.numeric(`BBL ID`)) %>% rename(testcode=`Test Code`,decisiontreename=`Decision Tree Collection Name`,datasetid_v2CE=Dataset.ID,date=`Response Logged Date`,score=`Running Score`) %>% 
+  filter(BBLID > 9999) 
+adaptive_v <- adaptive_v %>% mutate(BBLID=as.numeric(`BBL ID`)) %>% rename(testcode=`Test Code`,decisiontreename=`Decision Tree Collection Name`,datasetid_v=Dataset.ID,date=`Response Logged Date`,score=`Running Score`) %>% 
+  filter(BBLID > 9999) 
+adaptive_v2 <- adaptive_v2 %>% mutate(BBLID=as.numeric(`BBL ID`)) %>% rename(testcode=`Test Code`,decisiontreename=`Decision Tree Collection Name`,datasetid_v2=Dataset.ID,date=`Response Logged Date`,score=`Running Score`) %>% 
+  filter(BBLID > 9999) 
+
+{
+  # extracting only memory tests from adaptive_v2
+  mem_v2 <- adaptive_v2 %>% filter(testcode %in% c("cpf2-1.00-v1-cat","cpw-1.00-v1-cat","volt-1.00-v1-cat"))
+  cpf2_v2 <- adaptive_v2 %>% filter(testcode == "cpf2-1.00-v1-cat")
+  cpw_v2 <- adaptive_v2 %>% filter(testcode == "cpw-1.00-v1-cat")
+  volt_v2 <- adaptive_v2 %>% filter(testcode == "volt-1.00-v1-cat")
+  
+  # extracting only memory tests from adaptive_v
+  mem_v <- adaptive_v %>% filter(testcode %in% c("cpf-1.00-v1-cat","cpw-1.00-v1-cat","volt-1.00-v1-cat"),datasetid_v != 322,BBLID != 90158)
+  cpf_v <- adaptive_v %>% filter(testcode == "cpf-1.00-v1-cat",datasetid_v != 322,BBLID != 90158)
+  cpw_v <- adaptive_v %>% filter(testcode == "cpw-1.00-v1-cat",datasetid_v != 322,BBLID != 90158)
+  volt_v <- adaptive_v %>% filter(testcode == "volt-1.00-v1-cat",datasetid_v != 322,BBLID != 90158)
+  # datasetid 322 is not complete, use 323 only
+  # CAT CNB for 90158 was too glitchy (first time aka datasetid 542 got stuck at CPW, second time aka datasetid 543 got stuck at ER40)
+  
+  # extracting only memory tests from adaptive_cpfv2_er40v2
+  cpf2_v <- adaptive_cpfv2_er40v2 %>% filter(testcode == "cpf2-1.00-v2-cat",datasetid_v2CE != 597)
+  # datasetid 597 is  an incomplete record
+  
+  # combine CPW and VOLT since they are the same versions
+  cpw_combo <- rbind(cpw_v %>% rename(datasetid = datasetid_v), cpw_v2 %>% rename(datasetid = datasetid_v2))
+  volt_combo <- rbind(volt_v %>% rename(datasetid = datasetid_v), volt_v2 %>% rename(datasetid = datasetid_v2))
+  
+  
+  # median RT per pt
+  cpf_v <- cpf_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpf_v,.,by="BBLID")
+  cpf2_v2 <- cpf2_v2 %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpf2_v2,.,by="BBLID")
+  cpf2_v <- cpf2_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpf2_v,.,by="BBLID")
+  cpw_combo <- cpw_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpw_combo,.,by="BBLID")
+  volt_combo <- volt_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(volt_combo,.,by="BBLID")
+  
+  # save mRT in its own vectors
+  cpf_v_mRT <- cpf_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  cpf2_v2_mRT <- cpf2_v2 %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  cpf2_v_mRT <- cpf2_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  cpw_combo_mRT <- cpw_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  volt_combo_mRT <- volt_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+}
+
+# plots of RT distribution for CAT CNB memory tasks
+{ # CPF v1
+  dat <- cpf_v %>% mutate(same=1)
+  my_plot <- ggplot(dat, aes(x = same, y = mRT)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "Distribution of CPFv1 mRT in CAT CNB", caption = paste("n =",length(unique(dat$BBLID))),
+                           x = "", y = "Median response time (ms)") + 
+    # scale_color_manual(values = wes_palette("Darjeeling1",n=1)) + scale_fill_manual(values = wes_palette("Darjeeling1",n=1)) +
+    # scale_y_continuous(breaks = seq(0,175000,25000)) +
+    coord_flip() 
+  
+  # pdf("data/outputs/cat_cnb_rt_dist/CAT-CNB_mRT_cpfv1_dist_220825.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+  
+  
+  
+  # CPF v2.1
+  dat <- cpf2_v2 %>% mutate(same=1)
+  my_plot <- ggplot(dat, aes(x = same, y = mRT)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "Distribution of CPFv2.1 RT in CAT CNB", caption = paste("n =",length(unique(dat$BBLID))),
+                           x = "", y = "Median response time (ms)") + 
+    # scale_color_manual(values = wes_palette("Darjeeling1",n=1)) + scale_fill_manual(values = wes_palette("Darjeeling1",n=1)) +
+    # scale_y_continuous(breaks = seq(0,175000,25000)) +
+    coord_flip() 
+  
+  # pdf("data/outputs/cat_cnb_rt_dist/CAT-CNB_mRT_cpfv2_1_dist_220825.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+  
+  
+  
+  # CPF v2.2
+  dat <- cpf2_v %>% mutate(same=1)
+  my_plot <- ggplot(dat, aes(x = same, y = mRT)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "Distribution of CPFv2.2 mRT in CAT CNB", caption = paste("n =",length(unique(dat$BBLID))),
+                           x = "", y = "Median response time (ms)") + 
+    # scale_color_manual(values = wes_palette("Darjeeling1",n=1)) + scale_fill_manual(values = wes_palette("Darjeeling1",n=1)) +
+    # scale_y_continuous(breaks = seq(0,175000,25000)) +
+    coord_flip() 
+  
+  # pdf("data/outputs/cat_cnb_rt_dist/CAT-CNB_mRT_cpfv2_2_dist_220825.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+  
+  
+  
+  # CPW
+  dat <- cpw_combo %>% mutate(same=1)
+  my_plot <- ggplot(dat, aes(x = same, y = mRT)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "Distribution of CPW mRT in CAT CNB", caption = paste("n =",length(unique(dat$BBLID))),
+                           x = "", y = "Median response time (ms)") + 
+    # scale_color_manual(values = wes_palette("Darjeeling1",n=1)) + scale_fill_manual(values = wes_palette("Darjeeling1",n=1)) +
+    # scale_y_continuous(breaks = seq(0,175000,25000)) +
+    coord_flip() 
+  
+  # pdf("data/outputs/cat_cnb_rt_dist/CAT-CNB_mRT_cpw_dist_220825.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+  
+  
+  
+  # VOLT
+  dat <- volt_combo %>% mutate(same=1)
+  my_plot <- ggplot(dat, aes(x = same, y = mRT)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8,
+      fill  = "aquamarine3"
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5,
+      color = "aquamarine3"
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      ),
+      color = "aquamarine3"
+    )  + 
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "Distribution of VOLT mRT in CAT CNB", caption = paste("n =",length(unique(dat$BBLID))),
+                           x = "", y = "Median response time (ms)") + 
+    # scale_color_manual(values = wes_palette("Darjeeling1",n=1)) + scale_fill_manual(values = wes_palette("Darjeeling1",n=1)) +
+    # scale_y_continuous(breaks = seq(0,175000,25000)) +
+    coord_flip() 
+  
+  # pdf("data/outputs/cat_cnb_rt_dist/CAT-CNB_mRT_volt_dist_220825.pdf",height = 7,width = 10)
+  # my_plot
+  # dev.off()
+}
+
+# table to describe basic stats for RT
+{
+  #  median, mean, +/-2SD, max, min
+  rt_tab <- data.frame(matrix(NA,nrow = 5,ncol = 7))
+  rownames(rt_tab) <- c("CPW","VOLT","CPF v1","CPF v2.1","CPF v2.2")
+  names(rt_tab) <- c("median","mean","+/- 1SD","max","min","1%","5%")
+  
+  rt_tab[1,] <- c(median(cpw_combo$mRT,na.rm = T), round(mean(cpw_combo$mRT,na.rm = T),2),
+                  paste(as.character(round(mean(cpw_combo$mRT,na.rm = T) - sd(cpw_combo$mRT,na.rm = T),2)),as.character(round(mean(cpw_combo$mRT,na.rm = T) + sd(cpw_combo$mRT,na.rm = T),2)),sep=" , "),
+                  max(cpw_combo$mRT,na.rm = T),min(cpw_combo$mRT,na.rm = T),round(quantile(cpw_combo$mRT,0.01,na.rm=TRUE),2),round(quantile(cpw_combo$mRT,0.05,na.rm=TRUE),2))
+  rt_tab[2,] <- c(median(volt_combo$mRT,na.rm = T), round(mean(volt_combo$mRT,na.rm = T),2),
+                  paste(as.character(round(mean(volt_combo$mRT,na.rm = T) - sd(volt_combo$mRT,na.rm = T),2)),as.character(round(mean(volt_combo$mRT,na.rm = T) + sd(volt_combo$mRT,na.rm = T),2)),sep=" , "),
+                  max(volt_combo$mRT,na.rm = T),min(volt_combo$mRT,na.rm = T),round(quantile(volt_combo$mRT,0.01,na.rm=TRUE),2),round(quantile(volt_combo$mRT,0.05,na.rm=TRUE),2))
+  rt_tab[3,] <- c(median(cpf_v$mRT,na.rm = T), round(mean(cpf_v$mRT,na.rm = T),2),
+                  paste(as.character(round(mean(cpf_v$mRT,na.rm = T) - sd(cpf_v$mRT,na.rm = T),2)),as.character(round(mean(cpf_v$mRT,na.rm = T) + sd(cpf_v$mRT,na.rm = T),2)),sep=" , "),
+                  max(cpf_v$mRT,na.rm = T),min(cpf_v$mRT,na.rm = T),round(quantile(cpf_v$mRT,0.01,na.rm=TRUE),2),round(quantile(cpf_v$mRT,0.05,na.rm=TRUE),2))
+  rt_tab[4,] <- c(median(cpf2_v2$mRT,na.rm = T), round(mean(cpf2_v2$mRT,na.rm = T),2),
+                  paste(as.character(round(mean(cpf2_v2$mRT,na.rm = T) - sd(cpf2_v2$mRT,na.rm = T),2)),as.character(round(mean(cpf2_v2$mRT,na.rm = T) + sd(cpf2_v2$mRT,na.rm = T),2)),sep=" , "),
+                  max(cpf2_v2$mRT,na.rm = T),min(cpf2_v2$mRT,na.rm = T),round(quantile(cpf2_v2$mRT,0.01,na.rm=TRUE),2),round(quantile(cpf2_v2$mRT,0.05,na.rm=TRUE),2))
+  rt_tab[5,] <- c(median(cpf2_v$mRT,na.rm = T), round(mean(cpf2_v$mRT,na.rm = T),2),
+                  paste(as.character(round(mean(cpf2_v$mRT,na.rm = T) - sd(cpf2_v$mRT,na.rm = T),2)),as.character(round(mean(cpf2_v$mRT,na.rm = T) + sd(cpf2_v$mRT,na.rm = T),2)),sep=" , "),
+                  max(cpf2_v$mRT,na.rm = T),min(cpf2_v$mRT,na.rm = T),round(quantile(cpf2_v$mRT,0.01,na.rm=TRUE),2),round(quantile(cpf2_v$mRT,0.05,na.rm=TRUE),2))
+  
+  
+  rt_tab %>%
+    kbl(caption = "CAT CNB Memory task Response Times (ms)", align = rep("c", 8)) %>%
+    kable_classic(full_width = F, html_font = "Cambria") %>%
+    save_kable(file = "data/outputs/cat_cnb_rt_dist/mRT_table_220825.pdf", self_contained = T)
+}
 
 
-# scatters for testing within a week 
-pdf("data/outputs/scatters/CAT-full_diffdays_scatters_week_220822.pdf",height=9,width=12)
-pairs.panels(mem_week %>% dplyr::select(matches("cpf_cr|cpf_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(mem_week %>% dplyr::select(matches("cpf_cr|cpf2_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(mem_week %>% dplyr::select(matches("cpw_cr|cpw_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(mem_week %>% dplyr::select(matches("volt_cr|volt_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
-dev.off()
 
-# scatters for testing more than a week apart
-pdf("data/outputs/scatters/CAT-full_diffdays_scatters_overweek_220822.pdf",height=9,width=12)
-pairs.panels(mem_more %>% dplyr::select(matches("cpf_cr|cpf_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(mem_more %>% dplyr::select(matches("cpf_cr|cpf2_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(mem_more %>% dplyr::select(matches("cpw_cr|cpw_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(mem_more %>% dplyr::select(matches("volt_cr|volt_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
-dev.off()
+# make summary/total scores
+{
+  cpf_v$uniqtest <- paste(cpf_v$testcode,cpf_v$decisiontreename,sep="_")
+  cpf_v_sum <- cpf_v %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid_v,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  cpf_v_sum <- left_join(cpf_v_sum,cpf_v_mRT,by=c("BBLID"))
+  
+  cpf2_v2$uniqtest <- paste(cpf2_v2$testcode,cpf2_v2$decisiontreename,sep="_")
+  cpf2_v2_sum <- cpf2_v2 %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid_v2,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  cpf2_v2_sum <- left_join(cpf2_v2_sum,cpf2_v2_mRT,by=c("BBLID"))
+  
+  cpf2_v$uniqtest <- paste(cpf2_v$testcode,cpf2_v$decisiontreename,sep="_")
+  cpf2_v_sum <- cpf2_v %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid_v2CE,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  cpf2_v_sum <- left_join(cpf2_v_sum,cpf2_v_mRT,by=c("BBLID"))
+  
+  cpw_combo$uniqtest <- paste(cpw_combo$testcode,cpw_combo$decisiontreename,sep="_")
+  cpw_combo_sum <- cpw_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  cpw_combo_sum <- left_join(cpw_combo_sum,cpw_combo_mRT,by=c("BBLID"))
+  
+  volt_combo$uniqtest <- paste(volt_combo$testcode,volt_combo$decisiontreename,sep="_")
+  volt_combo_sum <- volt_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  volt_combo_sum <- left_join(volt_combo_sum,volt_combo_mRT,by=c("BBLID"))
+  
+}
+
+
+
+
+# RT QA method ----
+# using the same RT QA method as was done for the memory tasks
+
+# separate into tasks
+# make uniqtest column before separating
+adaptive_v2$uniqtest <- paste(adaptive_v2$testcode,adaptive_v2$decisiontreename,sep="_")
+adaptive_v$uniqtest <- paste(adaptive_v$testcode,adaptive_v$decisiontreename,sep="_")
+adaptive_cpfv2_er40v2$uniqtest <- paste(adaptive_cpfv2_er40v2$testcode,adaptive_cpfv2_er40v2$decisiontreename,sep="_")
+
+# extracting only memory tests from adaptive_v2
+adt_v2 <- adaptive_v2 %>% filter(testcode == "adt-1.00-cat")
+cpf2_v2 <- adaptive_v2 %>% filter(testcode == "cpf2-1.00-v1-cat")
+cpw_v2 <- adaptive_v2 %>% filter(testcode == "cpw-1.00-v1-cat")
+ddisc_v2 <- adaptive_v2 %>% filter(testcode == "ddisc-1.00-cat")
+edisc_v2 <- adaptive_v2 %>% filter(testcode == "edisc-1.00-cat")
+er40_v2 <- adaptive_v2 %>% filter(testcode == "er40-2.00-cat")
+medf_v2 <- adaptive_v2 %>% filter(testcode == "medf-1.00-cat")
+plot_v2 <- adaptive_v2 %>% filter(testcode == "plot-1.00-cat")
+pmat_v2 <- adaptive_v2 %>% filter(testcode == "pmat-1.00-cat")
+pvrt_v2 <- adaptive_v2 %>% filter(testcode == "pvrt-1.00-cat")
+rdisc_v2 <- adaptive_v2 %>% filter(testcode == "rdisc-1.00-cat")
+volt_v2 <- adaptive_v2 %>% filter(testcode == "volt-1.00-v1-cat")
+
+# extracting only memory tests from adaptive_v
+mem_v <- adaptive_v %>% filter(testcode %in% c("cpf-1.00-v1-cat","cpw-1.00-v1-cat","volt-1.00-v1-cat"),datasetid_v != 322,BBLID != 90158)
+cpf_v <- adaptive_v %>% filter(testcode == "cpf-1.00-v1-cat",datasetid_v != 322,BBLID != 90158)
+cpw_v <- adaptive_v %>% filter(testcode == "cpw-1.00-v1-cat",datasetid_v != 322,BBLID != 90158)
+volt_v <- adaptive_v %>% filter(testcode == "volt-1.00-v1-cat",datasetid_v != 322,BBLID != 90158)
+# datasetid 322 is not complete, use 323 only
+# CAT CNB for 90158 was too glitchy (first time aka datasetid 542 got stuck at CPW, second time aka datasetid 543 got stuck at ER40)
+
+# extracting only memory tests from adaptive_cpfv2_er40v2
+cpf2_v <- adaptive_cpfv2_er40v2 %>% filter(testcode == "cpf2-1.00-v2-cat",datasetid_v2CE != 597)
+# datasetid 597 is  an incomplete record
+
+# combine CPW and VOLT since they are the same versions
+cpw_combo <- rbind(cpw_v %>% rename(datasetid = datasetid_v), cpw_v2 %>% rename(datasetid = datasetid_v2))
+volt_combo <- rbind(volt_v %>% rename(datasetid = datasetid_v), volt_v2 %>% rename(datasetid = datasetid_v2))
+
+
+# median RT per pt
+cpf_v <- cpf_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpf_v,.,by="BBLID")
+cpf2_v2 <- cpf2_v2 %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpf2_v2,.,by="BBLID")
+cpf2_v <- cpf2_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpf2_v,.,by="BBLID")
+cpw_combo <- cpw_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpw_combo,.,by="BBLID")
+volt_combo <- volt_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(volt_combo,.,by="BBLID")
+
+# save mRT in its own vectors
+cpf_v_mRT <- cpf_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+cpf2_v2_mRT <- cpf2_v2 %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+cpf2_v_mRT <- cpf2_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+cpw_combo_mRT <- cpw_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+volt_combo_mRT <- volt_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
 
 
 
