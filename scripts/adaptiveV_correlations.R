@@ -1001,8 +1001,6 @@ demo_new_iw <- new_iw_ad %>% dplyr::select(test_sessions.datasetid:test_sessions
 
 
 
-
-
 # * * plot out distribution of SMVE subscores as well as score ----
 
 {
@@ -3634,7 +3632,6 @@ adaptive_v2 <- adaptive_v2 %>% mutate(BBLID=as.numeric(`BBL ID`)) %>% rename(tes
 }
 
 
-
 # make summary/total scores
 {
   cpf_v$uniqtest <- paste(cpf_v$testcode,cpf_v$decisiontreename,sep="_")
@@ -3671,68 +3668,232 @@ adaptive_v2 <- adaptive_v2 %>% mutate(BBLID=as.numeric(`BBL ID`)) %>% rename(tes
 # using the same RT QA method as was done for the memory tasks
 
 # separate into tasks
-# make uniqtest column before separating
-adaptive_v2$uniqtest <- paste(adaptive_v2$testcode,adaptive_v2$decisiontreename,sep="_")
-adaptive_v$uniqtest <- paste(adaptive_v$testcode,adaptive_v$decisiontreename,sep="_")
-adaptive_cpfv2_er40v2$uniqtest <- paste(adaptive_cpfv2_er40v2$testcode,adaptive_cpfv2_er40v2$decisiontreename,sep="_")
+{
+  # make uniqtest column before separating
+  adaptive_v2$uniqtest <- paste(adaptive_v2$testcode,adaptive_v2$decisiontreename,sep="_")
+  adaptive_v$uniqtest <- paste(adaptive_v$testcode,adaptive_v$decisiontreename,sep="_")
+  adaptive_cpfv2_er40v2$uniqtest <- paste(adaptive_cpfv2_er40v2$testcode,adaptive_cpfv2_er40v2$decisiontreename,sep="_")
+  
+  # extracting only memory tests from adaptive_v2
+  adt_v2 <- adaptive_v2 %>% filter(testcode == "adt-1.00-cat")
+  cpf2_v2 <- adaptive_v2 %>% filter(testcode == "cpf2-1.00-v1-cat")
+  cpw_v2 <- adaptive_v2 %>% filter(testcode == "cpw-1.00-v1-cat")
+  ddisc_v2 <- adaptive_v2 %>% filter(testcode == "ddisc-1.00-cat")
+  edisc_v2 <- adaptive_v2 %>% filter(testcode == "edisc-1.00-cat")
+  er40_v2 <- adaptive_v2 %>% filter(testcode == "er40-2.00-cat")
+  medf_v2 <- adaptive_v2 %>% filter(testcode == "medf-1.00-cat")
+  plot_v2 <- adaptive_v2 %>% filter(testcode == "plot-1.00-cat")
+  pmat_v2 <- adaptive_v2 %>% filter(testcode == "pmat-1.00-cat")
+  pvrt_v2 <- adaptive_v2 %>% filter(testcode == "pvrt-1.00-cat")
+  rdisc_v2 <- adaptive_v2 %>% filter(testcode == "rdisc-1.00-cat")
+  volt_v2 <- adaptive_v2 %>% filter(testcode == "volt-1.00-v1-cat")
+  
+  # extracting only memory tests from adaptive_v
+  # 22591 has less rows than others, 
+  adt_v <- adaptive_v %>% filter(testcode == "adt-1.00-cat")
+  cpf_v <- adaptive_v %>% filter(testcode == "cpf-1.00-v1-cat")
+  cpw_v <- adaptive_v %>% filter(testcode == "cpw-1.00-v1-cat")
+  ddisc_v <- adaptive_v %>% filter(testcode == "ddisc-1.00-cat")
+  edisc_v <- adaptive_v %>% filter(testcode == "edisc-1.00-cat")
+  er40_v <- adaptive_v %>% filter(testcode == "er40-1.00-cat")
+  medf_v <- adaptive_v %>% filter(testcode == "medf-1.00-cat")
+  plot_v <- adaptive_v %>% filter(testcode == "plot-1.00-cat")
+  pmat_v <- adaptive_v %>% filter(testcode == "pmat-1.00-cat")
+  pvrt_v <- adaptive_v %>% filter(testcode == "pvrt-1.00-cat")
+  rdisc_v <- adaptive_v %>% filter(testcode == "rdisc-1.00-cat")
+  volt_v <- adaptive_v %>% filter(testcode == "volt-1.00-v1-cat")
+  # datasetid 322 is not complete, use 323 only
+  # CAT CNB for 90158 was too glitchy (first time aka datasetid 542 got stuck at CPW, second time aka datasetid 543 got stuck at ER40)
+  
+  # extracting only memory tests from adaptive_cpfv2_er40v2
+  cpf2_v <- adaptive_cpfv2_er40v2 %>% filter(testcode == "cpf2-1.00-v2-cat",datasetid_v2CE != 597)
+  er402_v <- adaptive_cpfv2_er40v2 %>% filter(testcode == "er40-2.00-cat",datasetid_v2CE != 597)
+  # datasetid 597 is  an incomplete record
+  
+  # combine tests with same versions
+  adt_combo <- rbind(adt_v %>% rename(datasetid = datasetid_v), adt_v2 %>% rename(datasetid = datasetid_v2))
+  cpw_combo <- rbind(cpw_v %>% rename(datasetid = datasetid_v), cpw_v2 %>% rename(datasetid = datasetid_v2))
+  ddisc_combo <- rbind(ddisc_v %>% rename(datasetid = datasetid_v), ddisc_v2 %>% rename(datasetid = datasetid_v2))
+  edisc_combo <- rbind(edisc_v %>% rename(datasetid = datasetid_v), edisc_v2 %>% rename(datasetid = datasetid_v2))
+  er402_combo <- rbind(er402_v %>% rename(datasetid = datasetid_v2CE), er40_v2 %>% rename(datasetid = datasetid_v2))
+  medf_combo <- rbind(medf_v %>% rename(datasetid = datasetid_v), medf_v2 %>% rename(datasetid = datasetid_v2))
+  plot_combo <- rbind(plot_v %>% rename(datasetid = datasetid_v), plot_v2 %>% rename(datasetid = datasetid_v2))
+  pmat_combo <- rbind(pmat_v %>% rename(datasetid = datasetid_v), pmat_v2 %>% rename(datasetid = datasetid_v2))
+  pvrt_combo <- rbind(pvrt_v %>% rename(datasetid = datasetid_v), pvrt_v2 %>% rename(datasetid = datasetid_v2))
+  rdisc_combo <- rbind(rdisc_v %>% rename(datasetid = datasetid_v), rdisc_v2 %>% rename(datasetid = datasetid_v2))
+  volt_combo <- rbind(volt_v %>% rename(datasetid = datasetid_v), volt_v2 %>% rename(datasetid = datasetid_v2))
+  
+  
+  # median RT per pt
+  adt_combo <- adt_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(adt_combo,.,by="BBLID")
+  cpf_v <- cpf_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpf_v,.,by="BBLID")
+  cpf2_v2 <- cpf2_v2 %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpf2_v2,.,by="BBLID")
+  cpf2_v <- cpf2_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpf2_v,.,by="BBLID")
+  cpw_combo <- cpw_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpw_combo,.,by="BBLID")
+  ddisc_combo <- ddisc_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(ddisc_combo,.,by="BBLID")
+  edisc_combo <- edisc_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(edisc_combo,.,by="BBLID")
+  er402_combo <- er402_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(er402_combo,.,by="BBLID")
+  er40_v <- er40_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(er40_v,.,by="BBLID")
+  medf_combo <- medf_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(medf_combo,.,by="BBLID")
+  plot_combo <- plot_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(plot_combo,.,by="BBLID")
+  pmat_combo <- pmat_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(pmat_combo,.,by="BBLID")
+  pvrt_combo <- pvrt_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(pvrt_combo,.,by="BBLID")
+  rdisc_combo <- rdisc_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(rdisc_combo,.,by="BBLID")
+  volt_combo <- volt_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(volt_combo,.,by="BBLID")
+  
+  # save mRT in its own vectors
+  adt_combo_mRT <- adt_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  cpf_v_mRT <- cpf_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  cpf2_v2_mRT <- cpf2_v2 %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  cpf2_v_mRT <- cpf2_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  cpw_combo_mRT <- cpw_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  ddisc_combo_mRT <- ddisc_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  edisc_combo_mRT <- edisc_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  er402_combo_mRT <- er402_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  er40_v_mRT <- er40_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  medf_combo_mRT <- medf_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  plot_combo_mRT <- plot_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  pmat_combo_mRT <- pmat_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  pvrt_combo_mRT <- pvrt_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  rdisc_combo_mRT <- rdisc_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+  volt_combo_mRT <- volt_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+}
 
-# extracting only memory tests from adaptive_v2
-adt_v2 <- adaptive_v2 %>% filter(testcode == "adt-1.00-cat")
-cpf2_v2 <- adaptive_v2 %>% filter(testcode == "cpf2-1.00-v1-cat")
-cpw_v2 <- adaptive_v2 %>% filter(testcode == "cpw-1.00-v1-cat")
-ddisc_v2 <- adaptive_v2 %>% filter(testcode == "ddisc-1.00-cat")
-edisc_v2 <- adaptive_v2 %>% filter(testcode == "edisc-1.00-cat")
-er40_v2 <- adaptive_v2 %>% filter(testcode == "er40-2.00-cat")
-medf_v2 <- adaptive_v2 %>% filter(testcode == "medf-1.00-cat")
-plot_v2 <- adaptive_v2 %>% filter(testcode == "plot-1.00-cat")
-pmat_v2 <- adaptive_v2 %>% filter(testcode == "pmat-1.00-cat")
-pvrt_v2 <- adaptive_v2 %>% filter(testcode == "pvrt-1.00-cat")
-rdisc_v2 <- adaptive_v2 %>% filter(testcode == "rdisc-1.00-cat")
-volt_v2 <- adaptive_v2 %>% filter(testcode == "volt-1.00-v1-cat")
-
-# extracting only memory tests from adaptive_v
-# 22591 has less rows than others, 
-adt_v <- adaptive_v %>% filter(testcode == "adt-1.00-cat")
-cpf2_v <- adaptive_v %>% filter(testcode == "cpf-1.00-v1-cat")
-cpw_v <- adaptive_v %>% filter(testcode == "cpw-1.00-v1-cat")
-ddisc_v <- adaptive_v %>% filter(testcode == "ddisc-1.00-cat")
-edisc_v <- adaptive_v %>% filter(testcode == "edisc-1.00-cat")
-er40_v <- adaptive_v %>% filter(testcode == "er40-1.00-cat")
-medf_v <- adaptive_v %>% filter(testcode == "medf-1.00-cat")
-plot_v <- adaptive_v %>% filter(testcode == "plot-1.00-cat")
-pmat_v <- adaptive_v %>% filter(testcode == "pmat-1.00-cat")
-pvrt_v <- adaptive_v %>% filter(testcode == "pvrt-1.00-cat")
-rdisc_v <- adaptive_v %>% filter(testcode == "rdisc-1.00-cat")
-volt_v <- adaptive_v %>% filter(testcode == "volt-1.00-v1-cat")
-# datasetid 322 is not complete, use 323 only
-# CAT CNB for 90158 was too glitchy (first time aka datasetid 542 got stuck at CPW, second time aka datasetid 543 got stuck at ER40)
-
-# extracting only memory tests from adaptive_cpfv2_er40v2
-cpf2_v <- adaptive_cpfv2_er40v2 %>% filter(testcode == "cpf2-1.00-v2-cat",datasetid_v2CE != 597)
-# datasetid 597 is  an incomplete record
-
-# combine CPW and VOLT since they are the same versions
-cpw_combo <- rbind(cpw_v %>% rename(datasetid = datasetid_v), cpw_v2 %>% rename(datasetid = datasetid_v2))
-volt_combo <- rbind(volt_v %>% rename(datasetid = datasetid_v), volt_v2 %>% rename(datasetid = datasetid_v2))
-
-
-# median RT per pt
-cpf_v <- cpf_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpf_v,.,by="BBLID")
-cpf2_v2 <- cpf2_v2 %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpf2_v2,.,by="BBLID")
-cpf2_v <- cpf2_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpf2_v,.,by="BBLID")
-cpw_combo <- cpw_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(cpw_combo,.,by="BBLID")
-volt_combo <- volt_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`)) %>% left_join(volt_combo,.,by="BBLID")
-
-# save mRT in its own vectors
-cpf_v_mRT <- cpf_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
-cpf2_v2_mRT <- cpf2_v2 %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
-cpf2_v_mRT <- cpf2_v %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
-cpw_combo_mRT <- cpw_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
-volt_combo_mRT <- volt_combo %>% group_by(BBLID) %>% summarise(mRT=median(`Response Time (ms)`))
+# plots of RT distribution for CAT CNB memory tasks
+{ # put this in a loop
+  texts <- c("adt_combo","cpf_v","cpf2_v2","cpf2_v","cpw_combo","ddisc_combo","edisc_combo","er40_v",
+             "er402_combo","medf_combo","plot_combo","pmat_combo","pvrt_combo","rdisc_combo","volt_combo")
+  tests <- mget(paste0(texts,"_mRT"))
+  captions <- c("ADT","CPFv1","CPFv2.1","CPFv2.2","CPW","DDISC","EDISC","ER40v1","ER40v2","MEDF","PLOT","PMAT","PVRT","RDISC","VOLT")
+  
+  mRT_plots <- list()
+  
+  for (i in 1:length(texts)) {
+    test_dat <- tests[[i]]
+    dat <- test_dat %>% mutate(same=1)
+    mRT_plots[[i]] <- ggplot(dat, aes(x = same, y = mRT)) + 
+      ggdist::stat_halfeye(
+        adjust = .5, 
+        width = .6,
+        justification = -.2, 
+        .width = 0, 
+        point_colour = NA,
+        alpha = 0.8,
+        fill  = "aquamarine3"
+      ) + 
+      geom_boxplot(
+        width = .12, 
+        outlier.color = NA, ## `outlier.shape = NA` works as well
+        alpha = 0.5,
+        color = "aquamarine3"
+      ) +
+      geom_point(
+        size = .5, 
+        alpha = 0.3,
+        position = position_jitternudge(
+          jitter.width = .1,
+          jitter.height = 0,
+          nudge.x = -.2,
+          nudge.y = 0,
+          seed = 1
+        ),
+        color = "aquamarine3"
+      )  + 
+      coord_cartesian(xlim = c(1.2, NA)) +
+      theme_minimal() + labs(title = paste0("Distribution of ",captions[i]," mRT in CAT CNB"), caption = paste("n =",length(unique(dat$BBLID))),
+                             x = "", y = "Median response time (ms)") + coord_flip()
+  }
+  
+  # pdf("data/outputs/cat_cnb_rt_dist/CAT-CNB_mRT_dist_220829.pdf",height = 7,width = 10)
+  # for (i in 1:length(texts)){
+  #   print(mRT_plots[[i]])
+  # }
+  # dev.off()
+}
 
 
+# table to describe basic stats for RT
+{
+  #  median, mean, +/-2SD, max, min
+  rt_tab <- data.frame(matrix(NA,nrow = length(texts),ncol = 7))
+  rownames(rt_tab) <- captions
+  names(rt_tab) <- c("median","mean","+/- 1SD","max","min","1%","5%")
+  
+  for (i in 1:length(texts)) {
+    test_dat <- tests[[i]]
+    rt_tab[i,] <- c(median(test_dat$mRT,na.rm = T), round(mean(test_dat$mRT,na.rm = T),2),
+                    paste(as.character(round(mean(test_dat$mRT,na.rm = T) - sd(test_dat$mRT,na.rm = T),2)),as.character(round(mean(test_dat$mRT,na.rm = T) + sd(test_dat$mRT,na.rm = T),2)),sep=" , "),
+                    max(test_dat$mRT,na.rm = T),min(test_dat$mRT,na.rm = T),round(quantile(test_dat$mRT,0.01,na.rm=TRUE),2),round(quantile(test_dat$mRT,0.05,na.rm=TRUE),2))
+  }
+  rt_tab %>%
+    kbl(caption = "CAT CNB tasks, Response Times (ms)", align = rep("c", 8)) %>%
+    kable_classic(full_width = F, html_font = "Cambria") 
+    # %>% save_kable(file = "data/outputs/cat_cnb_rt_dist/mRT_all_table_220829.pdf", self_contained = T)
+}
 
 
+# make summary/total scores
+{
+  adt_combo_sum <- adt_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  adt_combo_sum <- left_join(adt_combo_sum,adt_combo_mRT,by=c("BBLID"))
+  
+  cpf_v_sum <- cpf_v %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid_v,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  cpf_v_sum <- left_join(cpf_v_sum,cpf_v_mRT,by=c("BBLID"))
+  
+  cpf2_v2_sum <- cpf2_v2 %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid_v2,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  cpf2_v2_sum <- left_join(cpf2_v2_sum,cpf2_v2_mRT,by=c("BBLID"))
+  
+  cpf2_v_sum <- cpf2_v %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid_v2CE,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  cpf2_v_sum <- left_join(cpf2_v_sum,cpf2_v_mRT,by=c("BBLID"))
+  
+  cpw_combo_sum <- cpw_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  cpw_combo_sum <- left_join(cpw_combo_sum,cpw_combo_mRT,by=c("BBLID"))
+  
+  ddisc_combo_sum <- ddisc_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  ddisc_combo_sum <- left_join(ddisc_combo_sum,ddisc_combo_mRT,by=c("BBLID"))
+  
+  edisc_combo_sum <- edisc_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  edisc_combo_sum <- left_join(edisc_combo_sum,edisc_combo_mRT,by=c("BBLID"))
+  
+  er40_v_sum <- er40_v %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid_v,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  er40_v_sum <- left_join(er40_v_sum,er40_v_mRT,by=c("BBLID"))
+  
+  er402_combo_sum <- er402_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  er402_combo_sum <- left_join(er402_combo_sum,er402_combo_mRT,by=c("BBLID"))
+  
+  medf_combo_sum <- medf_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  medf_combo_sum <- left_join(medf_combo_sum,medf_combo_mRT,by=c("BBLID"))
+  
+  plot_combo_sum <- plot_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  plot_combo_sum <- left_join(plot_combo_sum,plot_combo_mRT,by=c("BBLID"))
+  
+  pmat_combo_sum <- pmat_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  pmat_combo_sum <- left_join(pmat_combo_sum,pmat_combo_mRT,by=c("BBLID"))
+  
+  pvrt_combo_sum <- pvrt_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  pvrt_combo_sum <- left_join(pvrt_combo_sum,pvrt_combo_mRT,by=c("BBLID"))
+  
+  rdisc_combo_sum <- rdisc_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  rdisc_combo_sum <- left_join(rdisc_combo_sum,rdisc_combo_mRT,by=c("BBLID"))
+  
+  volt_combo_sum <- volt_combo %>% filter(`Final Score` == "Yes") %>% dplyr::select(BBLID,datasetid,date,score,uniqtest) %>% 
+    pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
+  volt_combo_sum <- left_join(volt_combo_sum,volt_combo_mRT,by=c("BBLID"))
+}
 
 
 
