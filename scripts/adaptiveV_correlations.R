@@ -3896,6 +3896,36 @@ adaptive_v2 <- adaptive_v2 %>% mutate(BBLID=as.numeric(`BBL ID`)) %>% rename(tes
 }
 
 
+# make table of accuracy scores for people under 1% of mRT
+{ # table should have test name, n, n removed, mRT 1% cutoff, max / min score 1, max / min score 2
+  acc_tab <- data.frame(matrix(NA,nrow = length(texts),ncol = 7))
+  rownames(acc_tab) <- captions
+  names(acc_tab) <- c("N","Rows removed","1% cutoff","max T/S/E","min T/S/E","max F/D/N","min F/D/N")
+  
+  tests_sum <- mget(paste0(texts,"_sum"))
+  
+  for (i in 1:length(texts)) {
+    test_dat <- tests_sum[[i]]
+    test <- test_dat %>% filter(mRT <= as.numeric(rt_tab[i,6]))
+    
+    # first add the max/min T/S/E or default
+    acc_tab[i,1:5] <- c(dim(test_dat)[1],dim(test)[1],rt_tab[i,6],round(max(as.numeric(unlist(test[,4]))),3),round(min(as.numeric(unlist(test[,4]))),3))
+    
+    if (ncol(test_dat) == 6) {
+      # add F/D/N for those who have it
+      acc_tab[i,6:7] <- c(round(max(as.numeric(unlist(test[,5]))),3),round(min(as.numeric(unlist(test[,5]))),3))
+    } else {
+      # have NA for the last two columns of the table
+      acc_tab[i,6:7] <- rep(NA,2)
+    }
+  }
+  acc_tab %>%
+    kbl(caption = "CAT CNB tasks, Response Times (ms)", align = rep("c", 8)) %>%
+    kable_classic(full_width = F, html_font = "Cambria") %>% 
+    save_kable(file = "data/outputs/cat_cnb_rt_dist/mRT_all_table_220830.pdf", self_contained = T)
+}
+
+
 
 
 
