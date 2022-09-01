@@ -3921,8 +3921,8 @@ adaptive_v2 <- adaptive_v2 %>% mutate(BBLID=as.numeric(`BBL ID`)) %>% rename(tes
   }
   acc_tab %>%
     kbl(caption = "CAT CNB tasks, Response Times (ms)", align = rep("c", 8)) %>%
-    kable_classic(full_width = F, html_font = "Cambria") %>% 
-    save_kable(file = "data/outputs/cat_cnb_rt_dist/mRT_all_table_220830.pdf", self_contained = T)
+    kable_classic(full_width = F, html_font = "Cambria") # %>%
+    # save_kable(file = "data/outputs/cat_cnb_rt_dist/mRT_all_table_220830.pdf", self_contained = T)
 }
 
 
