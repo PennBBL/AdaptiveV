@@ -1228,6 +1228,7 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
 
 
 # 6.16.22 I think for ICCs I just need mean and sd of tot scores in general
+# 8.30.22 added code for RT norms
 { # acc/score
   ADT30_1$ADT30_1_CORR <- rowSums(ADT30_1 %>% dplyr::select(matches("CORR")))
   ADT30_2$ADT30_2_CORR <- rowSums(ADT30_2 %>% dplyr::select(matches("CORR")))
@@ -1254,16 +1255,15 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
   names(ADT_3tojoin) <- names   # ADT30_1 items are named ADT30_QID001 - ADT30_QID012, ADT30_QID049 - ADT30_QID066
   ADT_all <- rbind(ADT_1tojoin,ADT_2tojoin,ADT_3tojoin)
   
-  # add a QA, limiting RT to something in the range 100 ms - 120000 ms
-  ADT_all[ADT_all > 120000 | ADT_all < 100] <- NA
-  
   ADT_rt <- data.frame(matrix(NA,nrow = ncol(ADT_all),ncol = 2))
   row.names(ADT_rt) <- names(ADT_all)
   names(ADT_rt) <- c("mean","sd")
   
   for (i in 1:ncol(ADT_all)) {
+    # QA method for extremes on both ends: winsorize, 1%
+    rt_vector <- winsor(ADT_all[,i],trim = 0.025,na.rm = T)
     # SD and mean for each item
-    ADT_rt[i,] <- c(mean(ADT_all[,i],na.rm=T),sd(ADT_all[,i],na.rm=T))
+    ADT_rt[i,] <- c(mean(rt_vector,na.rm=T),sd(rt_vector,na.rm=T))
   }
 }
 
@@ -1296,16 +1296,15 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
   names(CPF_5tojoin) <- names   
   CPF_all <- rbind(CPF_1tojoin,CPF_4tojoin,CPF_5tojoin)
   
-  # add a QA, limiting RT to something in the range 100 ms - 120000 ms
-  CPF_all[CPF_all > 120000 | CPF_all < 100] <- NA
-  
   CPF_rt <- data.frame(matrix(NA,nrow = ncol(CPF_all),ncol = 2))
   row.names(CPF_rt) <- names(CPF_all)
   names(CPF_rt) <- c("mean","sd")
   
   for (i in 1:ncol(CPF_all)) {
+    # QA method for extremes on both ends: winsorize, 1%
+    rt_vector <- winsor(CPF_all[,i],trim = 0.025,na.rm = T)
     # SD and mean for each item
-    CPF_rt[i,] <- c(mean(CPF_all[,i],na.rm=T),sd(CPF_all[,i],na.rm=T))
+    CPF_rt[i,] <- c(mean(rt_vector,na.rm=T),sd(rt_vector,na.rm=T))
   }
 }
 
@@ -1340,16 +1339,15 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
   names(CPW_3tojoin) <- names   
   CPW_all <- rbind(CPW_1tojoin,CPW_2tojoin,CPW_3tojoin)
   
-  # add a QA, limiting RT to something in the range 100 ms - 120000 ms
-  CPW_all[CPW_all > 120000 | CPW_all < 100] <- NA
-  
   CPW_rt <- data.frame(matrix(NA,nrow = ncol(CPW_all),ncol = 2))
   row.names(CPW_rt) <- names(CPW_all)
   names(CPW_rt) <- c("mean","sd")
   
   for (i in 1:ncol(CPW_all)) {
+    # QA method for extremes on both ends: winsorize, 1%
+    rt_vector <- winsor(CPW_all[,i],trim = 0.025,na.rm = T)
     # SD and mean for each item
-    CPW_rt[i,] <- c(mean(CPW_all[,i],na.rm=T),sd(CPW_all[,i],na.rm=T))
+    CPW_rt[i,] <- c(mean(rt_vector,na.rm=T),sd(rt_vector,na.rm=T))
   }
 }
 
@@ -1362,7 +1360,28 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
   score_sum[6,] <- data.frame(mean = mean(DDISC_all,na.rm = T),sd = sd(DDISC_all,na.rm = T))
   
   # rt/speed
+  DDISC_1tojoin <- data.frame(DDISC_1 %>% dplyr::select(matches("trr_")),matrix(NA, nrow = nrow(DDISC_1), ncol = 48))
+  DDISC_2tojoin <- data.frame(matrix(NA,nrow = nrow(DDISC_2),ncol = 82))
+  DDISC_2tojoin[,c(25,35:36,2,37:38,34,16,39:42,7,43,14,44:47,8,48,19,30,49:50,18,51:58)] <- DDISC_2 %>% dplyr::select(matches("trr_"))
+  DDISC_3tojoin <- data.frame(matrix(NA,nrow = nrow(DDISC_3),ncol = 82))
+  DDISC_3tojoin[,c(30,59:60,8,7,61:69,14,2,70,19,71:74,34,75:76,25,18,16,77:82)] <- DDISC_3 %>% dplyr::select(matches("trr_"))
   
+  names <- c("DISC_A_25","DISC_A_10","DISC_A_33","DISC_A_15","DISC_A_11","DISC_A_19","DISC_A_6","DISC_A_2","DISC_A_13","DISC_A_24","DISC_A_14","DISC_A_12","DISC_A_17","DISC_A_7","DISC_A_32","DISC_A_1","DISC_A_34","DISC_A_4","DISC_A_5","DISC_A_28","DISC_A_27","DISC_A_20","DISC_A_22","DISC_A_31","DISC_A_8","DISC_A_21","DISC_A_29","DISC_A_18","DISC_A_30","DISC_A_3","DISC_A_16","DISC_A_26","DISC_A_23","DISC_A_9","DISC_B_24","DISC_B_20","DISC_B_2","DISC_B_5","DISC_B_15","DISC_B_23","DISC_B_21","DISC_B_12","DISC_B_9","DISC_B_13","DISC_B_4","DISC_B_11","DISC_B_18","DISC_B_16","DISC_B_19","DISC_B_22","DISC_B_10","DISC_B_17","DISC_B_3","DISC_B_1","DISC_B_7","DISC_B_8","DISC_B_14","DISC_B_6","DISC_C_13","DISC_C_4","DISC_C_11","DISC_C_22","DISC_C_14","DISC_C_21","DISC_C_17","DISC_C_12","DISC_C_15","DISC_C_3","DISC_C_8","DISC_C_10","DISC_C_18","DISC_C_20","DISC_C_23","DISC_C_16","DISC_C_19","DISC_C_7","DISC_C_24","DISC_C_2","DISC_C_6","DISC_C_9","DISC_C_5","DISC_C_1")
+  names(DDISC_1tojoin) <- names   
+  names(DDISC_2tojoin) <- names   
+  names(DDISC_3tojoin) <- names   
+  DDISC_all <- rbind(DDISC_1tojoin,DDISC_2tojoin,DDISC_3tojoin)
+  
+  DDISC_rt <- data.frame(matrix(NA,nrow = ncol(DDISC_all),ncol = 2))
+  row.names(DDISC_rt) <- names(DDISC_all)
+  names(DDISC_rt) <- c("mean","sd")
+  
+  for (i in 1:ncol(DDISC_all)) {
+    # QA method for extremes on both ends: winsorize, 1%
+    rt_vector <- winsor(DDISC_all[,i],trim = 0.025,na.rm = T)
+    # SD and mean for each item
+    DDISC_rt[i,] <- c(mean(rt_vector,na.rm=T),sd(rt_vector,na.rm=T))
+  }
 }
 
 { # acc/score
@@ -1386,7 +1405,28 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
   score_sum[9,] <- data.frame(mean = mean(EDISC_all,na.rm = T),sd = sd(EDISC_all,na.rm = T))
   
   # rt/speed
+  EDISC_1tojoin <- data.frame(EDISC_1 %>% dplyr::select(matches("_ttr")),matrix(NA, nrow = nrow(EDISC_1), ncol = 48))
+  EDISC_2tojoin <- data.frame(matrix(NA,nrow = nrow(EDISC_2),ncol = 82))
+  EDISC_2tojoin[,c(25,35:36,2,37:38,34,16,39:42,7,43,14,44:47,8,48,19,30,49:50,18,51:58)] <- EDISC_2 %>% dplyr::select(matches("_ttr"))
+  EDISC_3tojoin <- data.frame(matrix(NA,nrow = nrow(EDISC_3),ncol = 82))
+  EDISC_3tojoin[,c(30,59:60,8,7,61:69,14,2,70,19,71:74,34,75:76,25,18,16,77:82)] <- EDISC_3 %>% dplyr::select(matches("_ttr"))
   
+  names <- c("DISC_A_25","DISC_A_10","DISC_A_33","DISC_A_15","DISC_A_11","DISC_A_19","DISC_A_6","DISC_A_2","DISC_A_13","DISC_A_24","DISC_A_14","DISC_A_12","DISC_A_17","DISC_A_7","DISC_A_32","DISC_A_1","DISC_A_34","DISC_A_4","DISC_A_5","DISC_A_28","DISC_A_27","DISC_A_20","DISC_A_22","DISC_A_31","DISC_A_8","DISC_A_21","DISC_A_29","DISC_A_18","DISC_A_30","DISC_A_3","DISC_A_16","DISC_A_26","DISC_A_23","DISC_A_9","DISC_B_24","DISC_B_20","DISC_B_2","DISC_B_5","DISC_B_15","DISC_B_23","DISC_B_21","DISC_B_12","DISC_B_9","DISC_B_13","DISC_B_4","DISC_B_11","DISC_B_18","DISC_B_16","DISC_B_19","DISC_B_22","DISC_B_10","DISC_B_17","DISC_B_3","DISC_B_1","DISC_B_7","DISC_B_8","DISC_B_14","DISC_B_6","DISC_C_13","DISC_C_4","DISC_C_11","DISC_C_22","DISC_C_14","DISC_C_21","DISC_C_17","DISC_C_12","DISC_C_15","DISC_C_3","DISC_C_8","DISC_C_10","DISC_C_18","DISC_C_20","DISC_C_23","DISC_C_16","DISC_C_19","DISC_C_7","DISC_C_24","DISC_C_2","DISC_C_6","DISC_C_9","DISC_C_5","DISC_C_1")
+  names(EDISC_1tojoin) <- names   
+  names(EDISC_2tojoin) <- names   
+  names(EDISC_3tojoin) <- names   
+  EDISC_all <- rbind(EDISC_1tojoin,EDISC_2tojoin,EDISC_3tojoin)
+  
+  EDISC_rt <- data.frame(matrix(NA,nrow = ncol(EDISC_all),ncol = 2))
+  row.names(EDISC_rt) <- names(EDISC_all)
+  names(EDISC_rt) <- c("mean","sd")
+  
+  for (i in 1:ncol(EDISC_all)) {
+    # QA method for extremes on both ends: winsorize, 1%
+    rt_vector <- winsor(EDISC_all[,i],trim = 0.025,na.rm = T)
+    # SD and mean for each item
+    EDISC_rt[i,] <- c(mean(rt_vector,na.rm=T),sd(rt_vector,na.rm=T))
+  }
 }
 
 { # acc/score
@@ -1398,7 +1438,28 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
   score_sum[10,] <- data.frame(mean = mean(ER40_all,na.rm = T),sd = sd(ER40_all,na.rm = T))
   
   # rt/speed
+  ER40_1tojoin <- data.frame(ER40_1 %>% dplyr::select(matches("_TTR")),matrix(NA, nrow = nrow(ER40_1), ncol = 40))
+  ER40_2tojoin <- data.frame(matrix(NA,nrow = nrow(ER40_2),ncol = 80))
+  ER40_2tojoin[,c(1,3,21,23,5,7,25,27,9,11,29,31,13,15,33,35,17,19,37,39,41:60)] <- ER40_2 %>% dplyr::select(matches("_TTR"))
+  ER40_3tojoin <- data.frame(matrix(NA,nrow = nrow(ER40_3),ncol = 80))
+  ER40_3tojoin[,c(1,3,21,23,5,7,25,27,9,11,29,31,13,15,33,35,17,19,37,39,61:80)] <- ER40_3 %>% dplyr::select(matches("_TTR"))
   
+  names <- c("ER40_A_1","ER40_A_2","ER40_A_3","ER40_A_4","ER40_A_5","ER40_A_6","ER40_A_7","ER40_A_8","ER40_A_9","ER40_A_10","ER40_A_11","ER40_A_12","ER40_A_13","ER40_A_14","ER40_A_15","ER40_A_16","ER40_A_17","ER40_A_18","ER40_A_19","ER40_A_20","ER40_A_21","ER40_A_22","ER40_A_23","ER40_A_24","ER40_A_25","ER40_A_26","ER40_A_27","ER40_A_28","ER40_A_29","ER40_A_30","ER40_A_31","ER40_A_32","ER40_A_33","ER40_A_34","ER40_A_35","ER40_A_36","ER40_A_37","ER40_A_38","ER40_A_39","ER40_A_40","ER40_C_1","ER40_C_2","ER40_C_5","ER40_C_7","ER40_C_9","ER40_C_11","ER40_C_13","ER40_C_15","ER40_C_17","ER40_C_18","ER40_C_21","ER40_C_23","ER40_C_25","ER40_C_27","ER40_C_29","ER40_C_30","ER40_C_33","ER40_C_35","ER40_C_37","ER40_C_39","ER40_C_3","ER40_C_4","ER40_C_6","ER40_C_8","ER40_C_10","ER40_C_12","ER40_C_14","ER40_C_16","ER40_C_19","ER40_C_20","ER40_C_22","ER40_C_24","ER40_C_26","ER40_C_28","ER40_C_31","ER40_C_32","ER40_C_34","ER40_C_36","ER40_C_38","ER40_C_40")
+  names(ER40_1tojoin) <- names   
+  names(ER40_2tojoin) <- names   
+  names(ER40_3tojoin) <- names   
+  ER40_all <- rbind(ER40_1tojoin,ER40_2tojoin,ER40_3tojoin)
+  
+  ER40_rt <- data.frame(matrix(NA,nrow = ncol(ER40_all),ncol = 2))
+  row.names(ER40_rt) <- names(ER40_all)
+  names(ER40_rt) <- c("mean","sd")
+  
+  for (i in 1:ncol(ER40_all)) {
+    # QA method for extremes on both ends: winsorize, 1%
+    rt_vector <- winsor(ER40_all[,i],trim = 0.025,na.rm = T)
+    # SD and mean for each item
+    ER40_rt[i,] <- c(mean(rt_vector,na.rm=T),sd(rt_vector,na.rm=T))
+  }
 }
 
 { # acc/score
@@ -1420,7 +1481,28 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
   score_sum[12,] <- data.frame(mean = mean(MEDF_all,na.rm = T),sd = sd(MEDF_all,na.rm = T))
   
   # rt/speed
+  MEDF_1tojoin <- data.frame(MEDF_1 %>% dplyr::select(matches("_TTR")),matrix(NA, nrow = nrow(MEDF_1), ncol = 30))
+  MEDF_2tojoin <- data.frame(matrix(NA,nrow = nrow(MEDF_2),ncol = 60))
+  MEDF_2tojoin[,c(11,1,24,31,18,32:36,23,9,17,4,37,20,38:40,7,6,41:42,26,43:45,14,22,8)] <- MEDF_2 %>% dplyr::select(matches("_TTR"))
+  MEDF_3tojoin <- data.frame(matrix(NA,nrow = nrow(MEDF_3),ncol = 60))
+  MEDF_3tojoin[,c(46:47,23,9,26,48:49,6,14,18,22,50,24,8,51,17,52:53,7,54,4,55:57,11,58:60,1,20)] <- MEDF_3 %>% dplyr::select(matches("_TTR"))
   
+  names <- c("MEDF60_38","MEDF60_11","MEDF60_7","MEDF60_28","MEDF60_44","MEDF60_25","MEDF60_4","MEDF60_21","MEDF60_27","MEDF60_58","MEDF60_33","MEDF60_15","MEDF60_41","MEDF60_51","MEDF60_22","MEDF60_10","MEDF60_17","MEDF60_36","MEDF60_57","MEDF60_14","MEDF60_60","MEDF60_12","MEDF60_32","MEDF60_34","MEDF60_56","MEDF60_59","MEDF60_37","MEDF60_19","MEDF60_54","MEDF60_5","MEDF60_48","MEDF60_55","MEDF60_46","MEDF60_23","MEDF60_43","MEDF60_8","MEDF60_13","MEDF60_53","MEDF60_18","MEDF60_24","MEDF60_6","MEDF60_26","MEDF60_49","MEDF60_2","MEDF60_31","MEDF60_45","MEDF60_40","MEDF60_1","MEDF60_47","MEDF60_42","MEDF60_9","MEDF60_3","MEDF60_52","MEDF60_35","MEDF60_29","MEDF60_20","MEDF60_30","MEDF60_50","MEDF60_39","MEDF60_16")
+  names(MEDF_1tojoin) <- names   
+  names(MEDF_2tojoin) <- names   
+  names(MEDF_3tojoin) <- names   
+  MEDF_all <- rbind(MEDF_1tojoin,MEDF_2tojoin,MEDF_3tojoin)
+  
+  MEDF_rt <- data.frame(matrix(NA,nrow = ncol(MEDF_all),ncol = 2))
+  row.names(MEDF_rt) <- names(MEDF_all)
+  names(MEDF_rt) <- c("mean","sd")
+  
+  for (i in 1:ncol(MEDF_all)) {
+    # QA method for extremes on both ends: winsorize, 1%
+    rt_vector <- winsor(MEDF_all[,i],trim = 0.025,na.rm = T)
+    # SD and mean for each item
+    MEDF_rt[i,] <- c(mean(rt_vector,na.rm=T),sd(rt_vector,na.rm=T))
+  }
 }
 
 { # acc/score
@@ -1432,7 +1514,28 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
   score_sum[13,] <- data.frame(mean = mean(PLOT24_all,na.rm = T),sd = sd(PLOT24_all,na.rm = T))
   
   # rt/speed
+  PLOT_1tojoin <- data.frame(PLOT24_1 %>% dplyr::select(matches("_TTR")),matrix(NA, nrow = nrow(PLOT24_1), ncol = 34))
+  PLOT_2tojoin <- data.frame(matrix(NA,nrow = nrow(PLOT24_2),ncol = 58))
+  PLOT_2tojoin[,c(1:7,25:41)] <- PLOT24_2 %>% dplyr::select(matches("_TTR"))
+  PLOT_3tojoin <- data.frame(matrix(NA,nrow = nrow(PLOT24_3),ncol = 58))
+  PLOT_3tojoin[,c(1:7,42:58)] <- PLOT24_3 %>% dplyr::select(matches("_TTR"))
   
+  names <- c("VSPLOT24_v1_Item_1","VSPLOT24_v1_Item_2","VSPLOT24_v1_Item_3","VSPLOT24_v1_Item_4","VSPLOT24_v1_Item_5","VSPLOT24_v1_Item_6","VSPLOT24_v1_Item_7","VSPLOT24_v1_Item_8","VSPLOT24_v1_Item_9","VSPLOT24_v1_Item_10","VSPLOT24_v1_Item_11","VSPLOT24_v1_Item_12","VSPLOT24_v1_Item_13","VSPLOT24_v1_Item_14","VSPLOT24_v1_Item_15","VSPLOT24_v1_Item_16","VSPLOT24_v1_Item_17","VSPLOT24_v1_Item_18","VSPLOT24_v1_Item_19","VSPLOT24_v1_Item_20","VSPLOT24_v1_Item_21","VSPLOT24_v1_Item_22","VSPLOT24_v1_Item_23","VSPLOT24_v1_Item_24","SPLOT12_v1_Item_1","SPLOT12_v1_Item_2","SPLOT12_v1_Item_3","SPLOT12_v1_Item_4","SPLOT12_v1_Item_5","SPLOT12_v1_Item_6","NewPLOT_v3_Item_1","NewPLOT_v3_Item_2","NewPLOT_v3_Item_3","NewPLOT_v3_Item_4","NewPLOT_v3_Item_5","NewPLOT_v3_Item_6","NewPLOT_v3_Item_7","NewPLOT_v3_Item_8","NewPLOT_v3_Item_9","NewPLOT_v3_Item_10","NewPLOT_v3_Item_11","SPLOT12_v1_Item_7","SPLOT12_v1_Item_8","SPLOT12_v1_Item_9","SPLOT12_v1_Item_10","SPLOT12_v1_Item_11","SPLOT12_v1_Item_12","NewPLOT_v3_Item_12","NewPLOT_v3_Item_13","NewPLOT_v3_Item_14","NewPLOT_v3_Item_15","NewPLOT_v3_Item_16","NewPLOT_v3_Item_17","NewPLOT_v3_Item_18","NewPLOT_v3_Item_19","NewPLOT_v3_Item_20","NewPLOT_v3_Item_21","NewPLOT_v3_Item_22")
+  names(PLOT_1tojoin) <- names   
+  names(PLOT_2tojoin) <- names   
+  names(PLOT_3tojoin) <- names   
+  PLOT_all <- rbind(PLOT_1tojoin,PLOT_2tojoin,PLOT_3tojoin)
+  
+  PLOT_rt <- data.frame(matrix(NA,nrow = ncol(PLOT_all),ncol = 2))
+  row.names(PLOT_rt) <- names(PLOT_all)
+  names(PLOT_rt) <- c("mean","sd")
+  
+  for (i in 1:ncol(PLOT_all)) {
+    # QA method for extremes on both ends: winsorize, 1%
+    rt_vector <- winsor(PLOT_all[,i],trim = 0.025,na.rm = T)
+    # SD and mean for each item
+    PLOT_rt[i,] <- c(mean(rt_vector,na.rm=T),sd(rt_vector,na.rm=T))
+  }
 }
 
 { # acc/score
@@ -1444,7 +1547,28 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
   score_sum[14,] <- data.frame(mean = mean(PMAT24_all,na.rm = T),sd = sd(PMAT24_all,na.rm = T))
   
   # rt/speed
+  PMAT_1tojoin <- data.frame(PMAT24_1 %>% dplyr::select(matches("_TTR")),matrix(NA, nrow = nrow(PMAT24_1), ncol = 32))
+  PMAT_2tojoin <- data.frame(matrix(NA,nrow = nrow(PMAT24_2),ncol = 56))
+  PMAT_2tojoin[,c(1,25,2,26,5,27:28,7,29,11,30:33,16,34:36,19,37:38,22,39:40)] <- PMAT24_2 %>% dplyr::select(matches("_TTR"))
+  PMAT_3tojoin <- data.frame(matrix(NA,nrow = nrow(PMAT24_3),ncol = 56))
+  PMAT_3tojoin[,c(1,41,2,42,5,43:44,7,45,11,46:49,16,50:52,19,53:54,22,55:56)] <- PMAT24_3 %>% dplyr::select(matches("_TTR"))
   
+  names <- c("PMAT24_A_1","PMAT24_A_2","PMAT24_A_3","PMAT24_A_4","PMAT24_A_5","PMAT24_A_6","PMAT24_A_7","PMAT24_A_8","PMAT24_A_9","PMAT24_A_10","PMAT24_A_11","PMAT24_A_12","PMAT24_A_13","PMAT24_A_14","PMAT24_A_15","PMAT24_A_16","PMAT24_A_17","PMAT24_A_18","PMAT24_A_19","PMAT24_A_20","PMAT24_A_21","PMAT24_A_22","PMAT24_A_23","PMAT24_A_24","PMAT24_B_2","PMAT24_B_4","PMAT24_B_6","PMAT24_B_7","PMAT24_B_9","PMAT24_B_11","PMAT24_B_12","PMAT24_B_13","PMAT24_B_14","PMAT24_B_16","PMAT24_B_17","PMAT24_B_18","PMAT24_B_20","PMAT24_B_21","PMAT24_B_23","PMAT24_B_24","pmat18_18B-3","pmat03_18A-4","pmat60","pmat26_18A-7","pmat52","pmat04_18B-8","pmat07_18B-9","pmat57","pmat62_18B-11","pmat06","pmat02_18B-12","pmat41_18B-13","pmat71_18A-15","pmat53_18A-17","pmat80","pmat25")
+  names(PMAT_1tojoin) <- names   
+  names(PMAT_2tojoin) <- names   
+  names(PMAT_3tojoin) <- names   
+  PMAT_all <- rbind(PMAT_1tojoin,PMAT_2tojoin,PMAT_3tojoin)
+  
+  PMAT_rt <- data.frame(matrix(NA,nrow = ncol(PMAT_all),ncol = 2))
+  row.names(PMAT_rt) <- names(PMAT_all)
+  names(PMAT_rt) <- c("mean","sd")
+  
+  for (i in 1:ncol(PMAT_all)) {
+    # QA method for extremes on both ends: winsorize, 1%
+    rt_vector <- winsor(PMAT_all[,i],trim = 0.025,na.rm = T)
+    # SD and mean for each item
+    PMAT_rt[i,] <- c(mean(rt_vector,na.rm=T),sd(rt_vector,na.rm=T))
+  }
 }
 
 { # acc/score
@@ -1456,7 +1580,28 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
   score_sum[15,] <- data.frame(mean = mean(PVRT25_all,na.rm = T),sd = sd(PVRT25_all,na.rm = T))
   
   # rt/speed
+  PVRT_1tojoin <- data.frame(PVRT25_1 %>% dplyr::select(matches("_TTR")),matrix(NA, nrow = nrow(PVRT25_1), ncol = 34))
+  PVRT_2tojoin <- data.frame(matrix(NA,nrow = nrow(PVRT25_2),ncol = 59))
+  PVRT_2tojoin[,c(1,3:4,9,20:21,7:8,26:42)] <- PVRT25_2 %>% dplyr::select(matches("_TTR"))
+  PVRT_3tojoin <- data.frame(matrix(NA,nrow = nrow(PVRT25_3),ncol = 59))
+  PVRT_3tojoin[,c(1,3:4,9,20:21,7:8,43:59)] <- PVRT25_3 %>% dplyr::select(matches("_TTR"))
   
+  names <- c("PVRT_1","PVRT_2","PVRT_3","PVRT_4","KSPVRT_A_1","KSPVRT_A_2","KSPVRT_B_1","KSPVRT_B_2","PVRT_1002","PVRT_6","PVRT_8","PVRT_9","PVRT_10","PVRT_11","PVRT_12","PVRT_1001","KSPVRT_A_3","KSPVRT_A_4","KSPVRT_A_5","KSPVRT_A_10","KSPVRT_A_7","KSPVRT_B_3","KSPVRT_B_4","KSPVRT_B_5","KSPVRT_B_6","PVRT_14","PVRT_15","PVRT_16","PVRT_17","PVRT_18","PVRT_30","PVRT_22","PVRT_21","KSPVRT_A_8","KSPVRT_A_9","KSPVRT_A_6","KSPVRT_A_11","KSPVRT_A_12","KSPVRT_B_7","KSPVRT_B_8","KSPVRT_B_9","KSPVRT_B_10","PVRT_20","PVRT_1003","PVRT_24","PVRT_25","PVRT_26","PVRT_27","PVRT_28","PVRT_29","PVRT_19","KSPVRT_A_13","KSPVRT_A_14","KSPVRT_A_15","KSPVRT_B_11","KSPVRT_B_12","KSPVRT_B_13","KSPVRT_B_14","KSPVRT_B_15")
+  names(PVRT_1tojoin) <- names   
+  names(PVRT_2tojoin) <- names   
+  names(PVRT_3tojoin) <- names   
+  PVRT_all <- rbind(PVRT_1tojoin,PVRT_2tojoin,PVRT_3tojoin)
+  
+  PVRT_rt <- data.frame(matrix(NA,nrow = ncol(PVRT_all),ncol = 2))
+  row.names(PVRT_rt) <- names(PVRT_all)
+  names(PVRT_rt) <- c("mean","sd")
+  
+  for (i in 1:ncol(PVRT_all)) {
+    # QA method for extremes on both ends: winsorize, 1%
+    rt_vector <- winsor(PVRT_all[,i],trim = 0.025,na.rm = T)
+    # SD and mean for each item
+    PVRT_rt[i,] <- c(mean(rt_vector,na.rm=T),sd(rt_vector,na.rm=T))
+  }
 }
 
 { # acc/score
@@ -1468,7 +1613,28 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
   score_sum[16,] <- data.frame(mean = mean(RDISC_all,na.rm = T),sd = sd(RDISC_all,na.rm = T))
   
   # rt/speed
+  RDISC_1tojoin <- data.frame(RDISC_1 %>% dplyr::select(matches("trr_")),matrix(NA, nrow = nrow(RDISC_1), ncol = 48))
+  RDISC_2tojoin <- data.frame(matrix(NA,nrow = nrow(RDISC_2),ncol = 82))
+  RDISC_2tojoin[,c(25,35:36,2,37:38,34,16,39:42,7,43,14,44:47,8,48,19,30,49:50,18,51:58)] <- RDISC_2 %>% dplyr::select(matches("trr_"))
+  RDISC_3tojoin <- data.frame(matrix(NA,nrow = nrow(RDISC_3),ncol = 82))
+  RDISC_3tojoin[,c(30,59:60,8,7,61:69,14,2,70,19,71:74,34,75:76,25,18,16,77:82)] <- RDISC_3 %>% dplyr::select(matches("trr_"))
   
+  names <- c("RDISC_A_25","RDISC_A_10","RDISC_A_33","RDISC_A_15","RDISC_A_11","RDISC_A_19","RDISC_A_6","RDISC_A_2","RDISC_A_13","RDISC_A_24","RDISC_A_14","RDISC_A_12","RDISC_A_17","RDISC_A_7","RDISC_A_32","RDISC_A_1","RDISC_A_34","RDISC_A_4","RDISC_A_5","RDISC_A_28","RDISC_A_27","RDISC_A_20","RDISC_A_22","RDISC_A_31","RDISC_A_8","RDISC_A_21","RDISC_A_29","RDISC_A_18","RDISC_A_30","RDISC_A_3","RDISC_A_16","RDISC_A_26","RDISC_A_23","RDISC_A_9","RDISC_B_24","RDISC_B_20","RDISC_B_2","RDISC_B_5","RDISC_B_15","RDISC_B_23","RDISC_B_21","RDISC_B_12","RDISC_B_9","RDISC_B_13","RDISC_B_4","RDISC_B_11","RDISC_B_18","RDISC_B_16","RDISC_B_19","RDISC_B_22","RDISC_B_10","RDISC_B_17","RDISC_B_3","RDISC_B_1","RDISC_B_7","RDISC_B_8","RDISC_B_14","RDISC_B_6","RDISC_C_13","RDISC_C_4","RDISC_C_11","RDISC_C_22","RDISC_C_14","RDISC_C_21","RDISC_C_17","RDISC_C_12","RDISC_C_15","RDISC_C_3","RDISC_C_8","RDISC_C_10","RDISC_C_18","RDISC_C_20","RDISC_C_23","RDISC_C_16","RDISC_C_19","RDISC_C_7","RDISC_C_24","RDISC_C_2","RDISC_C_6","RDISC_C_9","RDISC_C_5","RDISC_C_1")
+  names(RDISC_1tojoin) <- names   
+  names(RDISC_2tojoin) <- names   
+  names(RDISC_3tojoin) <- names   
+  RDISC_all <- rbind(RDISC_1tojoin,RDISC_2tojoin,RDISC_3tojoin)
+  
+  RDISC_rt <- data.frame(matrix(NA,nrow = ncol(RDISC_all),ncol = 2))
+  row.names(RDISC_rt) <- names(RDISC_all)
+  names(RDISC_rt) <- c("mean","sd")
+  
+  for (i in 1:ncol(RDISC_all)) {
+    # QA method for extremes on both ends: winsorize, 1%
+    rt_vector <- winsor(RDISC_all[,i],trim = 0.025,na.rm = T)
+    # SD and mean for each item
+    RDISC_rt[i,] <- c(mean(rt_vector,na.rm=T),sd(rt_vector,na.rm=T))
+  }
 }
 
 { # acc/score
@@ -1481,7 +1647,31 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
   score_sum[17,] <- data.frame(mean = mean(SVOLT_all,na.rm = T),sd = sd(SVOLT_all,na.rm = T))
   
   # rt/speed
+  SVOLT_1tojoin <- data.frame(SVOLT_1 %>% dplyr::select(matches("_TTR")),matrix(NA, nrow = nrow(SVOLT_1), ncol = 42))
+  SVOLT_2tojoin <- data.frame(matrix(NA,nrow = nrow(SVOLT_2),ncol = 62))
+  SVOLT_2tojoin[,c(1:6,21:34)] <- SVOLT_2 %>% dplyr::select(matches("_TTR"))
+  SVOLT_3tojoin <- data.frame(matrix(NA,nrow = nrow(SVOLT_3),ncol = 62))
+  SVOLT_3tojoin[,c(1:6,35:48)] <- SVOLT_3 %>% dplyr::select(matches("_TTR"))
+  SVOLT_4tojoin <- data.frame(matrix(NA,nrow = nrow(SVOLT_4),ncol = 62))
+  SVOLT_4tojoin[,c(1:6,49:62)] <- SVOLT_4 %>% dplyr::select(matches("_TTR"))
   
+  names <- c("SVOLT_A_3","SVOLT_A_1","SVOLT_A_6","SVOLT_A_2","SVOLT_A_4","SVOLT_A_7","SVOLT_A_11","SVOLT_A_5","SVOLT_A_12","SVOLT_A_8","SVOLT_A_14","SVOLT_A_16","SVOLT_A_9","SVOLT_A_10","SVOLT_A_13","SVOLT_A_17","SVOLT_A_18","SVOLT_A_15","SVOLT_A_20","SVOLT_A_19","SVOLT_B_1","SVOLT_B_2","SVOLT_B_3","SVOLT_B_6","SVOLT_B_4","SVOLT_B_5","SVOLT_B_7","SVOLT_B_9","SVOLT_B_10","SVOLT_B_8","SVOLT_B_13","SVOLT_B_11","SVOLT_B_17","SVOLT_B_12","SVOLT_C_3","SVOLT_C_1","SVOLT_C_4","SVOLT_C_2","SVOLT_C_6","SVOLT_C_7","SVOLT_C_5","SVOLT_C_8","SVOLT_C_11","SVOLT_C_10","SVOLT_C_9","SVOLT_C_12","SVOLT_C_13","SVOLT_C_14","SVOLT_C_15","SVOLT_B_14","SVOLT_B_18","SVOLT_B_15","SVOLT_B_19","SVOLT_B_20","SVOLT_C_19","SVOLT_B_16","SVOLT_C_17","SVOLT_C_18","SVOLT_C_16","SVOLT_D_2","SVOLT_C_20","SVOLT_D_5")
+  names(SVOLT_1tojoin) <- names   
+  names(SVOLT_2tojoin) <- names   
+  names(SVOLT_3tojoin) <- names   
+  names(SVOLT_4tojoin) <- names
+  SVOLT_all <- rbind(SVOLT_1tojoin,SVOLT_2tojoin,SVOLT_3tojoin,SVOLT_4tojoin)
+  
+  SVOLT_rt <- data.frame(matrix(NA,nrow = ncol(SVOLT_all),ncol = 2))
+  row.names(SVOLT_rt) <- names(SVOLT_all)
+  names(SVOLT_rt) <- c("mean","sd")
+  
+  for (i in 1:ncol(SVOLT_all)) {
+    # QA method for extremes on both ends: winsorize, 1%
+    rt_vector <- winsor(SVOLT_all[,i],trim = 0.025,na.rm = T)
+    # SD and mean for each item
+    SVOLT_rt[i,] <- c(mean(rt_vector,na.rm=T),sd(rt_vector,na.rm=T))
+  }
 }
 
 
@@ -1489,7 +1679,20 @@ CPT_1 <- CPT_1[,grepl("_CORR",colnames(CPT_1))]
 rownames(score_sum) <- c("ADT","AIM","CPF","CPT","CPW","DDISC","DIGSYM","DIGSYM.MEM","EDISC","ER40","GNG","MEDF","PLOT","PMAT","PVRT","RDISC","SVOLT")
 
 
-write.csv(score_sum,"data/inputs/crowd_sourced_norms/for_ICCs.csv")
+# write.csv(score_sum,"data/inputs/crowd_sourced_norms/for_ICCs.csv")
+
+write.csv(ADT_rt,"data/inputs/crowd_sourced_norms/RT_norms_ADT.csv")
+write.csv(CPF_rt,"data/inputs/crowd_sourced_norms/RT_norms_CPF.csv")
+write.csv(CPW_rt,"data/inputs/crowd_sourced_norms/RT_norms_CPW.csv")
+write.csv(DDISC_rt,"data/inputs/crowd_sourced_norms/RT_norms_DDISC.csv")
+write.csv(EDISC_rt,"data/inputs/crowd_sourced_norms/RT_norms_EDISC.csv")
+write.csv(ER40_rt,"data/inputs/crowd_sourced_norms/RT_norms_ER40.csv")
+write.csv(MEDF_rt,"data/inputs/crowd_sourced_norms/RT_norms_MEDF.csv")
+write.csv(PLOT_rt,"data/inputs/crowd_sourced_norms/RT_norms_PLOT.csv")
+write.csv(PMAT_rt,"data/inputs/crowd_sourced_norms/RT_norms_PMAT.csv")
+write.csv(PVRT_rt,"data/inputs/crowd_sourced_norms/RT_norms_PVRT.csv")
+write.csv(RDISC_rt,"data/inputs/crowd_sourced_norms/RT_norms_RDISC.csv")
+write.csv(SVOLT_rt,"data/inputs/crowd_sourced_norms/RT_norms_SVOLT.csv")
 
 
 
