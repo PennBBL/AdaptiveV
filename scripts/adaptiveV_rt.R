@@ -65,6 +65,8 @@ library(readr)
   VOLT_rt <- read.csv("data/inputs/crowd_sourced_norms/RT_norms_SVOLT.csv")
 }
 
+fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
+
 
 # Scaling CAT CNB RT ----
 # itemwise RT from adaptive CNB with be scaled using SDs and mean from above (question number is number from itembank)
@@ -487,6 +489,23 @@ library(readr)
 }
 
 
+# Merge full and CAT CNB ----
+{ # merge with full data
+  CNB_merged <- left_join(fullCNB,MRT_ADT,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,MRT_CPF,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,MRT_CPW,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,MRT_DDISC,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,MRT_EDISC,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,MRT_ER40,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,MRT_MEDF,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,MRT_PLOT,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,MRT_PMAT,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,MRT_PVRT,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,MRT_RDISC,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,MRT_VOLT,by=c("bblid"="BBLID"))
+}
+
+
 # QA ----
 # SMVE (not using this method for now)
 
@@ -502,6 +521,27 @@ library(readr)
 
 
 # Plot scatters ----
+
+demos <- CNB_merged %>% dplyr::select(bblid:dotest)
+merged_RTs <- CNB_merged %>% dplyr::select(matches("tprt|rtcr|MRT|corrt|mcrrt|totrt|CRRT")) %>% cbind(demos,.)
+
+# order regress
+{
+  sc <- matrix(NA,nrow(merged_RTs),ncol(merged_RTs)-ncol(demos))
+  
+  for (i in 1:(ncol(merged_RTs)-ncol(demos))) {
+    mod <- lm(merged_RTs[,(i+ncol(demos))]~proto_3,data=merged_RTs,na.action=na.exclude)
+    sc[,i] <- scale(residuals(mod,na.action=na.exclude))
+  }
+  
+  colnames(sc) <- paste0(colnames(merged_RTs[,(ncol(demos)+1):ncol(merged_RTs)]),"_Oreg")
+}
+
+
+x_all <- data.frame(x99_split,sc)
+x_TD <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Healthy Controls"))
+x_PS <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Psychosis"))
+x_MD <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Mood-Anx-BP"))
 
 
 
