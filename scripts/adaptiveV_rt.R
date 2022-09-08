@@ -66,6 +66,7 @@ library(readr)
 }
 
 
+# Scaling CAT CNB RT ----
 # itemwise RT from adaptive CNB with be scaled using SDs and mean from above (question number is number from itembank)
 {
   CAT_ADT <- rbind(adaptive_v %>% filter(testcode == "adt-1.00-cat") %>% rename(datasetid = datasetid_v),
@@ -377,7 +378,116 @@ library(readr)
 }
 
 
-# QA
+# Calculate MRT for each pt ----
+{ # ADT
+  # check that each BBLID only has one complete set of data
+  View(data.frame(table(CAT_ADT$BBLID)))
+  # calculate MRT
+  MRT_ADT <- CAT_ADT %>% group_by(BBLID) %>% summarise(ADT_MRT = median(scaled))
+  # merge MRT 
+  CAT_ADT <- left_join(CAT_ADT,MRT_ADT, by="BBLID")
+  
+  # CPF
+  # check that each BBLID only has one complete set of data
+  View(data.frame(table(CAT_CPF$BBLID)))
+  # duplicate data for 15507 (get rid of datasetid 893), 22723 keep original data from when they completed the whole battery (get rid of datasetid 556), 22293 (get rid of datasetid 597 for incomplete data)
+  CAT_CPF <- CAT_CPF %>% filter(datasetid %notin% c(893,556,597))
+  # calculate MRT
+  MRT_CPF <- CAT_CPF %>% group_by(BBLID) %>% summarise(CPF_MRT = median(scaled))
+  # merge MRT 
+  CAT_CPF <- left_join(CAT_CPF,MRT_CPF, by="BBLID")
+  
+  # CPW
+  # check that each BBLID only has one complete set of data
+  View(data.frame(table(CAT_CPW$BBLID)))
+  # duplicate data for 22454 (get rid of datasetid 322), 90158 test got stuck at the "smile" screen (get rid of datasetid 542)
+  CAT_CPW <- CAT_CPW %>% filter(datasetid %notin% c(322,542))
+  # calculate MRT
+  MRT_CPW <- CAT_CPW %>% group_by(BBLID) %>% summarise(CPW_MRT = median(scaled))
+  # merge MRT 
+  CAT_CPW <- left_join(CAT_CPW,MRT_CPW, by="BBLID")
+  
+  # DDISC
+  # check that each BBLID only has one complete set of data
+  View(data.frame(table(CAT_DDISC$BBLID)))
+  # calculate MRT
+  MRT_DDISC <- CAT_DDISC %>% group_by(BBLID) %>% summarise(DDISC_MRT = median(scaled))
+  # merge MRT 
+  CAT_DDISC <- left_join(CAT_DDISC,MRT_DDISC, by="BBLID")
+  
+  # EDISC
+  # check that each BBLID only has one complete set of data
+  View(data.frame(table(CAT_EDISC$BBLID)))
+  # calculate MRT
+  MRT_EDISC <- CAT_EDISC %>% group_by(BBLID) %>% summarise(EDISC_MRT = median(scaled))
+  # merge MRT 
+  CAT_EDISC <- left_join(CAT_EDISC,MRT_EDISC, by="BBLID")
+  
+  # ER40
+  # check that each BBLID only has one complete set of data
+  View(data.frame(table(CAT_ER40$BBLID)))
+  # duplicate data for 15507 (get rid of datasetid 893), 22723 keep original data from when they completed the whole battery (get rid of datasetid 556)
+  CAT_ER40 <- CAT_ER40 %>% filter(datasetid %notin% c(893,556))
+  # calculate MRT
+  MRT_ER40 <- CAT_ER40 %>% group_by(BBLID) %>% summarise(ER40_MRT = median(scaled))
+  # merge MRT 
+  CAT_ER40 <- left_join(CAT_ER40,MRT_ER40, by="BBLID")
+  
+  # MEDF
+  # check that each BBLID only has one complete set of data
+  View(data.frame(table(CAT_MEDF$BBLID)))
+  # duplicate data for 22454 (get rid of datasetid 322), 90158 (get rid of datasetid 543)
+  CAT_MEDF <- CAT_MEDF %>% filter(datasetid %notin% c(322,543))
+  # calculate MRT
+  MRT_MEDF <- CAT_MEDF %>% group_by(BBLID) %>% summarise(MEDF_MRT = median(scaled))
+  # merge MRT 
+  CAT_MEDF <- left_join(CAT_MEDF,MRT_MEDF, by="BBLID")
+  
+  # PLOT
+  # check that each BBLID only has one complete set of data
+  View(data.frame(table(CAT_PLOT$BBLID)))
+  # calculate MRT
+  MRT_PLOT <- CAT_PLOT %>% group_by(BBLID) %>% summarise(PLOT_MRT = median(scaled))
+  # merge MRT 
+  CAT_PLOT <- left_join(CAT_PLOT,MRT_PLOT, by="BBLID")
+  
+  # PMAT
+  # check that each BBLID only has one complete set of data
+  View(data.frame(table(CAT_PMAT$BBLID)))
+  # calculate MRT
+  MRT_PMAT <- CAT_PMAT %>% group_by(BBLID) %>% summarise(PMAT_MRT = median(scaled))
+  # merge MRT 
+  CAT_PMAT <- left_join(CAT_PMAT,MRT_PMAT, by="BBLID")
+  
+  # PVRT
+  # check that each BBLID only has one complete set of data
+  View(data.frame(table(CAT_PVRT$BBLID)))
+  # duplicate data for 22454 (get rid of datasetid 322), 90158 (get rid of datasetid 543)
+  CAT_PVRT <- CAT_PVRT %>% filter(datasetid %notin% c(322,543))
+  # calculate MRT
+  MRT_PVRT <- CAT_PVRT %>% group_by(BBLID) %>% summarise(PVRT_MRT = median(scaled))
+  # merge MRT 
+  CAT_PVRT <- left_join(CAT_PVRT,MRT_PVRT, by="BBLID")
+  
+  # RDISC
+  # check that each BBLID only has one complete set of data
+  View(data.frame(table(CAT_RDISC$BBLID)))
+  # calculate MRT
+  MRT_RDISC <- CAT_RDISC %>% group_by(BBLID) %>% summarise(RDISC_MRT = median(scaled))
+  # merge MRT 
+  CAT_RDISC <- left_join(CAT_RDISC,MRT_RDISC, by="BBLID")
+  
+  # VOLT
+  # check that each BBLID only has one complete set of data
+  View(data.frame(table(CAT_VOLT$BBLID)))
+  # calculate MRT
+  MRT_VOLT <- CAT_VOLT %>% group_by(BBLID) %>% summarise(VOLT_MRT = median(scaled))
+  # merge MRT 
+  CAT_VOLT <- left_join(CAT_VOLT,MRT_VOLT, by="BBLID")
+}
+
+
+# QA ----
 # SMVE (not using this method for now)
 
 
@@ -385,6 +495,19 @@ library(readr)
 
 
 # multivariate outlier removal
+
+
+# winsorize (trim=0.025) ?
+
+
+
+# Plot scatters ----
+
+
+
+
+
+
 
 
 
