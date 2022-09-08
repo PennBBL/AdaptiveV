@@ -523,7 +523,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
 # Plot scatters ----
 
 demos <- CNB_merged %>% dplyr::select(bblid:dotest)
-merged_RTs <- CNB_merged %>% dplyr::select(matches("tprt|rtcr|MRT|corrt|mcrrt|totrt|CRRT")) %>% cbind(demos,.)
+merged_RTs <- CNB_merged %>% dplyr::select(matches("tprt|mcr|rtcr|MRT|corrt|mcrrt|totrt|CRRT")) %>% cbind(demos,.)
 
 # order regress
 {
@@ -538,12 +538,99 @@ merged_RTs <- CNB_merged %>% dplyr::select(matches("tprt|rtcr|MRT|corrt|mcrrt|to
 }
 
 
-x_all <- data.frame(x99_split,sc)
-x_TD <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Healthy Controls"))
-x_PS <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Psychosis"))
-x_MD <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Mood-Anx-BP"))
+x_all <- data.frame(merged_RTs,sc)
+x_TD <- data.frame(merged_RTs,sc) %>% filter(study_group %in% c("Healthy Controls"))
+x_PS <- data.frame(merged_RTs,sc) %>% filter(study_group %in% c("Psychosis"))
+x_MD <- data.frame(merged_RTs,sc) %>% filter(study_group %in% c("Mood-Anx-BP"))
+
+# * all individual tests printed out by condition ---- 
+
+# overall
+pdf("data/outputs/scatters/CNB-CAT_RT_test-retest_scatter_matrices_ALL_bytest_220908.pdf",height=9,width=12)
+pairs.panels(x_all %>% dplyr::select(matches("adt_rtcr_Oreg|ADT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("aim_totrt_Oreg|S_AIM.AIMTOTRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
+pairs.panels(x_all %>% dplyr::select(matches("cpf_w_rtcr_Oreg|CPF_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                          # new, corrected cpf (cpfv2)
+pairs.panels(x_all %>% dplyr::select(matches("cpt_tprt_Oreg|CPT108.CATCPTT_TPRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
+pairs.panels(x_all %>% dplyr::select(matches("cpw_w_rtcr_Oreg|CPW_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("ddisc_mcr_Oreg|DDISC_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("dscorrt_Oreg|S_DIGSYM.DSCORRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_all %>% dplyr::select(matches("dsmcrrt_Oreg|S_DIGSYM.DSMCRRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym mem
+pairs.panels(x_all %>% dplyr::select(matches("edisc_mcr_Oreg|EDISC_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("er40_rtcr_Oreg|ER40_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("gng_rtcr_Oreg|GNG60.GNG60_RTCR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
+pairs.panels(x_all %>% dplyr::select(matches("medf_rtcr_Oreg|MEDF_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("plot_rtcr_Oreg|PLOT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("pmat_rtcr_Oreg|PMAT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("pvrt_rtcr_Oreg|PVRT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("rdisc_mcr_Oreg|RDISC_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("volt_w_rtcr_Oreg|VOLT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+dev.off()
 
 
+# TD
+pdf("data/outputs/scatters/CNB-CAT_RT_test-retest_scatter_matrices_TD_bytest_220908.pdf",height=9,width=12)
+pairs.panels(x_TD %>% dplyr::select(matches("adt_rtcr_Oreg|ADT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_TD %>% dplyr::select(matches("aim_totrt_Oreg|S_AIM.AIMTOTRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
+pairs.panels(x_TD %>% dplyr::select(matches("cpf_w_rtcr_Oreg|CPF_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                          # new, corrected cpf (cpfv2)
+pairs.panels(x_TD %>% dplyr::select(matches("cpt_tprt_Oreg|CPT108.CATCPTT_TPRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
+pairs.panels(x_TD %>% dplyr::select(matches("cpw_w_rtcr_Oreg|CPW_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_TD %>% dplyr::select(matches("ddisc_mcr_Oreg|DDISC_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_TD %>% dplyr::select(matches("dscorrt_Oreg|S_DIGSYM.DSCORRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_TD %>% dplyr::select(matches("dsmcrrt_Oreg|S_DIGSYM.DSMCRRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym mem
+pairs.panels(x_TD %>% dplyr::select(matches("edisc_mcr_Oreg|EDISC_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_TD %>% dplyr::select(matches("er40_rtcr_Oreg|ER40_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_TD %>% dplyr::select(matches("gng_rtcr_Oreg|GNG60.GNG60_RTCR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
+pairs.panels(x_TD %>% dplyr::select(matches("medf_rtcr_Oreg|MEDF_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_TD %>% dplyr::select(matches("plot_rtcr_Oreg|PLOT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_TD %>% dplyr::select(matches("pmat_rtcr_Oreg|PMAT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_TD %>% dplyr::select(matches("pvrt_rtcr_Oreg|PVRT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_TD %>% dplyr::select(matches("rdisc_mcr_Oreg|RDISC_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_TD %>% dplyr::select(matches("volt_w_rtcr_Oreg|VOLT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+dev.off()
+
+
+# PS
+pdf("data/outputs/scatters/CNB-CAT_RT_test-retest_scatter_matrices_PS_bytest_220908.pdf",height=9,width=12)
+pairs.panels(x_PS %>% dplyr::select(matches("adt_rtcr_Oreg|ADT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_PS %>% dplyr::select(matches("aim_totrt_Oreg|S_AIM.AIMTOTRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
+pairs.panels(x_PS %>% dplyr::select(matches("cpf_w_rtcr_Oreg|CPF_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                          # new, corrected cpf (cpfv2)
+pairs.panels(x_PS %>% dplyr::select(matches("cpt_tprt_Oreg|CPT108.CATCPTT_TPRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
+pairs.panels(x_PS %>% dplyr::select(matches("cpw_w_rtcr_Oreg|CPW_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_PS %>% dplyr::select(matches("ddisc_mcr_Oreg|DDISC_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_PS %>% dplyr::select(matches("dscorrt_Oreg|S_DIGSYM.DSCORRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_PS %>% dplyr::select(matches("dsmcrrt_Oreg|S_DIGSYM.DSMCRRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym mem
+pairs.panels(x_PS %>% dplyr::select(matches("edisc_mcr_Oreg|EDISC_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_PS %>% dplyr::select(matches("er40_rtcr_Oreg|ER40_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_PS %>% dplyr::select(matches("gng_rtcr_Oreg|GNG60.GNG60_RTCR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
+pairs.panels(x_PS %>% dplyr::select(matches("medf_rtcr_Oreg|MEDF_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_PS %>% dplyr::select(matches("plot_rtcr_Oreg|PLOT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_PS %>% dplyr::select(matches("pmat_rtcr_Oreg|PMAT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_PS %>% dplyr::select(matches("pvrt_rtcr_Oreg|PVRT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_PS %>% dplyr::select(matches("rdisc_mcr_Oreg|RDISC_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_PS %>% dplyr::select(matches("volt_w_rtcr_Oreg|VOLT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+dev.off()
+
+
+# MD
+pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_MD_bytest_220908.pdf",height=9,width=12)
+pairs.panels(x_MD %>% dplyr::select(matches("adt_rtcr_Oreg|ADT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_MD %>% dplyr::select(matches("aim_totrt_Oreg|S_AIM.AIMTOTRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
+pairs.panels(x_MD %>% dplyr::select(matches("cpf_w_rtcr_Oreg|CPF_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                          # new, corrected cpf (cpfv2)
+pairs.panels(x_MD %>% dplyr::select(matches("cpt_tprt_Oreg|CPT108.CATCPTT_TPRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
+pairs.panels(x_MD %>% dplyr::select(matches("cpw_w_rtcr_Oreg|CPW_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_MD %>% dplyr::select(matches("ddisc_mcr_Oreg|DDISC_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_MD %>% dplyr::select(matches("dscorrt_Oreg|S_DIGSYM.DSCORRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(x_MD %>% dplyr::select(matches("dsmcrrt_Oreg|S_DIGSYM.DSMCRRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym mem
+pairs.panels(x_MD %>% dplyr::select(matches("edisc_mcr_Oreg|EDISC_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_MD %>% dplyr::select(matches("er40_rtcr_Oreg|ER40_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_MD %>% dplyr::select(matches("gng_rtcr_Oreg|GNG60.GNG60_RTCR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
+pairs.panels(x_MD %>% dplyr::select(matches("medf_rtcr_Oreg|MEDF_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_MD %>% dplyr::select(matches("plot_rtcr_Oreg|PLOT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_MD %>% dplyr::select(matches("pmat_rtcr_Oreg|PMAT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_MD %>% dplyr::select(matches("pvrt_rtcr_Oreg|PVRT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_MD %>% dplyr::select(matches("rdisc_mcr_Oreg|RDISC_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_MD %>% dplyr::select(matches("volt_w_rtcr_Oreg|VOLT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+dev.off()
 
 
 
