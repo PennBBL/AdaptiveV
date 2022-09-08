@@ -104,18 +104,7 @@ library(readr)
   
   # start this as a loop and then maybe make it into a function?
   CAT_dat$scaled <- NA
-  for (i in 1:nrow(CAT_dat)) {
-    # get stimulus name (stim) and RT
-    stim <- unlist(CAT_dat[i,"Stimulus"])
-    RT <- as.numeric(CAT_dat[i,"Response Time (ms)"])
-    
-    # get relevant row from dat_RT
-    rt_norms <- dat_rt %>% filter(X == stim) %>% dplyr::select(mean:sd)
-    
-    CAT_dat[i,"scaled"] <- (RT - rt_norms$mean) / rt_norms$sd
-  }
   
-  #  try nested loop method to see if it goes faster
   for (i in 1:nrow(dat_rt)) {
     # item name from norms (stim) + norms in rt_norms
     stim <- dat_rt[i,1]
@@ -125,7 +114,268 @@ library(readr)
     to_scale <- CAT_dat %>% filter(Stimulus == stim) %>% dplyr::select(BBLID,Stimulus,`Response Time (ms)`)
     CAT_dat[which(CAT_dat$Stimulus == stim),"scaled"] <- (to_scale$`Response Time (ms)` - rt_norms$mean) / rt_norms$sd
   }
+  CAT_ADT <- CAT_dat
 }
+
+{ # CPF
+  # first check that all items in CAT_CPF have norms in CPF_rt
+  CAT_dat <- CAT_CPF
+  dat_rt <- CPF_rt %>% filter(X %in% unique(CAT_dat$Stimulus)) # only keep items that are used in the CAT version
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # F
+  
+  # need to change item names to match them
+  CPF_rt[1:40,"X"] <- gsub("CPF_v1_Item","cpf_a",CPF_rt[1:40,"X"])
+  CPF_rt[41:nrow(CPF_rt),"X"] <- gsub("-","_",CPF_rt[41:nrow(CPF_rt),"X"])
+  
+  dat_rt <- CPF_rt %>% filter(X %in% unique(CAT_dat$Stimulus))
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # T
+  
+  # start this as a loop and then maybe make it into a function?
+  CAT_dat$scaled <- NA
+  
+  for (i in 1:nrow(dat_rt)) {
+    # item name from norms (stim) + norms in rt_norms
+    stim <- dat_rt[i,1]
+    rt_norms <- dat_rt[i,2:3]
+    
+    # rows from CAT_dat where stim was administered
+    to_scale <- CAT_dat %>% filter(Stimulus == stim) %>% dplyr::select(BBLID,Stimulus,`Response Time (ms)`)
+    CAT_dat[which(CAT_dat$Stimulus == stim),"scaled"] <- (to_scale$`Response Time (ms)` - rt_norms$mean) / rt_norms$sd
+  }
+  CAT_CPF <- CAT_dat
+}
+
+{ # CPW
+  # first check that all items in CAT_CPW have norms in CPW_rt
+  CAT_dat <- CAT_CPW
+  dat_rt <- CPW_rt %>% filter(X %in% unique(CAT_dat$Stimulus)) # only keep items that are used in the CAT version
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # T
+  
+  # start this as a loop and then maybe make it into a function?
+  CAT_dat$scaled <- NA
+  
+  for (i in 1:nrow(dat_rt)) {
+    # item name from norms (stim) + norms in rt_norms
+    stim <- dat_rt[i,1]
+    rt_norms <- dat_rt[i,2:3]
+    
+    # rows from CAT_dat where stim was administered
+    to_scale <- CAT_dat %>% filter(Stimulus == stim) %>% dplyr::select(BBLID,Stimulus,`Response Time (ms)`)
+    CAT_dat[which(CAT_dat$Stimulus == stim),"scaled"] <- (to_scale$`Response Time (ms)` - rt_norms$mean) / rt_norms$sd
+  }
+  CAT_CPW <- CAT_dat
+}
+
+{ # DDISC
+  # first check that all items in CAT_DDISC have norms in DDISC_rt
+  CAT_dat <- CAT_DDISC
+  dat_rt <- DDISC_rt %>% filter(X %in% unique(CAT_dat$Stimulus)) # only keep items that are used in the CAT version
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # T
+  
+  # start this as a loop and then maybe make it into a function?
+  CAT_dat$scaled <- NA
+  
+  for (i in 1:nrow(dat_rt)) {
+    # item name from norms (stim) + norms in rt_norms
+    stim <- dat_rt[i,1]
+    rt_norms <- dat_rt[i,2:3]
+    
+    # rows from CAT_dat where stim was administered
+    to_scale <- CAT_dat %>% filter(Stimulus == stim) %>% dplyr::select(BBLID,Stimulus,`Response Time (ms)`)
+    CAT_dat[which(CAT_dat$Stimulus == stim),"scaled"] <- (to_scale$`Response Time (ms)` - rt_norms$mean) / rt_norms$sd
+  }
+  CAT_DDISC <- CAT_dat
+}
+
+{ # EDISC
+  # first check that all items in CAT_EDISC have norms in EDISC_rt
+  CAT_dat <- CAT_EDISC
+  dat_rt <- EDISC_rt %>% filter(X %in% unique(CAT_dat$Stimulus)) # only keep items that are used in the CAT version
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # F
+  
+  # need to change item names to match them
+  EDISC_rt$X <- paste0("E",EDISC_rt$X)
+  EDISC_rt[grep("A_",EDISC_rt$X),"X"] <- gsub("A_","A_Item",EDISC_rt[grep("A_",EDISC_rt$X),"X"])
+  EDISC_rt[grep("B_",EDISC_rt$X),"X"] <- gsub("B_","B_Item",EDISC_rt[grep("B_",EDISC_rt$X),"X"])
+  EDISC_rt[grep("_C_",EDISC_rt$X),"X"] <- gsub("_C_","_C_Item",EDISC_rt[grep("_C_",EDISC_rt$X),"X"])
+  
+  dat_rt <- EDISC_rt %>% filter(X %in% unique(CAT_dat$Stimulus))
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # T
+  
+  # start this as a loop and then maybe make it into a function?
+  CAT_dat$scaled <- NA
+  
+  for (i in 1:nrow(dat_rt)) {
+    # item name from norms (stim) + norms in rt_norms
+    stim <- dat_rt[i,1]
+    rt_norms <- dat_rt[i,2:3]
+    
+    # rows from CAT_dat where stim was administered
+    to_scale <- CAT_dat %>% filter(Stimulus == stim) %>% dplyr::select(BBLID,Stimulus,`Response Time (ms)`)
+    CAT_dat[which(CAT_dat$Stimulus == stim),"scaled"] <- (to_scale$`Response Time (ms)` - rt_norms$mean) / rt_norms$sd
+  }
+  CAT_EDISC <- CAT_dat
+}
+
+{ # ER40
+  # first check that all items in CAT_ER40 have norms in ER40_rt
+  CAT_dat <- CAT_ER40
+  dat_rt <- ER40_rt %>% filter(X %in% unique(CAT_dat$Stimulus)) # only keep items that are used in the CAT version
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # T
+  
+  # start this as a loop and then maybe make it into a function?
+  CAT_dat$scaled <- NA
+  
+  for (i in 1:nrow(dat_rt)) {
+    # item name from norms (stim) + norms in rt_norms
+    stim <- dat_rt[i,1]
+    rt_norms <- dat_rt[i,2:3]
+    
+    # rows from CAT_dat where stim was administered
+    to_scale <- CAT_dat %>% filter(Stimulus == stim) %>% dplyr::select(BBLID,Stimulus,`Response Time (ms)`)
+    CAT_dat[which(CAT_dat$Stimulus == stim),"scaled"] <- (to_scale$`Response Time (ms)` - rt_norms$mean) / rt_norms$sd
+  }
+  CAT_ER40 <- CAT_dat
+}
+
+{ # MEDF
+  # first check that all items in CAT_MEDF have norms in MEDF_rt
+  CAT_dat <- CAT_MEDF
+  dat_rt <- MEDF_rt %>% filter(X %in% unique(CAT_dat$Stimulus)) # only keep items that are used in the CAT version
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # T
+  
+  # start this as a loop and then maybe make it into a function?
+  CAT_dat$scaled <- NA
+  
+  for (i in 1:nrow(dat_rt)) {
+    # item name from norms (stim) + norms in rt_norms
+    stim <- dat_rt[i,1]
+    rt_norms <- dat_rt[i,2:3]
+    
+    # rows from CAT_dat where stim was administered
+    to_scale <- CAT_dat %>% filter(Stimulus == stim) %>% dplyr::select(BBLID,Stimulus,`Response Time (ms)`)
+    CAT_dat[which(CAT_dat$Stimulus == stim),"scaled"] <- (to_scale$`Response Time (ms)` - rt_norms$mean) / rt_norms$sd
+  }
+  CAT_MEDF <- CAT_dat
+}
+
+{ # PLOT
+  # first check that all items in CAT_PLOT have norms in PLOT_rt
+  CAT_dat <- CAT_PLOT
+  dat_rt <- PLOT_rt %>% filter(X %in% unique(CAT_dat$Stimulus)) # only keep items that are used in the CAT version
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # F
+  
+  # need to change item names to match them
+  PLOT_rt[grep("NewPLOT",PLOT_rt$X),"X"] <- gsub("NewPLOT_v3","new_PLOT",PLOT_rt[grep("NewPLOT",PLOT_rt$X),"X"])
+  
+  dat_rt <- PLOT_rt %>% filter(X %in% unique(CAT_dat$Stimulus))
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # T
+  
+  # start this as a loop and then maybe make it into a function?
+  CAT_dat$scaled <- NA
+  
+  for (i in 1:nrow(dat_rt)) {
+    # item name from norms (stim) + norms in rt_norms
+    stim <- dat_rt[i,1]
+    rt_norms <- dat_rt[i,2:3]
+    
+    # rows from CAT_dat where stim was administered
+    to_scale <- CAT_dat %>% filter(Stimulus == stim) %>% dplyr::select(BBLID,Stimulus,`Response Time (ms)`)
+    CAT_dat[which(CAT_dat$Stimulus == stim),"scaled"] <- (to_scale$`Response Time (ms)` - rt_norms$mean) / rt_norms$sd
+  }
+  CAT_PLOT <- CAT_dat
+}
+
+{ # PMAT
+  # first check that all items in CAT_PMAT have norms in PMAT_rt
+  CAT_dat <- CAT_PMAT
+  dat_rt <- PMAT_rt %>% filter(X %in% unique(CAT_dat$Stimulus)) # only keep items that are used in the CAT version
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # F
+  
+  # need to change item names to match them
+  PMAT_rt[grep("pmat",PMAT_rt$X),"X"] <- gsub("\\_18.*","",PMAT_rt[grep("pmat",PMAT_rt$X),"X"])
+  
+  dat_rt <- PMAT_rt %>% filter(X %in% unique(CAT_dat$Stimulus))
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # T
+  
+  # start this as a loop and then maybe make it into a function?
+  CAT_dat$scaled <- NA
+  
+  for (i in 1:nrow(dat_rt)) {
+    # item name from norms (stim) + norms in rt_norms
+    stim <- dat_rt[i,1]
+    rt_norms <- dat_rt[i,2:3]
+    
+    # rows from CAT_dat where stim was administered
+    to_scale <- CAT_dat %>% filter(Stimulus == stim) %>% dplyr::select(BBLID,Stimulus,`Response Time (ms)`)
+    CAT_dat[which(CAT_dat$Stimulus == stim),"scaled"] <- (to_scale$`Response Time (ms)` - rt_norms$mean) / rt_norms$sd
+  }
+  CAT_PMAT <- CAT_dat
+}
+
+{ # PVRT
+  # first check that all items in CAT_PVRT have norms in PVRT_rt
+  CAT_dat <- CAT_PVRT
+  dat_rt <- PVRT_rt %>% filter(X %in% unique(CAT_dat$Stimulus)) # only keep items that are used in the CAT version
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # T
+  
+  # start this as a loop and then maybe make it into a function?
+  CAT_dat$scaled <- NA
+  
+  for (i in 1:nrow(dat_rt)) {
+    # item name from norms (stim) + norms in rt_norms
+    stim <- dat_rt[i,1]
+    rt_norms <- dat_rt[i,2:3]
+    
+    # rows from CAT_dat where stim was administered
+    to_scale <- CAT_dat %>% filter(Stimulus == stim) %>% dplyr::select(BBLID,Stimulus,`Response Time (ms)`)
+    CAT_dat[which(CAT_dat$Stimulus == stim),"scaled"] <- (to_scale$`Response Time (ms)` - rt_norms$mean) / rt_norms$sd
+  }
+  CAT_PVRT <- CAT_dat
+}
+
+{ # RDISC
+  # first check that all items in CAT_RDISC have norms in RDISC_rt
+  CAT_dat <- CAT_RDISC
+  dat_rt <- RDISC_rt %>% filter(X %in% unique(CAT_dat$Stimulus)) # only keep items that are used in the CAT version
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # T
+  
+  # start this as a loop and then maybe make it into a function?
+  CAT_dat$scaled <- NA
+  
+  for (i in 1:nrow(dat_rt)) {
+    # item name from norms (stim) + norms in rt_norms
+    stim <- dat_rt[i,1]
+    rt_norms <- dat_rt[i,2:3]
+    
+    # rows from CAT_dat where stim was administered
+    to_scale <- CAT_dat %>% filter(Stimulus == stim) %>% dplyr::select(BBLID,Stimulus,`Response Time (ms)`)
+    CAT_dat[which(CAT_dat$Stimulus == stim),"scaled"] <- (to_scale$`Response Time (ms)` - rt_norms$mean) / rt_norms$sd
+  }
+  CAT_RDISC <- CAT_dat
+}
+
+{ # VOLT
+  # first check that all items in CAT_VOLT have norms in VOLT_rt
+  CAT_dat <- CAT_VOLT
+  dat_rt <- VOLT_rt %>% filter(X %in% unique(CAT_dat$Stimulus)) # only keep items that are used in the CAT version
+  all(unique(CAT_dat$Stimulus) %in% unique(dat_rt$X)) # T
+  
+  # start this as a loop and then maybe make it into a function?
+  CAT_dat$scaled <- NA
+  
+  for (i in 1:nrow(dat_rt)) {
+    # item name from norms (stim) + norms in rt_norms
+    stim <- dat_rt[i,1]
+    rt_norms <- dat_rt[i,2:3]
+    
+    # rows from CAT_dat where stim was administered
+    to_scale <- CAT_dat %>% filter(Stimulus == stim) %>% dplyr::select(BBLID,Stimulus,`Response Time (ms)`)
+    CAT_dat[which(CAT_dat$Stimulus == stim),"scaled"] <- (to_scale$`Response Time (ms)` - rt_norms$mean) / rt_norms$sd
+  }
+  CAT_VOLT <- CAT_dat
+}
+
 
 # QA
 # SMVE (not using this method for now)
