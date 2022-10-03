@@ -19,7 +19,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
 
 # Study Enroll ----
 {
-  studyAll<-read.csv("data/inputs/cnb/bbl_study_all.csv", comment.char="#")  # 302 rows of unique bblid as of 9/6/22
+  studyAll <- read.csv("data/inputs/cnb/bbl_study_all.csv", comment.char="#")  # 315 rows of unique bblid as of 9/30/22
  
   #pull out adaptive enrolled subjects
   studyEnroll<-studyAll%>%
@@ -27,7 +27,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   studyEnroll$BBLID = as.numeric(studyEnroll$BBLID)
   
   studyEnroll <- studyEnroll%>%
-    filter( BBLID>1000, BBLID != 18026)
+    filter( BBLID>1000, BBLID != 18026) # 18026 is an old test record according to Mruganka
   studyEnroll$formatted_doenroll<- as.Date(as.character(studyEnroll$DOENROLL), format = "%d-%b-%y")
   
   names(studyEnroll)<-tolower(names(studyEnroll))
@@ -35,7 +35,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
     dplyr::select(bblid, study_status, study_group, timepoints, formatted_doenroll)   # no date for bblid 22139, says it's cross-listed as 20871, but 20871 is not on this csv, only 22867 
   
   
-  # adding protocol order from what used to be adaptive_study_data_group_order_oracle.csv
+  # adding protocol order from what used to be adaptive_study_data_group_order_oracle.csv, now adaptive.csv
   group_order <- read.csv("data/inputs/cnb/adaptive.csv")
   # remove 22015, 22412, 22680, 23217, 91919, 94144, 112083, 119527 because they've been removed from study; 
   # 22139 is a duplicate for 20871; 
@@ -57,8 +57,8 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
       pull(ORDER_NAME)
   }
   
-  studyEnroll3 <- left_join(studyEnroll2,proto_order,by=c("bblid"="BBLID")) %>%      # 302 unique bblid rows, 9/6/22 (13 NA rows from group_order)
-    filter(study_status %notin% c("excluded","dropout","not enrolled"))              # 282 rows left after getting rid of "excluded","dropout","not enrolled", 9/6/22
+  studyEnroll3 <- left_join(studyEnroll2,proto_order,by=c("bblid"="BBLID")) %>%      # 315 unique bblid rows, 9/30/22 (13 NA rows from group_order)
+    filter(study_status %notin% c("excluded","dropout","not enrolled"))              # 288 rows left after getting rid of "excluded","dropout","not enrolled", 9/30/22
   
   # all rows that have data from bbl_study_all.csv, but not adaptive.csv
   bblstudyall_no_adapive <- studyEnroll3 %>% filter(is.na(proto_1))    # 13 after excluding non-active/complete ppl
@@ -106,18 +106,19 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   
   demographics_adaptive <- left_join(studyEnroll3,demofinal, by = "bblid")      
   demographics_adaptive$age_enroll<- (mapply(mondf,as.Date(as.character(demographics_adaptive$dobirth), format = "%d-%b-%y"),demographics_adaptive$formatted_doenroll)/12)
-  demographics_adaptive<-demographics_adaptive%>%
+  demographics_adaaptive<-demographics_adaptive%>%
     dplyr::select(bblid, study_status, study_group, sex, race, ethnic, educ, age_enroll,proto_1,proto_2,proto_3,proto_4)
 
   # all rows that have data from bbl_study_all.csv, but not subjectvisitsall_v.csv
-  no_subjectvisitsall <- demographics_adaptive %>% filter(is.na(sex))   # 37 missing as of 9/6/22
+  no_subjectvisitsall <- demographics_adaptive %>% filter(is.na(sex))   # 42 missing as of 10/03/22
 }
 
 
 #CNB ----
 
 {
-  cnb <- read.csv("data/inputs/cnb/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv") 
+  # cnb <- read.csv("data/inputs/cnb/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv")   # old file name
+  cnb <- read.csv("data/inputs/cnb/cnb_merged_webcnp_surveys_smryscores_allbbl_longform.csv") # new file name
   
   cnb1 <- cnb %>%
     dplyr::select(matches("datasetid_platform|test_sessions.datasetid|siteid|bblid.clean|age|battery|dotest|gng|cpf|medf|pvrt|er40|cpt|cpw|aim|adt|plot|volt|pmat|digsym|dscor|dsmemcr|dscorrt|dsmcrrt|KDDISC|KRDISC|EDISC"))
@@ -128,6 +129,9 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
                                        "test_sessions_v.dotest" )] <-
     c("datasetid", "siteid",       
       "bblid", "age","battery","dotest")
+  
+  # need to make sure bblid 23064 --> 23179
+  cnb1[which(cnb1$bblid == 23064),"bblid"] <- 23179
   
   cnb2 <- cnb1[cnb1$bblid %in% studyEnroll3$bblid, ] %>% filter(siteid == "adaptive_v")
   
@@ -152,8 +156,8 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   cnb2$edisc_mcr <- rowMedians(as.matrix(edisc_ttrs))
   
   # keep all tasks, get rid of itemwise DISC cols
-  fullcnb <- cnb2 %>% dplyr::select(datasetid_platform:aim_mcrrt,matches("ddisc_|rdisc_|edisc_")) %>%  # 271 rows as of 9/6/22
-    filter(datasetid %notin% c(47859,48505))     # get rid of doubled up bblid: datasetid = 47859, datasetid = 48505
+  fullcnb <- cnb2 %>% dplyr::select(datasetid_platform:aim_mcrrt,matches("ddisc_|rdisc_|edisc_")) %>%  # 278 rows as of 10/03/22
+    filter(datasetid %notin% c(47859,48505,52277))     # get rid of doubled up bblid: datasetid = 47859, datasetid = 48505, datasetid = 52277
   
   
   # adding PRA from iw
@@ -167,7 +171,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   PRA_resp[PRA_resp == 2] <- 0
   PRA_iw$pra_cr <- rowSums(PRA_resp,na.rm = T)
   
-  fullcnb2 <- left_join(fullcnb,PRA_iw %>% dplyr::select(bblid,pra_cr),by="bblid") # 7 NA as of 8/3/22, duplicate of 20189 and we should only keep the 2022 record 9/6/22
+  fullcnb2 <- left_join(fullcnb,PRA_iw %>% dplyr::select(bblid,pra_cr),by="bblid") # 11 NA as of 10/03/22, duplicate of 20189 and we should only keep the 2022 record 9/6/22
   
   # subset (old, from Mrugank's original script)
   cnb2_subset <- cnb2 %>%
@@ -189,10 +193,10 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
 #Adaptive CNB ----
 
 {
-  adaptive_v2 <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v2_20220829_105100.csv")
-  adaptive_v <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v_20220428_125332.csv")
-  adaptive_cpfv2_er40v2 <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v_cpfv2_er40v2_20220829_104834.csv")
-  adaptive_prad <- read_csv("data/inputs/cnb/CNB_CAT_session_pra-d_20220829_104906.csv")
+  adaptive_v2 <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v2_20220926_095354.csv")
+  adaptive_v <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v_20220909_221240.csv")
+  adaptive_cpfv2_er40v2 <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v_cpfv2_er40v2_20220926_095401.csv")
+  adaptive_prad <- read_csv("data/inputs/cnb/CNB_CAT_session_pra-d_20220926_095411.csv")
   
   adaptive_v2 <- rename(adaptive_v2, Dataset.ID = 1) %>% 
     mutate(version = "adaptive_cnb_V2")
@@ -211,7 +215,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
     pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID) %>% mutate(`pra-1.00-d-cat_default` = as.numeric(`pra-1.00-d-cat_default`))
   
   # changing BBLID 22668 -> 13446 for datsetid == 432, 6.7.22
-  adaptive_prad[which(adaptive_prad$BBLID==22668 & adaptive_prad$datasetid_pra == 432),"BBLID"] <- 13446
+  # adaptive_prad[which(adaptive_prad$BBLID==22668 & adaptive_prad$datasetid_pra == 432),"BBLID"] <- 13446
   
   # BBLID 90922 has 4 different data entries for pra_d, only keep datasetid == 291 for now because that matches adaptive_v data, all other datasetids match up (with dotest as well) with some people in adpative_v2
   # BBLID 90922, datasetid == 291 --> keep the same
@@ -278,7 +282,10 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
                                  pra_v2 %>% select(`er40-2.00-cat_emotive`:`er40-2.00-cat_neutral`),
                                  pra_v2 %>% select(`cpf2-1.00-v1-cat_target`:`cpf2-1.00-v1-cat_foil`))
   
-  adaptive_cnb <- rbind(pra_v1_tocombine,pra_v2_tocombine) # 272 as of 9/6/22 (with some tests having less)
+  # some people who have PRA who don't have adaptive_v or adaptive_v2 data
+  pra_no_other <- adaptive_prad %>% filter(BBLID %notin% pra_v1_tocombine$BBLID,BBLID %notin% pra_v2_tocombine$BBLID)
+  
+  adaptive_cnb <- rbind(pra_v1_tocombine,pra_v2_tocombine) # 277 as of 10/03/22 (with some tests having less)
   
   
   
@@ -287,11 +294,11 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   
   # there's data now! 9/6/22
   adaptive_AIM_CPT <- adaptive_short %>% mutate(bblid = as.numeric(test_sessions.bblid)) %>% 
-    filter(test_sessions.siteid == "adaptive_v",bblid>9999,!is.na(CPT108.ScorVers) | !is.na(S_AIM.ScorVers)) %>% arrange(bblid) %>% # BBLID 111789: (upon discussion w Kelly, keep datasetid 48932 and change sex to F since AFAB)
-    dplyr::select(matches("test_sessions|^bblid|S_AIM|CPT108")) %>% rename(datasetid_AC = test_sessions.datasetid) %>% filter(datasetid_AC != 48930)
+    filter(test_sessions.siteid == "adaptive_v",bblid>9999,!is.na(CPT108.valid_code) | !is.na(S_AIM.valid_code)) %>% arrange(bblid) %>% # BBLID 111789: (upon discussion w Kelly, keep datasetid 48932 and change sex to F since AFAB)
+    dplyr::select(matches("test_sessions|^bblid|S_AIM|CPT108")) %>% rename(datasetid_AC = test_sessions.datasetid) %>% filter(datasetid_AC != 48930)  # had to switch CPT108.ScorVers for  CPT108.valid_code, same for AIM on 10/03/2022
   
   adaptive_DIGSYM_GNG <- adaptive_short %>% mutate(bblid = as.numeric(test_sessions.bblid)) %>% 
-    filter(test_sessions.siteid == "adaptive_v",bblid>9999,!is.na(GNG60.ScorVers) | !is.na(S_DIGSYM.ScorVers)) %>% arrange(bblid) %>% 
+    filter(test_sessions.siteid == "adaptive_v",bblid>9999,!is.na(GNG60.valid_code) | !is.na(S_DIGSYM.valid_code)) %>% arrange(bblid) %>% 
     dplyr::select(matches("test_sessions|^bblid|S_DIGSYM|GNG60")) %>% rename(datasetid_DG = test_sessions.datasetid)
   adaptive_DIGSYM_GNG[which(adaptive_DIGSYM_GNG$datasetid_DG == 48900),20:33] <- adaptive_DIGSYM_GNG[which(adaptive_DIGSYM_GNG$datasetid_DG == 48898),20:33] # BBLID: 104265 (GNG and DIGSYM data separated into two datasetids because of technical issues, good to combine) from CAT CNB notes
   adaptive_DIGSYM_GNG <- adaptive_DIGSYM_GNG %>% filter(datasetid_DG != 48898)
@@ -301,7 +308,10 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
                                      adaptive_DIGSYM_GNG %>% dplyr::select(matches("^bblid|datasetid_DG|S_DIGSYM.DSCOR|S_DIGSYM.DSCORRT|S_DIGSYM.DSMEMCR|S_DIGSYM.DSMCRRT|GNG60.GNG60_CR|GNG60.GNG60_RTCR")),by="bblid") %>% 
     dplyr::select(bblid,datasetid_AC,S_AIM.AIM_NM:S_AIM.AIMTOTRT,CPT108.CATCPTT_FP:CPT108.CATCPTT_TPRT,CPT108.CATCPTT_FPRT,datasetid_DG,S_DIGSYM.DSCOR:S_DIGSYM.DSMCRRT,GNG60.GNG60_CR:GNG60.GNG60_RTCR)
   
-  adaptive_cnb1 <- left_join(adaptive_cnb,adaptive_short_tojoin,by=c("BBLID"="bblid")) # 272 rows as of 9/6/22
+  # 20189 23402 23486 23536 23584 96149 in adaptive_short_tojoin, but not merged because other non-short test data doesn't exist
+  # 20189,23536,23584,96149 not in adpative_pra either
+  
+  adaptive_cnb1 <- left_join(adaptive_cnb,adaptive_short_tojoin,by=c("BBLID"="bblid")) # 277 rows as of 10/3/22
   
   # 199 unique BBLIDs in cat_dat_nodates:
   #   1) BBLID 90922, datasetid_pra 489 only has pra_d
@@ -313,12 +323,13 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   dat_combined2 <- left_join(dat_combined,adaptive_cnb1, by = c("bblid" = "BBLID"))    # 100079 is excluded and still trying to figure out about 23064
   
   # all rows that have data from bbl_study_all.csv, but not in the adaptivecnb CSVs  
-  no_adaptivecnb <- dat_combined2 %>% filter(is.na(pra.1.00.d.cat_default)) # 21 rows missing (at least), 8/3/22
+  no_adaptivecnb <- dat_combined2 %>% filter(is.na(pra.1.00.d.cat_default)) # 13 rows missing (at least), 10/3/22
+  
 }
 
 
 # print out CSV of combined CNB data
-write.csv(dat_combined2,"data/inputs/cnb_merged/cnb_merged_20220906.csv",row.names = F)
+write.csv(dat_combined2,"data/inputs/cnb_merged/cnb_merged_20221003.csv",row.names = F)
 
 
 
@@ -329,26 +340,18 @@ write.csv(dat_combined2,"data/inputs/cnb_merged/cnb_merged_20220906.csv",row.nam
 
 #Phenome ----
 
-{ # started updating this 9/6/22, but Mrugank will be producing merged files, so no need
-  CAT_GOA_ext <- read.csv("data/inputs/goa/GACAT_completed_Externalizing_v1_20220829_1451.csv") %>% 
-    mutate(BBLID = as.numeric(BBL.ID)) %>% filter(BBLID>9999) %>% 
-    dplyr::select(BBLID,Domain:Reconstructed.Response.Path) %>% arrange(BBLID)   # duplicate BBLIDs 18026,22358,106255
-  CAT_GOA_mood <- read.csv("data/inputs/goa/GACAT_completed_Mood_Anxiety_v1_20220829_1454.csv") %>% 
-    mutate(BBLID = as.numeric(BBL.ID)) %>% filter(BBLID>9999) %>% 
-    dplyr::select(BBLID,Domain:Reconstructed.Response.Path) %>% arrange(BBLID)   # duplicate BBLIDs 18026,22196,22358,23336,23348,100056,106255,107712,114007
-  CAT_GOA_per <- read.csv("data/inputs/goa/GACAT_completed_Personality_v1_20220829_1455.csv") %>% 
-    mutate(BBLID = as.numeric(BBL.ID)) %>% filter(BBLID>9999) %>% 
-    dplyr::select(BBLID,Domain:Reconstructed.Response.Path) %>% arrange(BBLID)   # duplicate BBLIDs 18026,106255
-  CAT_GOA_phob <- read.csv("data/inputs/goa/GACAT_completed_Phobias_v1_20220829_1457.csv") %>% 
-    mutate(BBLID = as.numeric(BBL.ID)) %>% filter(BBLID>9999) %>% 
-    dplyr::select(BBLID,Domain:Reconstructed.Response.Path) %>% arrange(BBLID)   # duplicate BBLIDs 18026,22196,22358,23336,106255,107712
-  CAT_GOA_psy <- read.csv("data/inputs/goa/GACAT_completed_Psychosis_v1_20220829_1457.csv") %>% 
-    mutate(BBLID = as.numeric(BBL.ID)) %>% filter(BBLID>9999) %>% 
-    dplyr::select(BBLID,Domain:Reconstructed.Response.Path) %>% arrange(BBLID)   # duplicate BBLIDs 18026,22358,106255
+{ # using Mrugank's merged files, 9/30/22
+  # 301 unique BBLIDs
+  CATGOA_ext <- read.csv("data/inputs/goa/externalizing_adaptive.csv") %>% arrange(bblid)   # duplicate BBLIDs 22358,106255
+  CATGOA_mood <- read.csv("data/inputs/goa/mood_anxiety_adaptive.csv") %>% arrange(bblid)   # duplicate BBLIDs 22196,22358,23336,23348,100056,106255,107712,114007
+  CATGOA_per <- read.csv("data/inputs/goa/personality_adaptive.csv") %>% arrange(bblid)   # duplicate BBLIDs 106255
+  CATGOA_phob <- read.csv("data/inputs/goa/phobia_adaptive.csv") %>% arrange(bblid)   # duplicate BBLIDs 22196,22358,23348,106255,107712
+  CATGOA_psy <- read.csv("data/inputs/goa/psychosis_adaptive.csv") %>% arrange(bblid)   # duplicate BBLIDs 22358,106255
+  
+  # Digging on Slack and checking other notes to figure out these duplicates
+  # 22358: first link crashed, given new link
     
-  
-  
-  
+  # figuring out why there are duplicates
   
   phenome <-bind_rows(mood_anxiety,externalizing,phobia)
   
