@@ -19,6 +19,7 @@ library(matrixStats)
 library(irr)
 library(lubridate)
 library(readr)
+library(wesanderson)
 
 
 # load data ----
@@ -383,7 +384,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
 # Calculate MRT for each pt ----
 { # ADT
   # check that each BBLID only has one complete set of data
-  View(data.frame(table(CAT_ADT$BBLID)))
+  # View(data.frame(table(CAT_ADT$BBLID)))
   # calculate MRT
   MRT_ADT <- CAT_ADT %>% group_by(BBLID) %>% summarise(ADT_MRT = median(scaled))
   # merge MRT 
@@ -391,7 +392,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   
   # CPF
   # check that each BBLID only has one complete set of data
-  View(data.frame(table(CAT_CPF$BBLID)))
+  # View(data.frame(table(CAT_CPF$BBLID)))
   # duplicate data for 15507 (get rid of datasetid 893), 22723 keep original data from when they completed the whole battery (get rid of datasetid 556), 22293 (get rid of datasetid 597 for incomplete data)
   CAT_CPF <- CAT_CPF %>% filter(datasetid %notin% c(893,556,597))
   # calculate MRT
@@ -401,7 +402,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   
   # CPW
   # check that each BBLID only has one complete set of data
-  View(data.frame(table(CAT_CPW$BBLID)))
+  # View(data.frame(table(CAT_CPW$BBLID)))
   # duplicate data for 22454 (get rid of datasetid 322), 90158 test got stuck at the "smile" screen (get rid of datasetid 542)
   CAT_CPW <- CAT_CPW %>% filter(datasetid %notin% c(322,542))
   # calculate MRT
@@ -411,7 +412,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   
   # DDISC
   # check that each BBLID only has one complete set of data
-  View(data.frame(table(CAT_DDISC$BBLID)))
+  # View(data.frame(table(CAT_DDISC$BBLID)))
   # calculate MRT
   MRT_DDISC <- CAT_DDISC %>% group_by(BBLID) %>% summarise(DDISC_MRT = median(scaled))
   # merge MRT 
@@ -419,7 +420,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   
   # EDISC
   # check that each BBLID only has one complete set of data
-  View(data.frame(table(CAT_EDISC$BBLID)))
+  # View(data.frame(table(CAT_EDISC$BBLID)))
   # calculate MRT
   MRT_EDISC <- CAT_EDISC %>% group_by(BBLID) %>% summarise(EDISC_MRT = median(scaled))
   # merge MRT 
@@ -427,7 +428,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   
   # ER40
   # check that each BBLID only has one complete set of data
-  View(data.frame(table(CAT_ER40$BBLID)))
+  # View(data.frame(table(CAT_ER40$BBLID)))
   # duplicate data for 15507 (get rid of datasetid 893), 22723 keep original data from when they completed the whole battery (get rid of datasetid 556)
   CAT_ER40 <- CAT_ER40 %>% filter(datasetid %notin% c(893,556))
   # calculate MRT
@@ -437,7 +438,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   
   # MEDF
   # check that each BBLID only has one complete set of data
-  View(data.frame(table(CAT_MEDF$BBLID)))
+  # View(data.frame(table(CAT_MEDF$BBLID)))
   # duplicate data for 22454 (get rid of datasetid 322), 90158 (get rid of datasetid 543)
   CAT_MEDF <- CAT_MEDF %>% filter(datasetid %notin% c(322,543))
   # calculate MRT
@@ -447,7 +448,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   
   # PLOT
   # check that each BBLID only has one complete set of data
-  View(data.frame(table(CAT_PLOT$BBLID)))
+  # View(data.frame(table(CAT_PLOT$BBLID)))
   # calculate MRT
   MRT_PLOT <- CAT_PLOT %>% group_by(BBLID) %>% summarise(PLOT_MRT = median(scaled))
   # merge MRT 
@@ -455,7 +456,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   
   # PMAT
   # check that each BBLID only has one complete set of data
-  View(data.frame(table(CAT_PMAT$BBLID)))
+  # View(data.frame(table(CAT_PMAT$BBLID)))
   # calculate MRT
   MRT_PMAT <- CAT_PMAT %>% group_by(BBLID) %>% summarise(PMAT_MRT = median(scaled))
   # merge MRT 
@@ -463,7 +464,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   
   # PVRT
   # check that each BBLID only has one complete set of data
-  View(data.frame(table(CAT_PVRT$BBLID)))
+  # View(data.frame(table(CAT_PVRT$BBLID)))
   # duplicate data for 22454 (get rid of datasetid 322), 90158 (get rid of datasetid 543)
   CAT_PVRT <- CAT_PVRT %>% filter(datasetid %notin% c(322,543))
   # calculate MRT
@@ -473,7 +474,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   
   # RDISC
   # check that each BBLID only has one complete set of data
-  View(data.frame(table(CAT_RDISC$BBLID)))
+  # View(data.frame(table(CAT_RDISC$BBLID)))
   # calculate MRT
   MRT_RDISC <- CAT_RDISC %>% group_by(BBLID) %>% summarise(RDISC_MRT = median(scaled))
   # merge MRT 
@@ -481,11 +482,17 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   
   # VOLT
   # check that each BBLID only has one complete set of data
-  View(data.frame(table(CAT_VOLT$BBLID)))
+  # View(data.frame(table(CAT_VOLT$BBLID)))
   # calculate MRT
   MRT_VOLT <- CAT_VOLT %>% group_by(BBLID) %>% summarise(VOLT_MRT = median(scaled))
   # merge MRT 
   CAT_VOLT <- left_join(CAT_VOLT,MRT_VOLT, by="BBLID")
+}
+
+# * try no-scaled median RT ----
+{
+  noscale <- CAT_ADT %>% group_by(BBLID) %>% summarise(noscale = median(`Response Time (ms)`))
+  CAT_ADT <- left_join(CAT_ADT,noscale,by="BBLID")
 }
 
 
@@ -503,6 +510,9 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   CNB_merged <- left_join(CNB_merged,MRT_PVRT,by=c("bblid"="BBLID"))
   CNB_merged <- left_join(CNB_merged,MRT_RDISC,by=c("bblid"="BBLID"))
   CNB_merged <- left_join(CNB_merged,MRT_VOLT,by=c("bblid"="BBLID"))
+  
+  # add noscale
+  CNB_merged <- left_join(CNB_merged,noscale,by=c("bblid"="BBLID"))
 }
 
 
@@ -523,7 +533,7 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
 # Plot scatters ----
 
 demos <- CNB_merged %>% dplyr::select(bblid:dotest)
-merged_RTs <- CNB_merged %>% dplyr::select(matches("tprt|mcr|rtcr|MRT|corrt|mcrrt|totrt|CRRT")) %>% cbind(demos,.)
+merged_RTs <- CNB_merged %>% dplyr::select(matches("tprt|mcr|rtcr|MRT|corrt|mcrrt|totrt|CRRT|noscale")) %>% cbind(demos,.)
 
 # order regress
 {
@@ -536,6 +546,40 @@ merged_RTs <- CNB_merged %>% dplyr::select(matches("tprt|mcr|rtcr|MRT|corrt|mcrr
   
   colnames(sc) <- paste0(colnames(merged_RTs[,(ncol(demos)+1):ncol(merged_RTs)]),"_Oreg")
 }
+
+
+# * checking effect size ----
+{
+  my_gg <- ggplot(merged_RTs, aes(x = proto_3, y = er40_rtcr,color=proto_3)) + 
+    ggdist::stat_halfeye(
+      adjust = .5, 
+      width = .6,
+      justification = -.2, 
+      .width = 0, 
+      point_colour = NA,
+      alpha = 0.8
+    ) + 
+    geom_boxplot(
+      width = .12, 
+      outlier.color = NA, ## `outlier.shape = NA` works as well
+      alpha = 0.5
+    ) +
+    geom_point(
+      size = .5, 
+      alpha = 0.3,
+      position = position_jitternudge(
+        jitter.width = .1,
+        jitter.height = 0,
+        nudge.x = -.2,
+        nudge.y = 0,
+        seed = 1
+      )
+    )  + 
+    geom_hline(yintercept = 7) +
+    coord_cartesian(xlim = c(1.2, NA)) +
+    theme_minimal() + labs(title = "Distribution of RT in full ER40",x = "", y = "RT (ms)") + coord_flip() 
+}
+
 
 
 x_all <- data.frame(merged_RTs,sc)
@@ -612,7 +656,7 @@ dev.off()
 
 
 # MD
-pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_MD_bytest_220908.pdf",height=9,width=12)
+pdf("data/outputs/scatters/CNB-CAT_RT_test-retest_scatter_matrices_MD_bytest_220908.pdf",height=9,width=12)
 pairs.panels(x_MD %>% dplyr::select(matches("adt_rtcr_Oreg|ADT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_MD %>% dplyr::select(matches("aim_totrt_Oreg|S_AIM.AIMTOTRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
 pairs.panels(x_MD %>% dplyr::select(matches("cpf_w_rtcr_Oreg|CPF_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                          # new, corrected cpf (cpfv2)
