@@ -52,14 +52,15 @@ library(readr)
 # load data ----
 
 # demos, proto order, groups, full cnb + cat cnb (missing rapid tests aka AIM, CPT, GNG, DIGSYM)
-all_cnb <- read.csv("data/inputs/cnb_merged/cnb_merged_20220810.csv",na.strings=c(""," ","NA"))  # 272 rows as of 8/9/22
+all_cnb <- read.csv("data/inputs/cnb_merged/cnb_merged_20221003.csv",na.strings=c(""," ","NA"))  # 288 rows as of 10/3/22
 x <- all_cnb
 
 # full CNB for itemwise DISC tasks
-f_cnb <- read.csv("data/inputs/cnb/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv",na.strings=c(""," ","NA"))
+# f_cnb <- read.csv("data/inputs/cnb/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv",na.strings=c(""," ","NA"))  # old name
+f_cnb <- read.csv("data/inputs/cnb/cnb_merged_webcnp_surveys_smryscores_allbbl_longform.csv",na.strings=c(""," ","NA"))  # new name same file, just more updated, 10/3/2022
 f_cnb <- f_cnb %>% filter(test_sessions_v.battery %in% c("adaptive_v_battery_v0","adaptive_v_battery_v1","adaptive_v_battery_v2"),test_sessions.bblid.clean>9999)
 demo_f_cnb <- f_cnb %>% dplyr::select(datasetid_platform:test_sessions.bblid.clean,test_sessions_v.age:test_sessions_v.endtime) %>% 
-  rename(BBLID = test_sessions.bblid.clean)  # 262 rows as of 8/3/22
+  rename(BBLID = test_sessions.bblid.clean)  # 281 rows as of 10/3/22
 
 # old itemwise full CNB
 {
@@ -87,9 +88,12 @@ new_iw_ad <- new_iw_adaptive %>% filter(test_sessions_v.battery %in% c("adaptive
 
 # get rid of datasetid 49043, 49044, 47905, 47859, 48036, 48505 for duplicate bblid, look into bblid 104265
 new_iw_ad <- new_iw_ad %>% filter(test_sessions_v.battery_complete == 1, is.na(test_sessions_v.deleted_flag))
+# bblid 23402 has two sessions: take first session (datasetid 52273) and replace EDISC (doesn't exist in this CSV),DIGSYM,GNG150 data with second session (52277) & remove second session
+new_iw_ad[which(new_iw_ad$test_sessions.datasetid == 52273),c(4339:5102,5342:7446)] <- new_iw_ad[which(new_iw_ad$test_sessions.datasetid == 52277),c(4339:5102,5342:7446)]
+new_iw_ad <- new_iw_ad %>% filter(test_sessions.datasetid != 52277)
 
 # make new demos variable for new_iw
-demo_new_iw <- new_iw_ad %>% dplyr::select(test_sessions.datasetid:test_sessions_v.endtime)  # 252 rows as of 8/3/22  
+demo_new_iw <- new_iw_ad %>% dplyr::select(test_sessions.datasetid:test_sessions_v.endtime)  # 269 rows with unique bblid as of 10/3/22  
 
 # old stuff
 {
@@ -135,8 +139,10 @@ demo_new_iw <- new_iw_ad %>% dplyr::select(test_sessions.datasetid:test_sessions
   ADT_iw <- dat %>% dplyr::select(matches("^ADT36_A.ADT36A_CR$|^ADT36_A.ADT36A_PC$|^ADT36_A.ADT36A_RTCR$|ADT36_A.ADT36A_QID")) %>% cbind(demos,.)   # 252 rows, 8/3/22
   CPF_iw <- dat %>% dplyr::select(matches("^CPF_B.CPF_CR$|^CPF_B.CPF_RTCR$|^CPF_B.CPF_W_RTCR$|CPF_B.CPF_TRIAL")) %>% cbind(demos,.)
   CPW_iw <- dat %>% dplyr::select(matches("^CPW_A.CPW_CR$|^CPW_A.CPW_RTCR$|^CPW_A.CPW_W_RTCR$|CPW_A.CPW_TRIAL")) %>% cbind(demos,.)
-  DDISC_iw <- f_cnb %>% dplyr::select(matches("DDISC")) %>% cbind(demo_f_cnb,.)   # 262 rows, 8/3/22
-  EDISC_iw <- f_cnb %>% dplyr::select(matches("EDISC")) %>% cbind(demo_f_cnb,.) %>% dplyr::select(datasetid_platform:EDISC.valid_code,EDISC.q_101_resp:EDISC.test)
+  DDISC_iw <- f_cnb %>% dplyr::select(matches("DDISC")) %>% cbind(demo_f_cnb,.) %>%  # duplicates exist for 23402 (delete datasetid 52277) and 22012 (delete datasetid 47859 since missing data)
+    filter(test_sessions.datasetid %notin% c(52277,47859))   # 279 rows, 10/3/22
+  EDISC_iw <- f_cnb %>% dplyr::select(matches("EDISC")) %>% cbind(demo_f_cnb,.) %>% dplyr::select(datasetid_platform:EDISC.valid_code,EDISC.q_101_resp:EDISC.test) %>%  # duplicates exist for 23402 (delete datasetid 52273 since EDISC crashed) and 22012 (delete datasetid 47859 since missing data)
+    filter(test_sessions.datasetid %notin% c(52273,47859))
   ER40_iw <- dat %>% dplyr::select(matches("^ER40_D.ER40D_CR$|^ER40_D.ER40D_RTCR$|ER40_D.ER40D_QID")) %>% cbind(demos,.)
   MEDF_iw <- dat %>% dplyr::select(matches("^MEDF36_A.MEDF36A_CR$|^MEDF36_A.MEDF36A_PC$|^MEDF36_A.MEDF36A_RTCR$|MEDF36_A.MEDF36A_QID")) %>% cbind(demos,.)
   PMAT_iw <- dat %>% dplyr::select(matches("^PMAT24_A.PMAT24_A_CR$|^PMAT24_A.PMAT24_A_PC$|^PMAT24_A.PMAT24_A_RTCR$|PMAT24_A.PMAT24_A_QID0000")) %>% cbind(demos,.)
@@ -146,7 +152,8 @@ demo_new_iw <- new_iw_ad %>% dplyr::select(test_sessions.datasetid:test_sessions
     filter(test_sessions.siteid == "adaptive_v",test_sessions_v.battery == "PRA_D", bblid > 9999) %>% 
     dplyr::select(matches("test_session|^bblid|PRA_D")) %>% dplyr::select(test_sessions.datasetid:test_sessions.famid,bblid,test_sessions_v.admin_comments:test_sessions_v.batt_consent,test_sessions_v.deleted_flag:PRA_D.AGE)
   PVRT_iw <- dat %>% dplyr::select(matches("^SPVRT_A.SPVRTA_CR$|^SPVRT_A.SPVRTA_PC$|^SPVRT_A.SPVRTA_W_CR$|^SPVRT_A.SPVRTA_W_PC$|^SPVRT_A.SPVRTA_RTCR$|SPVRT_A.SPVRTA_QID")) %>% cbind(demos,.)
-  RDISC_iw <- f_cnb %>% dplyr::select(matches("RDISC")) %>% cbind(demo_f_cnb,.) %>% dplyr::select(datasetid_platform:KRDISC.test)
+  RDISC_iw <- f_cnb %>% dplyr::select(matches("RDISC")) %>% cbind(demo_f_cnb,.) %>% dplyr::select(datasetid_platform:KRDISC.test) %>%  # duplicates exist for 23402 (delete datasetid 52277) and 22012 (delete datasetid 47859 since missing data)
+    filter(test_sessions.datasetid %notin% c(52277,47859))
   VOLT_iw <- dat %>% dplyr::select(matches("^SVOLT_A.SVOLT_CR$|^SVOLT_A.SVOLT_RTCR$|^SVOLT_A.SVOLT_W_RTCR$|SVOLT_A.SVOLT_TRIAL")) %>% cbind(demos,.)
   
   # rapid tests
@@ -163,197 +170,197 @@ demo_new_iw <- new_iw_ad %>% dplyr::select(test_sessions.datasetid:test_sessions
   DIGSYM_iw <- DIGSYM_iw %>% dplyr::select(test_sessions.datasetid:DIGSYM.DS_QID000170_TTR) # still true, 8/3/22
   
   
-  
-  
   # all memory + ER40 + MEDF columns to make separate full CNB target/foil scores
-  
-  # ER40 separation
-  er40_all <- dat %>% dplyr::select(matches("ER40")) %>% cbind(demos,.)   # emotive vs neutral
-  er40_emo <- er40_all %>% dplyr::select(matches("_ANG|_FEAR|_HAP|_SAD")) %>% cbind(demos,.) %>% 
-    mutate(ER40_D.ER40D_EMO = rowSums(.[,15:18]))
-  # use iw data for ER40_D.ER40D_EMORTCR
-  # code below was used to check that the item ordering that I got from Lucky matched preexisting data. it did! yay:)
-  er40_ang <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000001_RESP:ER40_D.ER40D_QID000004_CORR,ER40_D.ER40D_QID000021_RESP:ER40_D.ER40D_QID000024_CORR)    # %>% mutate(ang = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
-  er40_fear <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000005_RESP:ER40_D.ER40D_QID000008_CORR,ER40_D.ER40D_QID000025_RESP:ER40_D.ER40D_QID000028_CORR)   #  %>% mutate(fear = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
-  er40_hap <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000009_RESP:ER40_D.ER40D_QID000012_CORR,ER40_D.ER40D_QID000029_RESP:ER40_D.ER40D_QID000032_CORR)    # %>% mutate(hap = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
-  er40_sad <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000017_RESP:ER40_D.ER40D_QID000020_CORR,ER40_D.ER40D_QID000037_RESP:ER40_D.ER40D_QID000040_CORR)    # %>% mutate(sad = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
-  
-  er40_noe <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000013_RESP:ER40_D.ER40D_QID000016_CORR,ER40_D.ER40D_QID000033_RESP:ER40_D.ER40D_QID000036_CORR)    # %>% mutate(noe = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
-  
-  er40_resp <- er40_all %>% dplyr::select(matches("_TTR"))
-  er40_resp$ER40_D.ER40D_EMORTCR <- rowMedians(as.matrix(er40_resp %>% dplyr::select(ER40_D.ER40D_QID000001_TTR:ER40_D.ER40D_QID000012_TTR,
-                                                                                     ER40_D.ER40D_QID000017_TTR:ER40_D.ER40D_QID000032_TTR,
-                                                                                     ER40_D.ER40D_QID000037_TTR:ER40_D.ER40D_QID000040_TTR)))
-  ER40_EMO_iw <- cbind(demos,er40_ang,er40_fear,er40_hap,er40_sad,er40_emo$ER40_D.ER40D_EMO,er40_resp$ER40_D.ER40D_EMORTCR)
-  ER40_NEU_iw <- cbind(demos,er40_noe,er40_all %>% dplyr::select(matches("_NOE")))
-  
-  
-  # MEDDF separation
-  medf_all <- dat %>% dplyr::select(matches("MEDF")) %>% cbind(demos,.)   # same vs different
-  # medf_emo <- medf_all %>% dplyr::select(matches("_ANG|_FEAR|_HAP|_SAD")) %>% cbind(demos,.) # initially used this to calculate MEDF36_A.MEDF36A_DIF, but realized this doesn't work 
-  # use iw data for MEDF36_A.MEDF36A_SAMERTCR
-  medf_resp <- medf_all %>% dplyr::select(matches("_TTR"))
-  medf_resp$MEDF36_A.MEDF36A_DIFRT <- rowMedians(as.matrix(medf_resp %>% dplyr::select(MEDF36_A.MEDF36A_QID000001_TTR:MEDF36_A.MEDF36A_QID000008_TTR,
-                                                                                       MEDF36_A.MEDF36A_QID000010_TTR:MEDF36_A.MEDF36A_QID000012_TTR,
-                                                                                       MEDF36_A.MEDF36A_QID000014_TTR:MEDF36_A.MEDF36A_QID000020_TTR,
-                                                                                       MEDF36_A.MEDF36A_QID000022_TTR:MEDF36_A.MEDF36A_QID000035_TTR)))
-  
-  medf_corr <- medf_all %>% dplyr::select(matches("_CORR"))
-  medf_corr$MEDF36_A.MEDF36A_DIF <- rowSums(medf_corr %>% dplyr::select(MEDF36_A.MEDF36A_QID000001_CORR:MEDF36_A.MEDF36A_QID000008_CORR,
-                                                                        MEDF36_A.MEDF36A_QID000010_CORR:MEDF36_A.MEDF36A_QID000012_CORR,
-                                                                        MEDF36_A.MEDF36A_QID000014_CORR:MEDF36_A.MEDF36A_QID000020_CORR,
-                                                                        MEDF36_A.MEDF36A_QID000022_CORR:MEDF36_A.MEDF36A_QID000035_CORR))
-  
-  
-  MEDF_DIF_iw <- cbind(demos,medf_all %>% dplyr::select(MEDF36_A.MEDF36A_QID000001_RESP:MEDF36_A.MEDF36A_QID000008_CORR,
-                                                        MEDF36_A.MEDF36A_QID000010_RESP:MEDF36_A.MEDF36A_QID000012_CORR,
-                                                        MEDF36_A.MEDF36A_QID000014_RESP:MEDF36_A.MEDF36A_QID000020_CORR,
-                                                        MEDF36_A.MEDF36A_QID000022_RESP:MEDF36_A.MEDF36A_QID000035_CORR),
-                       medf_corr$MEDF36_A.MEDF36A_DIF,medf_resp$MEDF36_A.MEDF36A_DIFRT)
-  
-  # recalculating RTCR for same items
-  medf_same_resp <- medf_all %>% dplyr::select(MEDF36_A.MEDF36A_QID000009_RESP:MEDF36_A.MEDF36A_QID000009_CORR,
-                                                MEDF36_A.MEDF36A_QID000013_RESP:MEDF36_A.MEDF36A_QID000013_CORR,
-                                                MEDF36_A.MEDF36A_QID000021_RESP:MEDF36_A.MEDF36A_QID000021_CORR,
-                                                MEDF36_A.MEDF36A_QID000036_RESP:MEDF36_A.MEDF36A_QID000036_CORR)
-  medf_same_resp$MEDF36_A.MEDF36A_SAME_RTCR <- rowMedians(as.matrix(medf_same_resp %>% dplyr::select(matches("_TTR"))))
-  
-  MEDF_SAME_iw <- cbind(demos, medf_same_resp %>% dplyr::select(MEDF36_A.MEDF36A_QID000009_RESP:MEDF36_A.MEDF36A_QID000036_CORR),
-                        medf_all %>% dplyr::select(MEDF36_A.MEDF36A_SAME_CR),medf_same_resp %>% dplyr::select(MEDF36_A.MEDF36A_SAME_RTCR))
-  
-  # CPF separation
-  cpf_all <- dat %>% dplyr::select(matches("CPF")) %>% cbind(demos,.)     # targets vs foils (TP vs TN)
-  
-  CPF_targets <- cpf_all %>% dplyr::select(CPF_B.CPF_TRIAL000003_RESP:CPF_B.CPF_TRIAL000006_CORR,
-                                           CPF_B.CPF_TRIAL000008_RESP:CPF_B.CPF_TRIAL000010_CORR,
-                                           CPF_B.CPF_TRIAL000014_RESP:CPF_B.CPF_TRIAL000014_CORR,
-                                           CPF_B.CPF_TRIAL000019_RESP:CPF_B.CPF_TRIAL000022_CORR,
-                                           CPF_B.CPF_TRIAL000025_RESP:CPF_B.CPF_TRIAL000025_CORR,
-                                           CPF_B.CPF_TRIAL000028_RESP:CPF_B.CPF_TRIAL000029_CORR,
-                                           CPF_B.CPF_TRIAL000031_RESP:CPF_B.CPF_TRIAL000031_CORR,
-                                           CPF_B.CPF_TRIAL000034_RESP:CPF_B.CPF_TRIAL000036_CORR,
-                                           CPF_B.CPF_TRIAL000040_RESP:CPF_B.CPF_TRIAL000040_CORR,
-                                           CPF_B.CPF_TP,CPF_B.CPF_TPRT) %>% cbind(demos,.)  # checked 8/3/22
-  
-  CPF_foils <- cpf_all %>% dplyr::select(CPF_B.CPF_TRIAL000001_RESP:CPF_B.CPF_TRIAL000002_CORR,
-                                         CPF_B.CPF_TRIAL000007_RESP:CPF_B.CPF_TRIAL000007_CORR,
-                                         CPF_B.CPF_TRIAL000011_RESP:CPF_B.CPF_TRIAL000013_CORR,
-                                         CPF_B.CPF_TRIAL000015_RESP:CPF_B.CPF_TRIAL000018_CORR,
-                                         CPF_B.CPF_TRIAL000023_RESP:CPF_B.CPF_TRIAL000024_CORR,
-                                         CPF_B.CPF_TRIAL000026_RESP:CPF_B.CPF_TRIAL000027_CORR,
-                                         CPF_B.CPF_TRIAL000030_RESP:CPF_B.CPF_TRIAL000030_CORR,
-                                         CPF_B.CPF_TRIAL000032_RESP:CPF_B.CPF_TRIAL000033_CORR,
-                                         CPF_B.CPF_TRIAL000037_RESP:CPF_B.CPF_TRIAL000039_CORR,
-                                         CPF_B.CPF_TN,CPF_B.CPF_TNRT) %>% cbind(demos,.)   # checked 8/3/22
-  
-  # temporary to check TP and TPRT, TN and TNR
-  { # TPRT are a little bit off but TP matches exactly, so i think we're safe
-    temp_resp <- CPF_targets %>% dplyr::select(matches("TTR"))
-    temp_resp$CPF_B.CPF_Tscore <- rowMedians(as.matrix(temp_resp)) 
-    temp_resp <- cbind(temp_resp,CPF_targets$CPF_B.CPF_TPRT)
+  {
     
-    temp_corr <- CPF_targets %>% dplyr::select(matches("CORR"))
-    temp_corr$CPF_B.CPF_Tscore <- rowSums(temp_corr) 
-    temp_corr <- cbind(temp_corr,CPF_targets$CPF_B.CPF_TP)
+    # ER40 separation
+    er40_all <- dat %>% dplyr::select(matches("ER40")) %>% cbind(demos,.)   # emotive vs neutral
+    er40_emo <- er40_all %>% dplyr::select(matches("_ANG|_FEAR|_HAP|_SAD")) %>% cbind(demos,.) %>% 
+      mutate(ER40_D.ER40D_EMO = rowSums(.[,15:18]))
+    # use iw data for ER40_D.ER40D_EMORTCR
+    # code below was used to check that the item ordering that I got from Lucky matched preexisting data. it did! yay:)
+    er40_ang <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000001_RESP:ER40_D.ER40D_QID000004_CORR,ER40_D.ER40D_QID000021_RESP:ER40_D.ER40D_QID000024_CORR)    # %>% mutate(ang = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
+    er40_fear <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000005_RESP:ER40_D.ER40D_QID000008_CORR,ER40_D.ER40D_QID000025_RESP:ER40_D.ER40D_QID000028_CORR)   #  %>% mutate(fear = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
+    er40_hap <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000009_RESP:ER40_D.ER40D_QID000012_CORR,ER40_D.ER40D_QID000029_RESP:ER40_D.ER40D_QID000032_CORR)    # %>% mutate(hap = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
+    er40_sad <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000017_RESP:ER40_D.ER40D_QID000020_CORR,ER40_D.ER40D_QID000037_RESP:ER40_D.ER40D_QID000040_CORR)    # %>% mutate(sad = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
     
-    # TNRT are a little bit off but TN matches exactly, so i think we're safe
-    temp_resp <- CPF_foils %>% dplyr::select(matches("TTR"))
-    temp_resp$CPF_B.CPF_Tscore <- rowMedians(as.matrix(temp_resp)) 
-    temp_resp <- cbind(temp_resp,CPF_foils$CPF_B.CPF_TNRT)
+    er40_noe <- er40_all %>% dplyr::select(ER40_D.ER40D_QID000013_RESP:ER40_D.ER40D_QID000016_CORR,ER40_D.ER40D_QID000033_RESP:ER40_D.ER40D_QID000036_CORR)    # %>% mutate(noe = rowSums(.[,c(5,10,15,20,25,30,35,40)]))
     
-    temp_corr <- CPF_foils %>% dplyr::select(matches("CORR"))
-    temp_corr$CPF_B.CPF_Tscore <- rowSums(temp_corr) 
-    temp_corr <- cbind(temp_corr,CPF_foils$CPF_B.CPF_TN)
-                                         }
-  
-  cpw_all <- dat %>% dplyr::select(matches("CPW")) %>% cbind(demos,.)     # targets vs foils (TP vs TN)
-  
-  CPW_targets <- cpw_all %>% dplyr::select(CPW_A.CPW_TRIAL000001_RESP:CPW_A.CPW_TRIAL000001_CORR,
-                                           CPW_A.CPW_TRIAL000003_RESP:CPW_A.CPW_TRIAL000003_CORR,
-                                           CPW_A.CPW_TRIAL000005_RESP:CPW_A.CPW_TRIAL000005_CORR,
-                                           CPW_A.CPW_TRIAL000009_RESP:CPW_A.CPW_TRIAL000010_CORR,
-                                           CPW_A.CPW_TRIAL000012_RESP:CPW_A.CPW_TRIAL000013_CORR,
-                                           CPW_A.CPW_TRIAL000016_RESP:CPW_A.CPW_TRIAL000017_CORR,
-                                           CPW_A.CPW_TRIAL000019_RESP:CPW_A.CPW_TRIAL000019_CORR,
-                                           CPW_A.CPW_TRIAL000021_RESP:CPW_A.CPW_TRIAL000022_CORR,
-                                           CPW_A.CPW_TRIAL000024_RESP:CPW_A.CPW_TRIAL000025_CORR,
-                                           CPW_A.CPW_TRIAL000029_RESP:CPW_A.CPW_TRIAL000029_CORR,
-                                           CPW_A.CPW_TRIAL000031_RESP:CPW_A.CPW_TRIAL000032_CORR,
-                                           CPW_A.CPW_TRIAL000036_RESP:CPW_A.CPW_TRIAL000036_CORR,
-                                           CPW_A.CPW_TRIAL000039_RESP:CPW_A.CPW_TRIAL000040_CORR,
-                                           CPW_A.CPW_TP,CPW_A.CPW_TPRT) %>% cbind(demos,.)  # checked 8/3/22
-  
-  CPW_foils <- cpw_all %>% dplyr::select(CPW_A.CPW_TRIAL000002_RESP:CPW_A.CPW_TRIAL000002_CORR,
-                                         CPW_A.CPW_TRIAL000004_RESP:CPW_A.CPW_TRIAL000004_CORR,
-                                         CPW_A.CPW_TRIAL000006_RESP:CPW_A.CPW_TRIAL000008_CORR,
-                                         CPW_A.CPW_TRIAL000011_RESP:CPW_A.CPW_TRIAL000011_CORR,
-                                         CPW_A.CPW_TRIAL000014_RESP:CPW_A.CPW_TRIAL000015_CORR,
-                                         CPW_A.CPW_TRIAL000018_RESP:CPW_A.CPW_TRIAL000018_CORR,
-                                         CPW_A.CPW_TRIAL000020_RESP:CPW_A.CPW_TRIAL000020_CORR,
-                                         CPW_A.CPW_TRIAL000023_RESP:CPW_A.CPW_TRIAL000023_CORR,
-                                         CPW_A.CPW_TRIAL000026_RESP:CPW_A.CPW_TRIAL000028_CORR,
-                                         CPW_A.CPW_TRIAL000030_RESP:CPW_A.CPW_TRIAL000030_CORR,
-                                         CPW_A.CPW_TRIAL000033_RESP:CPW_A.CPW_TRIAL000035_CORR,
-                                         CPW_A.CPW_TRIAL000037_RESP:CPW_A.CPW_TRIAL000038_CORR,
-                                         CPW_A.CPW_TN,CPW_A.CPW_TNRT) %>% cbind(demos,.)   # checked 8/3/22
-  
-  # temporary to check TP and TPRT, TN and TNR
-  { # TPRT are a little bit off but TP matches exactly, so i think we're safe
-    temp_resp <- CPW_targets %>% dplyr::select(matches("TTR"))
-    temp_resp$CPW_A.CPW_Tscore <- rowMedians(as.matrix(temp_resp)) 
-    temp_resp <- cbind(temp_resp,CPW_targets$CPW_A.CPW_TPRT)
+    er40_resp <- er40_all %>% dplyr::select(matches("_TTR"))
+    er40_resp$ER40_D.ER40D_EMORTCR <- rowMedians(as.matrix(er40_resp %>% dplyr::select(ER40_D.ER40D_QID000001_TTR:ER40_D.ER40D_QID000012_TTR,
+                                                                                       ER40_D.ER40D_QID000017_TTR:ER40_D.ER40D_QID000032_TTR,
+                                                                                       ER40_D.ER40D_QID000037_TTR:ER40_D.ER40D_QID000040_TTR)))
+    ER40_EMO_iw <- cbind(demos,er40_ang,er40_fear,er40_hap,er40_sad,er40_emo$ER40_D.ER40D_EMO,er40_resp$ER40_D.ER40D_EMORTCR)
+    ER40_NEU_iw <- cbind(demos,er40_noe,er40_all %>% dplyr::select(matches("_NOE")))
     
-    temp_corr <- CPW_targets %>% dplyr::select(matches("CORR"))
-    temp_corr$CPW_A.CPW_Tscore <- rowSums(temp_corr) 
-    temp_corr <- cbind(temp_corr,CPW_targets$CPW_A.CPW_TP)
     
-    # TNRT are a little bit off but TN matches exactly, so i think we're safe
-    temp_resp <- CPW_foils %>% dplyr::select(matches("TTR"))
-    temp_resp$CPW_A.CPW_Tscore <- rowMedians(as.matrix(temp_resp)) 
-    temp_resp <- cbind(temp_resp,CPW_foils$CPW_A.CPW_TNRT)
+    # MEDDF separation
+    medf_all <- dat %>% dplyr::select(matches("MEDF")) %>% cbind(demos,.)   # same vs different
+    # medf_emo <- medf_all %>% dplyr::select(matches("_ANG|_FEAR|_HAP|_SAD")) %>% cbind(demos,.) # initially used this to calculate MEDF36_A.MEDF36A_DIF, but realized this doesn't work 
+    # use iw data for MEDF36_A.MEDF36A_SAMERTCR
+    medf_resp <- medf_all %>% dplyr::select(matches("_TTR"))
+    medf_resp$MEDF36_A.MEDF36A_DIFRT <- rowMedians(as.matrix(medf_resp %>% dplyr::select(MEDF36_A.MEDF36A_QID000001_TTR:MEDF36_A.MEDF36A_QID000008_TTR,
+                                                                                         MEDF36_A.MEDF36A_QID000010_TTR:MEDF36_A.MEDF36A_QID000012_TTR,
+                                                                                         MEDF36_A.MEDF36A_QID000014_TTR:MEDF36_A.MEDF36A_QID000020_TTR,
+                                                                                         MEDF36_A.MEDF36A_QID000022_TTR:MEDF36_A.MEDF36A_QID000035_TTR)))
     
-    temp_corr <- CPW_foils %>% dplyr::select(matches("CORR"))
-    temp_corr$CPW_A.CPW_Tscore <- rowSums(temp_corr) 
-    temp_corr <- cbind(temp_corr,CPW_foils$CPW_A.CPW_TN)
-                                         }
-  
-  volt_all <- dat %>% dplyr::select(matches("VOLT")) %>% cbind(demos,.)   # targets vs foils (TP vs TN)
-  
-  VOLT_targets <- volt_all %>% dplyr::select(SVOLT_A.SVOLT_TRIAL000001_RESP:SVOLT_A.SVOLT_TRIAL000002_CORR,
-                                             SVOLT_A.SVOLT_TRIAL000004_RESP:SVOLT_A.SVOLT_TRIAL000005_CORR,
-                                             SVOLT_A.SVOLT_TRIAL000008_RESP:SVOLT_A.SVOLT_TRIAL000010_CORR,
-                                             SVOLT_A.SVOLT_TRIAL000013_RESP:SVOLT_A.SVOLT_TRIAL000013_CORR,
-                                             SVOLT_A.SVOLT_TRIAL000015_RESP:SVOLT_A.SVOLT_TRIAL000015_CORR,
-                                             SVOLT_A.SVOLT_TRIAL000019_RESP:SVOLT_A.SVOLT_TRIAL000019_CORR,
-                                             SVOLT_A.SVOLT_TP,SVOLT_A.SVOLT_TPRT) %>% cbind(demos,.)  # checked 8/3/22
-  
-  VOLT_foils <- volt_all %>% dplyr::select(SVOLT_A.SVOLT_TRIAL000003_RESP:SVOLT_A.SVOLT_TRIAL000003_CORR,
-                                           SVOLT_A.SVOLT_TRIAL000006_RESP:SVOLT_A.SVOLT_TRIAL000007_CORR,
-                                           SVOLT_A.SVOLT_TRIAL000011_RESP:SVOLT_A.SVOLT_TRIAL000012_CORR,
-                                           SVOLT_A.SVOLT_TRIAL000014_RESP:SVOLT_A.SVOLT_TRIAL000014_CORR,
-                                           SVOLT_A.SVOLT_TRIAL000016_RESP:SVOLT_A.SVOLT_TRIAL000018_CORR,
-                                           SVOLT_A.SVOLT_TRIAL000020_RESP:SVOLT_A.SVOLT_TRIAL000020_CORR,
-                                           SVOLT_A.SVOLT_TN,SVOLT_A.SVOLT_TNRT) %>% cbind(demos,.)   # checked 8/3/22
-  
-  # temporary to check TP and TPRT, TN and TNR
-  { # TPRT are a little bit off but TP matches exactly, so i think we're safe
-    temp_resp <- VOLT_targets %>% dplyr::select(matches("TTR"))
-    temp_resp$SVOLT_A.SVOLT_Tscore <- rowMedians(as.matrix(temp_resp)) 
-    temp_resp <- cbind(temp_resp,VOLT_targets$SVOLT_A.SVOLT_TPRT)
+    medf_corr <- medf_all %>% dplyr::select(matches("_CORR"))
+    medf_corr$MEDF36_A.MEDF36A_DIF <- rowSums(medf_corr %>% dplyr::select(MEDF36_A.MEDF36A_QID000001_CORR:MEDF36_A.MEDF36A_QID000008_CORR,
+                                                                          MEDF36_A.MEDF36A_QID000010_CORR:MEDF36_A.MEDF36A_QID000012_CORR,
+                                                                          MEDF36_A.MEDF36A_QID000014_CORR:MEDF36_A.MEDF36A_QID000020_CORR,
+                                                                          MEDF36_A.MEDF36A_QID000022_CORR:MEDF36_A.MEDF36A_QID000035_CORR))
     
-    temp_corr <- VOLT_targets %>% dplyr::select(matches("CORR"))
-    temp_corr$SVOLT_A.SVOLT_Tscore <- rowSums(temp_corr) 
-    temp_corr <- cbind(temp_corr,VOLT_targets$SVOLT_A.SVOLT_TP)
     
-    # TNRT are a little bit off but TN matches exactly, so i think we're safe
-    temp_resp <- VOLT_foils %>% dplyr::select(matches("TTR"))
-    temp_resp$SVOLT_A.SVOLT_Tscore <- rowMedians(as.matrix(temp_resp)) 
-    temp_resp <- cbind(temp_resp,VOLT_foils$SVOLT_A.SVOLT_TNRT)
+    MEDF_DIF_iw <- cbind(demos,medf_all %>% dplyr::select(MEDF36_A.MEDF36A_QID000001_RESP:MEDF36_A.MEDF36A_QID000008_CORR,
+                                                          MEDF36_A.MEDF36A_QID000010_RESP:MEDF36_A.MEDF36A_QID000012_CORR,
+                                                          MEDF36_A.MEDF36A_QID000014_RESP:MEDF36_A.MEDF36A_QID000020_CORR,
+                                                          MEDF36_A.MEDF36A_QID000022_RESP:MEDF36_A.MEDF36A_QID000035_CORR),
+                         medf_corr$MEDF36_A.MEDF36A_DIF,medf_resp$MEDF36_A.MEDF36A_DIFRT)
     
-    temp_corr <- VOLT_foils %>% dplyr::select(matches("CORR"))
-    temp_corr$SVOLT_A.SVOLT_Tscore <- rowSums(temp_corr) 
-    temp_corr <- cbind(temp_corr,VOLT_foils$SVOLT_A.SVOLT_TN)
+    # recalculating RTCR for same items
+    medf_same_resp <- medf_all %>% dplyr::select(MEDF36_A.MEDF36A_QID000009_RESP:MEDF36_A.MEDF36A_QID000009_CORR,
+                                                 MEDF36_A.MEDF36A_QID000013_RESP:MEDF36_A.MEDF36A_QID000013_CORR,
+                                                 MEDF36_A.MEDF36A_QID000021_RESP:MEDF36_A.MEDF36A_QID000021_CORR,
+                                                 MEDF36_A.MEDF36A_QID000036_RESP:MEDF36_A.MEDF36A_QID000036_CORR)
+    medf_same_resp$MEDF36_A.MEDF36A_SAME_RTCR <- rowMedians(as.matrix(medf_same_resp %>% dplyr::select(matches("_TTR"))))
+    
+    MEDF_SAME_iw <- cbind(demos, medf_same_resp %>% dplyr::select(MEDF36_A.MEDF36A_QID000009_RESP:MEDF36_A.MEDF36A_QID000036_CORR),
+                          medf_all %>% dplyr::select(MEDF36_A.MEDF36A_SAME_CR),medf_same_resp %>% dplyr::select(MEDF36_A.MEDF36A_SAME_RTCR))
+    
+    # CPF separation
+    cpf_all <- dat %>% dplyr::select(matches("CPF")) %>% cbind(demos,.)     # targets vs foils (TP vs TN)
+    
+    CPF_targets <- cpf_all %>% dplyr::select(CPF_B.CPF_TRIAL000003_RESP:CPF_B.CPF_TRIAL000006_CORR,
+                                             CPF_B.CPF_TRIAL000008_RESP:CPF_B.CPF_TRIAL000010_CORR,
+                                             CPF_B.CPF_TRIAL000014_RESP:CPF_B.CPF_TRIAL000014_CORR,
+                                             CPF_B.CPF_TRIAL000019_RESP:CPF_B.CPF_TRIAL000022_CORR,
+                                             CPF_B.CPF_TRIAL000025_RESP:CPF_B.CPF_TRIAL000025_CORR,
+                                             CPF_B.CPF_TRIAL000028_RESP:CPF_B.CPF_TRIAL000029_CORR,
+                                             CPF_B.CPF_TRIAL000031_RESP:CPF_B.CPF_TRIAL000031_CORR,
+                                             CPF_B.CPF_TRIAL000034_RESP:CPF_B.CPF_TRIAL000036_CORR,
+                                             CPF_B.CPF_TRIAL000040_RESP:CPF_B.CPF_TRIAL000040_CORR,
+                                             CPF_B.CPF_TP,CPF_B.CPF_TPRT) %>% cbind(demos,.)  # checked 8/3/22
+    
+    CPF_foils <- cpf_all %>% dplyr::select(CPF_B.CPF_TRIAL000001_RESP:CPF_B.CPF_TRIAL000002_CORR,
+                                           CPF_B.CPF_TRIAL000007_RESP:CPF_B.CPF_TRIAL000007_CORR,
+                                           CPF_B.CPF_TRIAL000011_RESP:CPF_B.CPF_TRIAL000013_CORR,
+                                           CPF_B.CPF_TRIAL000015_RESP:CPF_B.CPF_TRIAL000018_CORR,
+                                           CPF_B.CPF_TRIAL000023_RESP:CPF_B.CPF_TRIAL000024_CORR,
+                                           CPF_B.CPF_TRIAL000026_RESP:CPF_B.CPF_TRIAL000027_CORR,
+                                           CPF_B.CPF_TRIAL000030_RESP:CPF_B.CPF_TRIAL000030_CORR,
+                                           CPF_B.CPF_TRIAL000032_RESP:CPF_B.CPF_TRIAL000033_CORR,
+                                           CPF_B.CPF_TRIAL000037_RESP:CPF_B.CPF_TRIAL000039_CORR,
+                                           CPF_B.CPF_TN,CPF_B.CPF_TNRT) %>% cbind(demos,.)   # checked 8/3/22
+    
+    # temporary to check TP and TPRT, TN and TNR
+    { # TPRT are a little bit off but TP matches exactly, so i think we're safe
+      temp_resp <- CPF_targets %>% dplyr::select(matches("TTR"))
+      temp_resp$CPF_B.CPF_Tscore <- rowMedians(as.matrix(temp_resp)) 
+      temp_resp <- cbind(temp_resp,CPF_targets$CPF_B.CPF_TPRT)
+      
+      temp_corr <- CPF_targets %>% dplyr::select(matches("CORR"))
+      temp_corr$CPF_B.CPF_Tscore <- rowSums(temp_corr) 
+      temp_corr <- cbind(temp_corr,CPF_targets$CPF_B.CPF_TP)
+      
+      # TNRT are a little bit off but TN matches exactly, so i think we're safe
+      temp_resp <- CPF_foils %>% dplyr::select(matches("TTR"))
+      temp_resp$CPF_B.CPF_Tscore <- rowMedians(as.matrix(temp_resp)) 
+      temp_resp <- cbind(temp_resp,CPF_foils$CPF_B.CPF_TNRT)
+      
+      temp_corr <- CPF_foils %>% dplyr::select(matches("CORR"))
+      temp_corr$CPF_B.CPF_Tscore <- rowSums(temp_corr) 
+      temp_corr <- cbind(temp_corr,CPF_foils$CPF_B.CPF_TN)
                                            }
+    
+    cpw_all <- dat %>% dplyr::select(matches("CPW")) %>% cbind(demos,.)     # targets vs foils (TP vs TN)
+    
+    CPW_targets <- cpw_all %>% dplyr::select(CPW_A.CPW_TRIAL000001_RESP:CPW_A.CPW_TRIAL000001_CORR,
+                                             CPW_A.CPW_TRIAL000003_RESP:CPW_A.CPW_TRIAL000003_CORR,
+                                             CPW_A.CPW_TRIAL000005_RESP:CPW_A.CPW_TRIAL000005_CORR,
+                                             CPW_A.CPW_TRIAL000009_RESP:CPW_A.CPW_TRIAL000010_CORR,
+                                             CPW_A.CPW_TRIAL000012_RESP:CPW_A.CPW_TRIAL000013_CORR,
+                                             CPW_A.CPW_TRIAL000016_RESP:CPW_A.CPW_TRIAL000017_CORR,
+                                             CPW_A.CPW_TRIAL000019_RESP:CPW_A.CPW_TRIAL000019_CORR,
+                                             CPW_A.CPW_TRIAL000021_RESP:CPW_A.CPW_TRIAL000022_CORR,
+                                             CPW_A.CPW_TRIAL000024_RESP:CPW_A.CPW_TRIAL000025_CORR,
+                                             CPW_A.CPW_TRIAL000029_RESP:CPW_A.CPW_TRIAL000029_CORR,
+                                             CPW_A.CPW_TRIAL000031_RESP:CPW_A.CPW_TRIAL000032_CORR,
+                                             CPW_A.CPW_TRIAL000036_RESP:CPW_A.CPW_TRIAL000036_CORR,
+                                             CPW_A.CPW_TRIAL000039_RESP:CPW_A.CPW_TRIAL000040_CORR,
+                                             CPW_A.CPW_TP,CPW_A.CPW_TPRT) %>% cbind(demos,.)  # checked 8/3/22
+    
+    CPW_foils <- cpw_all %>% dplyr::select(CPW_A.CPW_TRIAL000002_RESP:CPW_A.CPW_TRIAL000002_CORR,
+                                           CPW_A.CPW_TRIAL000004_RESP:CPW_A.CPW_TRIAL000004_CORR,
+                                           CPW_A.CPW_TRIAL000006_RESP:CPW_A.CPW_TRIAL000008_CORR,
+                                           CPW_A.CPW_TRIAL000011_RESP:CPW_A.CPW_TRIAL000011_CORR,
+                                           CPW_A.CPW_TRIAL000014_RESP:CPW_A.CPW_TRIAL000015_CORR,
+                                           CPW_A.CPW_TRIAL000018_RESP:CPW_A.CPW_TRIAL000018_CORR,
+                                           CPW_A.CPW_TRIAL000020_RESP:CPW_A.CPW_TRIAL000020_CORR,
+                                           CPW_A.CPW_TRIAL000023_RESP:CPW_A.CPW_TRIAL000023_CORR,
+                                           CPW_A.CPW_TRIAL000026_RESP:CPW_A.CPW_TRIAL000028_CORR,
+                                           CPW_A.CPW_TRIAL000030_RESP:CPW_A.CPW_TRIAL000030_CORR,
+                                           CPW_A.CPW_TRIAL000033_RESP:CPW_A.CPW_TRIAL000035_CORR,
+                                           CPW_A.CPW_TRIAL000037_RESP:CPW_A.CPW_TRIAL000038_CORR,
+                                           CPW_A.CPW_TN,CPW_A.CPW_TNRT) %>% cbind(demos,.)   # checked 8/3/22
+    
+    # temporary to check TP and TPRT, TN and TNR
+    { # TPRT are a little bit off but TP matches exactly, so i think we're safe
+      temp_resp <- CPW_targets %>% dplyr::select(matches("TTR"))
+      temp_resp$CPW_A.CPW_Tscore <- rowMedians(as.matrix(temp_resp)) 
+      temp_resp <- cbind(temp_resp,CPW_targets$CPW_A.CPW_TPRT)
+      
+      temp_corr <- CPW_targets %>% dplyr::select(matches("CORR"))
+      temp_corr$CPW_A.CPW_Tscore <- rowSums(temp_corr) 
+      temp_corr <- cbind(temp_corr,CPW_targets$CPW_A.CPW_TP)
+      
+      # TNRT are a little bit off but TN matches exactly, so i think we're safe
+      temp_resp <- CPW_foils %>% dplyr::select(matches("TTR"))
+      temp_resp$CPW_A.CPW_Tscore <- rowMedians(as.matrix(temp_resp)) 
+      temp_resp <- cbind(temp_resp,CPW_foils$CPW_A.CPW_TNRT)
+      
+      temp_corr <- CPW_foils %>% dplyr::select(matches("CORR"))
+      temp_corr$CPW_A.CPW_Tscore <- rowSums(temp_corr) 
+      temp_corr <- cbind(temp_corr,CPW_foils$CPW_A.CPW_TN)
+                                           }
+    
+    volt_all <- dat %>% dplyr::select(matches("VOLT")) %>% cbind(demos,.)   # targets vs foils (TP vs TN)
+    
+    VOLT_targets <- volt_all %>% dplyr::select(SVOLT_A.SVOLT_TRIAL000001_RESP:SVOLT_A.SVOLT_TRIAL000002_CORR,
+                                               SVOLT_A.SVOLT_TRIAL000004_RESP:SVOLT_A.SVOLT_TRIAL000005_CORR,
+                                               SVOLT_A.SVOLT_TRIAL000008_RESP:SVOLT_A.SVOLT_TRIAL000010_CORR,
+                                               SVOLT_A.SVOLT_TRIAL000013_RESP:SVOLT_A.SVOLT_TRIAL000013_CORR,
+                                               SVOLT_A.SVOLT_TRIAL000015_RESP:SVOLT_A.SVOLT_TRIAL000015_CORR,
+                                               SVOLT_A.SVOLT_TRIAL000019_RESP:SVOLT_A.SVOLT_TRIAL000019_CORR,
+                                               SVOLT_A.SVOLT_TP,SVOLT_A.SVOLT_TPRT) %>% cbind(demos,.)  # checked 8/3/22
+    
+    VOLT_foils <- volt_all %>% dplyr::select(SVOLT_A.SVOLT_TRIAL000003_RESP:SVOLT_A.SVOLT_TRIAL000003_CORR,
+                                             SVOLT_A.SVOLT_TRIAL000006_RESP:SVOLT_A.SVOLT_TRIAL000007_CORR,
+                                             SVOLT_A.SVOLT_TRIAL000011_RESP:SVOLT_A.SVOLT_TRIAL000012_CORR,
+                                             SVOLT_A.SVOLT_TRIAL000014_RESP:SVOLT_A.SVOLT_TRIAL000014_CORR,
+                                             SVOLT_A.SVOLT_TRIAL000016_RESP:SVOLT_A.SVOLT_TRIAL000018_CORR,
+                                             SVOLT_A.SVOLT_TRIAL000020_RESP:SVOLT_A.SVOLT_TRIAL000020_CORR,
+                                             SVOLT_A.SVOLT_TN,SVOLT_A.SVOLT_TNRT) %>% cbind(demos,.)   # checked 8/3/22
+    
+    # temporary to check TP and TPRT, TN and TNR
+    { # TPRT are a little bit off but TP matches exactly, so i think we're safe
+      temp_resp <- VOLT_targets %>% dplyr::select(matches("TTR"))
+      temp_resp$SVOLT_A.SVOLT_Tscore <- rowMedians(as.matrix(temp_resp)) 
+      temp_resp <- cbind(temp_resp,VOLT_targets$SVOLT_A.SVOLT_TPRT)
+      
+      temp_corr <- VOLT_targets %>% dplyr::select(matches("CORR"))
+      temp_corr$SVOLT_A.SVOLT_Tscore <- rowSums(temp_corr) 
+      temp_corr <- cbind(temp_corr,VOLT_targets$SVOLT_A.SVOLT_TP)
+      
+      # TNRT are a little bit off but TN matches exactly, so i think we're safe
+      temp_resp <- VOLT_foils %>% dplyr::select(matches("TTR"))
+      temp_resp$SVOLT_A.SVOLT_Tscore <- rowMedians(as.matrix(temp_resp)) 
+      temp_resp <- cbind(temp_resp,VOLT_foils$SVOLT_A.SVOLT_TNRT)
+      
+      temp_corr <- VOLT_foils %>% dplyr::select(matches("CORR"))
+      temp_corr$SVOLT_A.SVOLT_Tscore <- rowSums(temp_corr) 
+      temp_corr <- cbind(temp_corr,VOLT_foils$SVOLT_A.SVOLT_TN)
+                                             }
+  }
   
   # adding summary scores to DISC tasks
   # disc_tasks <- all_cnb %>% dplyr::select(bblid,ddisc_sum:edisc_mcr) # for some reason, there are some scores missing when using this method
@@ -2128,7 +2135,7 @@ demo_new_iw <- new_iw_ad %>% dplyr::select(test_sessions.datasetid:test_sessions
   n_tot <- dim(dat)[1]
   qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
   
-  data_left <- dat[which(dat$SMVE > qu),]  # 230 left
+  data_left <- dat[which(dat$SMVE > qu),]  # 265 left
   n_left <- dim(data_left)[1]
   
   {
@@ -2180,7 +2187,7 @@ demo_new_iw <- new_iw_ad %>% dplyr::select(test_sessions.datasetid:test_sessions
   n_tot <- dim(dat)[1]
   qu <- quantile(dat$SMVE,0.05,na.rm=TRUE)
   
-  data_left <- dat[which(dat$SMVE > qu),]  # 225 left
+  data_left <- dat[which(dat$SMVE > qu),]  # 254 left
   n_left <- dim(data_left)[1]
   
   {
@@ -2232,33 +2239,35 @@ rownames(smve_sum) <- c("ADT","AIM","CPF","CPT","CPW","DDISC","DIGSYM","EDISC","
                         "GNG","MEDF","PLOT","PMAT","PRA","PVRT","RDISC","SVOLT")
 smve_sum[,1] <- sapply(smve_sum[,1],round,3)
 
-# smve_sum %>% 
+# smve_sum %>%
 #   kbl(caption = "SMVE Cutoff value + Rows left per Test", align = rep("c", 8),
 #       col.names = c("Cutoff", "Rows Left")) %>%
 #   kable_classic(full_width = F, html_font = "Cambria") %>%
-#   save_kable(file = "data/outputs/SMVE_table_220803.pdf", self_contained = T)
+#   save_kable(file = "data/outputs/SMVE_table_221005.pdf", self_contained = T)
 
 
 # sum of all test SMVE_drops
-no_good$sum <- rowSums(no_good[,2:18],na.rm = T)
+no_good$sum <- rowSums(no_good[,2:18],na.rm = T) # max: 6 tests flagged, 10/3/2022
 
 # NA for rows with SMVE below 5%
-
-lower_names <- tolower(c("ADT","AIM","CPF","CPT","CPW","DDISC","DIGSYM","EDISC","ER40",
-                 "GNG","MEDF","PLOT","PMAT","PRA","PVRT","RDISC","SVOLT"))
-
-xx <- all_cnb
-x <- left_join(xx,no_good[,1:18],by=c("bblid"="BBLID"))
-# 1:18 of x are demos, 19:91 are full CNB, 92:137 are CAT CNB, 138:154 are no_good
-
-for (i in 1:length(lower_names)) {
-  tname <- lower_names[i]
-  for (j in 1:nrow(x)) {
-    if (!is.na(x[j,i+137]) & x[j,i+137] == 1) {   # need to update this number everytime more columns are added to all_cnb
-      x[j,grepl(tname,colnames(x))] <- NA
+{
+  lower_names <- tolower(c("ADT","AIM","CPF","CPT","CPW","DDISC","DIGSYM","EDISC","ER40",
+                           "GNG","MEDF","PLOT","PMAT","PRA","PVRT","RDISC","SVOLT"))
+  
+  xx <- all_cnb
+  x <- left_join(xx,no_good[,1:18],by=c("bblid"="BBLID"))
+  # 1:18 of x are demos, 19:91 are full CNB, 92:137 are CAT CNB, 138:154 are no_good
+  
+  for (i in 1:length(lower_names)) {
+    tname <- lower_names[i]
+    for (j in 1:nrow(x)) {
+      if (!is.na(x[j,i+137]) & x[j,i+137] == 1) {   # need to update this number everytime more columns are added to all_cnb
+        x[j,grepl(tname,colnames(x))] <- NA
+      }
     }
   }
 }
+
 
 # * Multivariate Outlier Removal ----
 
@@ -2270,9 +2279,9 @@ temp <- x$gng_cr
 temp[temp<100] <- NA
 x$gng_cr <- temp
 
-# temp <- x$GNG60.GNG60_CR
-# temp[temp<50] <- NA
-# x$GNG60.GNG60_CR <- temp
+temp <- x$GNG60.GNG60_CR
+temp[temp<50] <- NA
+x$GNG60.GNG60_CR <- temp
 
 cpt_acc <- x$cpt_ptp - x$cpt_pfp
 
@@ -2454,7 +2463,7 @@ x_TD <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Healthy Controls
 x_PS <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Psychosis"))
 x_MD <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Mood-Anx-BP"))
 
-# write.csv(x,"CNB-CAT_test-retest_with_order-regressed.csv",na="",row.names=FALSE)
+# write.csv(x_all,"CNB-CAT_test-retest_with_order-regressed_221003.csv",na="",row.names=FALSE)
 
 
 # scatters spread by test
@@ -2471,72 +2480,72 @@ x_MD <- data.frame(x99_split,sc) %>% filter(study_group %in% c("Mood-Anx-BP"))
 # * all individual tests printed out by condition ---- 
 
 # overall
-pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_ALL_bytest_220810.pdf",height=9,width=12)
+pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_ALL_bytest_221003.pdf",height=9,width=12)
 pairs.panels(x_all %>% dplyr::select(matches("adt_pc_Oreg|adt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_all %>% dplyr::select(matches("aim_tot_Oreg|S_AIM.AIMTOT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
-pairs.panels(x_all %>% dplyr::select(matches("cpf_cr_Oreg|cpf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_all %>% dplyr::select(matches("cpf_cr_Oreg|cpf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_all %>% dplyr::select(matches("cpf_cr_Oreg|cpf_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
-pairs.panels(x_all %>% dplyr::select(matches("cpf_t_SMVE_Oreg|cpf_2_t_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
-pairs.panels(x_all %>% dplyr::select(matches("cpf_f_SMVE_Oreg|cpf_2_f_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
+# pairs.panels(x_all %>% dplyr::select(matches("cpf_t_SMVE_Oreg|cpf_2_t_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
+# pairs.panels(x_all %>% dplyr::select(matches("cpf_f_SMVE_Oreg|cpf_2_f_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
 pairs.panels(x_all %>% dplyr::select(matches("cpt_acc_Oreg|cpt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
 pairs.panels(x_all %>% dplyr::select(matches("cpw_cr_Oreg|cpw_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x_all %>% dplyr::select(matches("cpw_t_SMVE_Oreg|cpw.1.00.v1.cat_target_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x_all %>% dplyr::select(matches("cpw_f_SMVE_Oreg|cpw.1.00.v1.cat_foil_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_all %>% dplyr::select(matches("cpw_t_SMVE_Oreg|cpw.1.00.v1.cat_target_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_all %>% dplyr::select(matches("cpw_f_SMVE_Oreg|cpw.1.00.v1.cat_foil_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_all %>% dplyr::select(matches("ddisc_sum_Oreg|ddisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_all %>% dplyr::select(matches("dscor_Oreg|S_DIGSYM.DSCOR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
 pairs.panels(x_all %>% dplyr::select(matches("dsmemcr_Oreg|S_DIGSYM.DSMEMCR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym mem
 pairs.panels(x_all %>% dplyr::select(matches("edisc_sum_Oreg|edisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x_all %>% dplyr::select(matches("er40_cr_Oreg|er40_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_all %>% dplyr::select(matches("er40_cr_Oreg|er40_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_all %>% dplyr::select(matches("er40_cr_Oreg|er40_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                         # new, corrected er40 (er40v2)
-pairs.panels(x_all %>% dplyr::select(matches("er40_emo_SMVE_Oreg|er40.2.00.cat_emotive_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, emotive items, by general SMVE
-pairs.panels(x_all %>% dplyr::select(matches("er40_noe_SMVE_Oreg|er40.2.00.cat_neutral_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, neutral items, by general SMVE
+# pairs.panels(x_all %>% dplyr::select(matches("er40_emo_SMVE_Oreg|er40.2.00.cat_emotive_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, emotive items, by general SMVE
+# pairs.panels(x_all %>% dplyr::select(matches("er40_noe_SMVE_Oreg|er40.2.00.cat_neutral_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, neutral items, by general SMVE
 pairs.panels(x_all %>% dplyr::select(matches("gng_cr_Oreg|GNG60.GNG60_CR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
 pairs.panels(x_all %>% dplyr::select(matches("medf_pc_Oreg|medf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x_all %>% dplyr::select(matches("medf_dif_SMVE_Oreg|medf.1.00.cat_different_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)      # medf split, dif items, by general SMVE
-pairs.panels(x_all %>% dplyr::select(matches("medf_same_SMVE_Oreg|medf.1.00.cat_same_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)          # medf split, same items, by general SMVE
+# pairs.panels(x_all %>% dplyr::select(matches("medf_dif_SMVE_Oreg|medf.1.00.cat_different_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)      # medf split, dif items, by general SMVE
+# pairs.panels(x_all %>% dplyr::select(matches("medf_same_SMVE_Oreg|medf.1.00.cat_same_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)          # medf split, same items, by general SMVE
 pairs.panels(x_all %>% dplyr::select(matches("plot_pc_Oreg|plot.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_all %>% dplyr::select(matches("pmat_pc_Oreg|pmat.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_all %>% dplyr::select(matches("pra_cr_Oreg|pra.1.00.d.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # pra
 pairs.panels(x_all %>% dplyr::select(matches("pvrt_cr_Oreg|pvrt.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_all %>% dplyr::select(matches("rdisc_sum_Oreg|rdisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_all %>% dplyr::select(matches("volt_cr_Oreg|volt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x_all %>% dplyr::select(matches("volt_t_SMVE_Oreg|volt.1.00.v1.cat_targets_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x_all %>% dplyr::select(matches("volt_f_SMVE_Oreg|volt.1.00.v1.cat_foils_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_all %>% dplyr::select(matches("volt_t_SMVE_Oreg|volt.1.00.v1.cat_targets_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_all %>% dplyr::select(matches("volt_f_SMVE_Oreg|volt.1.00.v1.cat_foils_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 dev.off()
 
 
 # TD
-pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_TD_bytest_220810.pdf",height=9,width=12)
+pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_TD_bytest_221003.pdf",height=9,width=12)
 pairs.panels(x_TD %>% dplyr::select(matches("adt_pc_Oreg|adt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("aim_tot_Oreg|S_AIM.AIMTOT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
-pairs.panels(x_TD %>% dplyr::select(matches("cpf_cr_Oreg|cpf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_TD %>% dplyr::select(matches("cpf_cr_Oreg|cpf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("cpf_cr_Oreg|cpf_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
-pairs.panels(x_TD %>% dplyr::select(matches("cpf_t_SMVE_Oreg|cpf_2_t_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
-pairs.panels(x_TD %>% dplyr::select(matches("cpf_f_SMVE_Oreg|cpf_2_f_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
+# pairs.panels(x_TD %>% dplyr::select(matches("cpf_t_SMVE_Oreg|cpf_2_t_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
+# pairs.panels(x_TD %>% dplyr::select(matches("cpf_f_SMVE_Oreg|cpf_2_f_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                           # new, corrected cpf (cpfv2)
 pairs.panels(x_TD %>% dplyr::select(matches("cpt_acc_Oreg|cpt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
 pairs.panels(x_TD %>% dplyr::select(matches("cpw_cr_Oreg|cpw_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x_TD %>% dplyr::select(matches("cpw_t_SMVE_Oreg|cpw.1.00.v1.cat_target_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x_TD %>% dplyr::select(matches("cpw_f_SMVE_Oreg|cpw.1.00.v1.cat_foil_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_TD %>% dplyr::select(matches("cpw_t_SMVE_Oreg|cpw.1.00.v1.cat_target_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_TD %>% dplyr::select(matches("cpw_f_SMVE_Oreg|cpw.1.00.v1.cat_foil_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("ddisc_sum_Oreg|ddisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("dscor_Oreg|S_DIGSYM.DSCOR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
 pairs.panels(x_TD %>% dplyr::select(matches("dsmemcr_Oreg|S_DIGSYM.DSMEMCR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym mem
 pairs.panels(x_TD %>% dplyr::select(matches("edisc_sum_Oreg|edisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x_TD %>% dplyr::select(matches("er40_cr_Oreg|er40_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_TD %>% dplyr::select(matches("er40_cr_Oreg|er40_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("er40_cr_Oreg|er40_2_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                         # new, corrected er40 (er40v2)
-pairs.panels(x_TD %>% dplyr::select(matches("er40_emo_SMVE_Oreg|er40.2.00.cat_emotive_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, emotive items, by general SMVE
-pairs.panels(x_TD %>% dplyr::select(matches("er40_noe_SMVE_Oreg|er40.2.00.cat_neutral_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, neutral items, by general SMVE
+# pairs.panels(x_TD %>% dplyr::select(matches("er40_emo_SMVE_Oreg|er40.2.00.cat_emotive_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, emotive items, by general SMVE
+# pairs.panels(x_TD %>% dplyr::select(matches("er40_noe_SMVE_Oreg|er40.2.00.cat_neutral_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)        # er40 split, neutral items, by general SMVE
 pairs.panels(x_TD %>% dplyr::select(matches("gng_cr_Oreg|GNG60.GNG60_CR_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
 pairs.panels(x_TD %>% dplyr::select(matches("medf_pc_Oreg|medf_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x_TD %>% dplyr::select(matches("medf_dif_SMVE_Oreg|medf.1.00.cat_different_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)      # medf split, dif items, by general SMVE
-pairs.panels(x_TD %>% dplyr::select(matches("medf_same_SMVE_Oreg|medf.1.00.cat_same_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)          # medf split, same items, by general SMVE
+# pairs.panels(x_TD %>% dplyr::select(matches("medf_dif_SMVE_Oreg|medf.1.00.cat_different_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)      # medf split, dif items, by general SMVE
+# pairs.panels(x_TD %>% dplyr::select(matches("medf_same_SMVE_Oreg|medf.1.00.cat_same_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)          # medf split, same items, by general SMVE
 pairs.panels(x_TD %>% dplyr::select(matches("plot_pc_Oreg|plot.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("pmat_pc_Oreg|pmat.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("pra_cr_Oreg|pra.1.00.d.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # pra
 pairs.panels(x_TD %>% dplyr::select(matches("pvrt_cr_Oreg|pvrt.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("rdisc_sum_Oreg|rdisc.1.00.cat_default_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_TD %>% dplyr::select(matches("volt_cr_Oreg|volt_cat_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x_TD %>% dplyr::select(matches("volt_t_SMVE_Oreg|volt.1.00.v1.cat_targets_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
-pairs.panels(x_TD %>% dplyr::select(matches("volt_f_SMVE_Oreg|volt.1.00.v1.cat_foils_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_TD %>% dplyr::select(matches("volt_t_SMVE_Oreg|volt.1.00.v1.cat_targets_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+# pairs.panels(x_TD %>% dplyr::select(matches("volt_f_SMVE_Oreg|volt.1.00.v1.cat_foils_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 dev.off()
 
 
@@ -2614,7 +2623,7 @@ dev.off()
 
 # for AdaptiveV vs Extralong (XL) comparison
 # overall
-pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_ALL_bytest_forXL_220803.pdf",height=9,width=12)
+pdf("data/outputs/scatters/CNB-CAT_test-retest_scatter_matrices_ALL_bytest_forXL_221003.pdf",height=9,width=12)
 pairs.panels(x_xl %>% dplyr::select(matches("adt_pc|adt_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_xl %>% dplyr::select(matches("aim_tot_Oreg|S_AIM.AIMTOT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
 pairs.panels(x_xl %>% dplyr::select(matches("cpf_cr|cpf_cat")),lm=TRUE,scale=TRUE,ci=TRUE)
@@ -2663,12 +2672,12 @@ adapt_XL[17,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("pvrt_cr")))),su
 adapt_XL[18,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("rdisc_sum")))),sum(!is.na(x_xl %>% dplyr::select(matches("rdisc.1.00.cat_default")))))
 adapt_XL[19,1] <- min(sum(!is.na(x_xl %>% dplyr::select(matches("volt_cr")))),sum(!is.na(x_xl %>% dplyr::select(matches("volt_cat")))))
 
-adapt_XL %>% 
-  kbl(caption = "Number of Rows for each Test", align = rep("c", 8),
-      col.names = "N") %>%
-  kable_classic(full_width = F, html_font = "Cambria") %>%
-  column_spec(1, width = "12em") %>% 
-  save_kable(file = "data/outputs/AdaptiveV_table_220810.pdf", self_contained = T)
+# adapt_XL %>% 
+#   kbl(caption = "Number of Rows for each Test", align = rep("c", 8),
+#       col.names = "N") %>%
+#   kable_classic(full_width = F, html_font = "Cambria") %>%
+#   column_spec(1, width = "12em") %>% 
+#   save_kable(file = "data/outputs/AdaptiveV_table_220810.pdf", self_contained = T)
 
 
 
