@@ -88,7 +88,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   
   ## BBLID that are in study enroll but not marked as Adaptive
   
-  nodemo<-demo2[demo2$bblid %notin%demo3$bblid,]
+  nodemo<-demo2[demo2$bblid %notin%demo3$bblid,] # 13, 10/5/22
   
   ## Descending Rank filters to the latest DOVISIT
   nodemo<-nodemo %>%
@@ -110,7 +110,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
     dplyr::select(bblid, study_status, study_group, sex, race, ethnic, educ, age_enroll,proto_1,proto_2,proto_3,proto_4)
 
   # all rows that have data from bbl_study_all.csv, but not subjectvisitsall_v.csv
-  no_subjectvisitsall <- demographics_adaptive %>% filter(is.na(sex))   # 42 missing as of 10/03/22
+  no_subjectvisitsall <- demographics_adaptive %>% filter(is.na(sex))   # 0 missing as of 10/05/22
 }
 
 
@@ -181,7 +181,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
     pivot_wider(names_from = battery, values_from = status)
 
   # all rows that have data from bbl_study_all.csv, but not cnb_merged_webcnp_surveys_allbblprjcts_longform.csv 
-  missing <- studyEnroll3[studyEnroll3$bblid %notin% cnb2$bblid,]  # 11 as of 9/6/22
+  missing <- studyEnroll3[studyEnroll3$bblid %notin% cnb2$bblid,]  # 10 as of 10/5/22
   
   tracker <- left_join(demographics_adaptive,cnb2_subset, by = c("bblid"))
   dat_combined <- left_join(demographics_adaptive,fullcnb2, by = c("bblid"))  
@@ -253,7 +253,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
     pivot_wider(names_from = "uniqtest",values_from = "score") %>% arrange(BBLID)
   
   # replace temp with adaptive_v2[,4:ncol(adaptive_v2)]
-  adaptive_v2[,4:ncol(adaptive_v2)] <- adaptive_v2 %>% dplyr::select(matches(".00")) %>% data.frame(sapply(., as.numeric)) %>% select(matches(".1$")) %>% colClean(.)
+  adaptive_v2[,4:ncol(adaptive_v2)] <- adaptive_v2 %>% dplyr::select(matches(".00")) %>% data.frame(sapply(., as.numeric)) %>% dplyr::select(matches(".1$")) %>% colClean(.)
   
   
   
@@ -265,22 +265,22 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   
   pra_v_new_cpf_er40 <- left_join(pra_v,adaptive_cpfv2_er40v2,by=c("BBLID")) %>% arrange(BBLID)
   
-  pra_v1_tocombine <- data.frame(pra_v_new_cpf_er40 %>% select(BBLID:datasetid_v),datasetid_v2 = NA,
-                                 pra_v_new_cpf_er40 %>% select(`medf-1.00-cat_same`:`er40-2.00-cat_neutral`),
+  pra_v1_tocombine <- data.frame(pra_v_new_cpf_er40 %>% dplyr::select(BBLID:datasetid_v),datasetid_v2 = NA,
+                                 pra_v_new_cpf_er40 %>% dplyr::select(`medf-1.00-cat_same`:`er40-2.00-cat_neutral`),
                                  `cpf2.1.00.v1.cat_target` = NA, `cpf2.1.00.v1.cat_foil` = NA)
   
   pra_v2 <- inner_join(adaptive_prad,adaptive_v2,by=c("BBLID","date_pra" = "date")) %>% arrange(BBLID)
   
-  pra_v2_tocombine <- data.frame(pra_v2 %>% select(BBLID:`pra-1.00-d-cat_default`),
-                                 datasetid_v = NA,pra_v2 %>% select(datasetid_v2),
-                                 pra_v2 %>% select(`medf-1.00-cat_same`:`pvrt-1.00-cat_default`),
+  pra_v2_tocombine <- data.frame(pra_v2 %>% dplyr::select(BBLID:`pra-1.00-d-cat_default`),
+                                 datasetid_v = NA,pra_v2 %>% dplyr::select(datasetid_v2),
+                                 pra_v2 %>% dplyr::select(`medf-1.00-cat_same`:`pvrt-1.00-cat_default`),
                                  `cpf-1.00-v1-cat_target` = NA, `cpf-1.00-v1-cat_foil` = NA,
                                  `er40-1.00-cat_emotive` = NA, `er40-1.00-cat_neutral` = NA,
-                                 pra_v2 %>% select(`cpw-1.00-v1-cat_target`:`edisc-1.00-cat_default`),
+                                 pra_v2 %>% dplyr::select(`cpw-1.00-v1-cat_target`:`edisc-1.00-cat_default`),
                                  datasetid_v2CE = NA, date = NA, 
                                  `cpf2-1.00-v2-cat_target` = NA, `cpf2-1.00-v2-cat_foil` = NA,
-                                 pra_v2 %>% select(`er40-2.00-cat_emotive`:`er40-2.00-cat_neutral`),
-                                 pra_v2 %>% select(`cpf2-1.00-v1-cat_target`:`cpf2-1.00-v1-cat_foil`))
+                                 pra_v2 %>% dplyr::select(`er40-2.00-cat_emotive`:`er40-2.00-cat_neutral`),
+                                 pra_v2 %>% dplyr::select(`cpf2-1.00-v1-cat_target`:`cpf2-1.00-v1-cat_foil`))
   
   # some people who have PRA who don't have adaptive_v or adaptive_v2 data
   pra_no_other <- adaptive_prad %>% filter(BBLID %notin% pra_v1_tocombine$BBLID,BBLID %notin% pra_v2_tocombine$BBLID)
@@ -329,7 +329,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
 
 
 # print out CSV of combined CNB data
-write.csv(dat_combined2,"data/inputs/cnb_merged/cnb_merged_20221003.csv",row.names = F)
+write.csv(dat_combined2,"data/inputs/cnb_merged/cnb_merged_20221005.csv",row.names = F)
 
 
 
