@@ -24,11 +24,11 @@ library(wesanderson)
 
 # load data ----
 {
-  adaptive_v2 <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v2_20220829_105100.csv")
-  adaptive_v <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v_20220428_125332.csv")
-  adaptive_cpfv2_er40v2 <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v_cpfv2_er40v2_20220829_104834.csv")
+  adaptive_v2 <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v2_20220926_095354.csv")
+  adaptive_v <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v_20220909_221240.csv")
+  adaptive_cpfv2_er40v2 <- read_csv("data/inputs/cnb/CNB_CAT_session_adaptive_v_cpfv2_er40v2_20220926_095401.csv")
   # no PRA because we don't need PRA RT
-  # adaptive_prad <- read_csv("data/inputs/cnb/CNB_CAT_session_pra-d_20220829_104906.csv")
+  # adaptive_prad <- read_csv("data/inputs/cnb/CNB_CAT_session_pra-d_20220926_095411.csv")
 }
 
 # clean up the adaptive CSVs
