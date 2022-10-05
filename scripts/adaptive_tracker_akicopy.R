@@ -106,7 +106,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   
   demographics_adaptive <- left_join(studyEnroll3,demofinal, by = "bblid")      
   demographics_adaptive$age_enroll<- (mapply(mondf,as.Date(as.character(demographics_adaptive$dobirth), format = "%d-%b-%y"),demographics_adaptive$formatted_doenroll)/12)
-  demographics_adaaptive<-demographics_adaptive%>%
+  demographics_adaptive <- demographics_adaptive%>%
     dplyr::select(bblid, study_status, study_group, sex, race, ethnic, educ, age_enroll,proto_1,proto_2,proto_3,proto_4)
 
   # all rows that have data from bbl_study_all.csv, but not subjectvisitsall_v.csv
@@ -349,7 +349,9 @@ write.csv(dat_combined2,"data/inputs/cnb_merged/cnb_merged_20221003.csv",row.nam
   CATGOA_psy <- read.csv("data/inputs/goa/psychosis_adaptive.csv") %>% arrange(bblid)   # duplicate BBLIDs 22358,106255
   
   # Digging on Slack and checking other notes to figure out these duplicates
-  # 22358: first link crashed, given new link
+  # 22358: first link crashed, given new link (DROPOUT)
+  # 106255: unclear
+  # 
     
   # figuring out why there are duplicates
   
