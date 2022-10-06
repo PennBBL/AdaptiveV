@@ -83,58 +83,60 @@ repeats_only <- extralong_repeat %>% filter(diffdays > 0) %>% mutate(constant = 
 
 
 # PRA from itemwise
-for_pra <- read.csv("data/inputs/cnb/athena_195_360.csv",na.strings=c(""," ","NA"))
-for_pra2 <-  read.csv("data/inputs/cnb/athena_253_324.csv",na.strings=c(""," ","NA"))
-
-PRA_iw1 <- for_pra %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% arrange(bblid) %>% 
-  filter(bblid > 9999,!is.na(PRA_D.PRADWORDCR)) %>% 
-  dplyr::select(matches("test_session|^bblid|PRA_D"))
-
-PRA_iw1$PRA_D.PRADWORDCR <- ifelse(!is.na(PRA_iw1$PRA_D.PRADWORDCR),PRA_iw1$PRA_D.PRADWORDCR,0)
-
-PRA_iw2 <- for_pra2 %>% mutate(bblid = as.numeric(test_sessions.bblid)) %>% arrange(bblid) %>% 
-  filter(bblid > 9999,!is.na(PRA_D.PRADWORDCR)) %>% 
-  dplyr::select(matches("test_session|^bblid|PRA_D"))
-
-PRA_iw2_tomerge <- PRA_iw2 %>% dplyr::select(bblid,test_sessions.datasetid:test_sessions.famid,test_sessions_v.battery,
-                                             test_sessions_v.dotest,test_sessions_v.valid_code,test_sessions_v.age,
-                                             test_sessions_v.dob,test_sessions_v.education,PRA_D.test:PRA_D.PRADCR_RAW)
-
-# all(PRA_iw1$test_sessions.datasetid  %in% PRA_iw2$test_sessions.datasetid) # TRUE, so we can just stick with PRA_iw2
-
-# athena_254_360 <- read.csv("data/inputs/athena_254_360_220713.csv",na.strings=c(""," ","NA")) # PRA cols, but empty
-# athena_3360_1878 <- read.csv("data/inputs/athena_3360_1878.csv",na.strings=c(""," ","NA")) # no PRA cols
-athena_3360_2096 <- read.csv("data/inputs/cnb/athena_3360_2096_220713.csv",na.strings=c(""," ","NA"))
-
-PRA_iw3 <- athena_3360_2096 %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% arrange(bblid) %>% 
-  filter(bblid > 9999,!is.na(PRA_D.PRADWORDCR)) %>% 
-  dplyr::select(matches("test_session|^bblid|PRA_D"))
-
-PRA_iw3_tomerge <- PRA_iw3 %>% mutate(test_sessions_v.valid_code = NA,PRA_D.test = NA,PRA_D.valid_code = NA) %>% 
-  dplyr::select(bblid,test_sessions.datasetid:test_sessions.famid,test_sessions_v.battery,test_sessions_v.dotest,
-                test_sessions_v.valid_code,test_sessions_v.age,test_sessions_v.dob,test_sessions_v.education,
-                PRA_D.test,PRA_D.valid_code,PRA_D.AGE_MON,PRA_D.AGE_YR,PRA_D.PRADLETCR,PRA_D.PRADWORDCR,PRA_D.PRADCR_RAW)
-
-PRA_iw <- rbind(PRA_iw2_tomerge,PRA_iw3_tomerge)
-
-PRA_repeat <- PRA_iw %>% group_by(bblid) %>% dplyr::summarize(n = n()) %>% 
-  left_join(PRA_iw,.,by="bblid") %>% filter(n>1) %>% arrange(bblid,test_sessions_v.dotest)
-
-PRA_repeat$test_sessions_v.dotest <- as.Date(PRA_repeat$test_sessions_v.dotest,format = "%Y-%m-%d")
-PRA_repeat$days <- as.numeric(ymd(PRA_repeat$test_sessions_v.dotest))
-
-# difference between timepoints in days
-PRA_repeat$diffdays <- 0
-for (i in 2:nrow(PRA_repeat)) {
-  PRA_repeat$diffdays[i] <- PRA_repeat$days[i] - PRA_repeat$days[i-1]
+{
+  # for_pra <- read.csv("data/inputs/cnb/athena_195_360.csv",na.strings=c(""," ","NA"))
+  for_pra2 <-  read.csv("data/inputs/cnb/athena_253_324.csv",na.strings=c(""," ","NA"))
+  
+  # PRA_iw1 <- for_pra %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% arrange(bblid) %>% 
+  #   filter(bblid > 9999,!is.na(PRA_D.PRADWORDCR)) %>% 
+  #   dplyr::select(matches("test_session|^bblid|PRA_D"))
+  # 
+  # PRA_iw1$PRA_D.PRADWORDCR <- ifelse(!is.na(PRA_iw1$PRA_D.PRADWORDCR),PRA_iw1$PRA_D.PRADWORDCR,0)
+  
+  PRA_iw2 <- for_pra2 %>% mutate(bblid = as.numeric(test_sessions.bblid)) %>% arrange(bblid) %>% 
+    filter(bblid > 9999,!is.na(PRA_D.PRADWORDCR)) %>% 
+    dplyr::select(matches("test_session|^bblid|PRA_D"))
+  
+  PRA_iw2_tomerge <- PRA_iw2 %>% dplyr::select(bblid,test_sessions.datasetid:test_sessions.famid,test_sessions_v.battery,
+                                               test_sessions_v.dotest,test_sessions_v.valid_code,test_sessions_v.age,
+                                               test_sessions_v.dob,test_sessions_v.education,PRA_D.test:PRA_D.PRADCR_RAW)
+  
+  # all(PRA_iw1$test_sessions.datasetid  %in% PRA_iw2$test_sessions.datasetid) # TRUE, so we can just stick with PRA_iw2
+  
+  # athena_254_360 <- read.csv("data/inputs/athena_254_360_220713.csv",na.strings=c(""," ","NA")) # PRA cols, but empty
+  # athena_3360_1878 <- read.csv("data/inputs/athena_3360_1878.csv",na.strings=c(""," ","NA")) # no PRA cols
+  athena_3360_2096 <- read.csv("data/inputs/cnb/athena_3360_2096_220713.csv",na.strings=c(""," ","NA"))
+  
+  PRA_iw3 <- athena_3360_2096 %>% mutate(bblid = as.numeric(test_sessions_v.bblid)) %>% arrange(bblid) %>% 
+    filter(bblid > 9999,!is.na(PRA_D.PRADWORDCR)) %>% 
+    dplyr::select(matches("test_session|^bblid|PRA_D"))
+  
+  PRA_iw3_tomerge <- PRA_iw3 %>% mutate(test_sessions_v.valid_code = NA,PRA_D.test = NA,PRA_D.valid_code = NA) %>% 
+    dplyr::select(bblid,test_sessions.datasetid:test_sessions.famid,test_sessions_v.battery,test_sessions_v.dotest,
+                  test_sessions_v.valid_code,test_sessions_v.age,test_sessions_v.dob,test_sessions_v.education,
+                  PRA_D.test,PRA_D.valid_code,PRA_D.AGE_MON,PRA_D.AGE_YR,PRA_D.PRADLETCR,PRA_D.PRADWORDCR,PRA_D.PRADCR_RAW)
+  
+  PRA_iw <- rbind(PRA_iw2_tomerge,PRA_iw3_tomerge)
+  
+  PRA_repeat <- PRA_iw %>% group_by(bblid) %>% dplyr::summarize(n = n()) %>% 
+    left_join(PRA_iw,.,by="bblid") %>% filter(n>1) %>% arrange(bblid,test_sessions_v.dotest)
+  
+  PRA_repeat$test_sessions_v.dotest <- as.Date(PRA_repeat$test_sessions_v.dotest,format = "%Y-%m-%d")
+  PRA_repeat$days <- as.numeric(ymd(PRA_repeat$test_sessions_v.dotest))
+  
+  # difference between timepoints in days
+  PRA_repeat$diffdays <- 0
+  for (i in 2:nrow(PRA_repeat)) {
+    PRA_repeat$diffdays[i] <- PRA_repeat$days[i] - PRA_repeat$days[i-1]
+  }
+  
+  temp <- PRA_repeat %>% dplyr::select("bblid","test_sessions_v.dotest")
+  t.first <- temp[match(unique(temp$bblid), temp$bblid),]    # this has the first instances of each unique bblid
+  t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
+  
+  PRA_repeat$combo <- paste(as.character(PRA_repeat$bblid),as.character(PRA_repeat$test_sessions_v.dotest),sep="_")
+  PRA_repeat$diffdays <- ifelse(PRA_repeat$combo %in% t.first$combo,0,PRA_repeat$diffdays)
 }
-
-temp <- PRA_repeat %>% dplyr::select("bblid","test_sessions_v.dotest")
-t.first <- temp[match(unique(temp$bblid), temp$bblid),]    # this has the first instances of each unique bblid
-t.first$combo <- paste(as.character(t.first$bblid),as.character(t.first$test_sessions_v.dotest),sep="_")
-
-PRA_repeat$combo <- paste(as.character(PRA_repeat$bblid),as.character(PRA_repeat$test_sessions_v.dotest),sep="_")
-PRA_repeat$diffdays <- ifelse(PRA_repeat$combo %in% t.first$combo,0,PRA_repeat$diffdays)
 
 # distribution of difference in days
 {
