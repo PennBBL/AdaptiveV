@@ -66,7 +66,7 @@ library(wesanderson)
   VOLT_rt <- read.csv("data/inputs/crowd_sourced_norms/RT_norms_SVOLT.csv")
 }
 
-fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
+fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20221005.csv")
 
 
 # Scaling CAT CNB RT ----
@@ -491,8 +491,41 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
 
 # * try no-scaled median RT ----
 {
-  noscale <- CAT_ADT %>% group_by(BBLID) %>% summarise(noscale = median(`Response Time (ms)`))
-  CAT_ADT <- left_join(CAT_ADT,noscale,by="BBLID")
+  noscale_ADT <- CAT_ADT %>% group_by(BBLID) %>% summarise(noscale_ADT = median(`Response Time (ms)`))
+  CAT_ADT <- left_join(CAT_ADT,noscale_ADT,by="BBLID")
+  
+  noscale_CPF <- CAT_CPF %>% group_by(BBLID) %>% summarise(noscale_CPF = median(`Response Time (ms)`))
+  CAT_CPF <- left_join(CAT_CPF,noscale_CPF,by="BBLID")
+  
+  noscale_CPW <- CAT_CPW %>% group_by(BBLID) %>% summarise(noscale_CPW = median(`Response Time (ms)`))
+  CAT_CPW <- left_join(CAT_CPW,noscale_CPW,by="BBLID")
+  
+  noscale_DDISC <- CAT_DDISC %>% group_by(BBLID) %>% summarise(noscale_DDISC = median(`Response Time (ms)`))
+  CAT_DDISC <- left_join(CAT_DDISC,noscale_DDISC,by="BBLID")
+  
+  noscale_EDISC <- CAT_EDISC %>% group_by(BBLID) %>% summarise(noscale_EDISC = median(`Response Time (ms)`))
+  CAT_EDISC <- left_join(CAT_EDISC,noscale_EDISC,by="BBLID")
+  
+  noscale_ER40 <- CAT_ER40 %>% group_by(BBLID) %>% summarise(noscale_ER40 = median(`Response Time (ms)`))
+  CAT_ER40 <- left_join(CAT_ER40,noscale_ER40,by="BBLID")
+  
+  noscale_MEDF <- CAT_MEDF %>% group_by(BBLID) %>% summarise(noscale_MEDF = median(`Response Time (ms)`))
+  CAT_MEDF <- left_join(CAT_MEDF,noscale_MEDF,by="BBLID")
+  
+  noscale_PLOT <- CAT_PLOT %>% group_by(BBLID) %>% summarise(noscale_PLOT = median(`Response Time (ms)`))
+  CAT_PLOT <- left_join(CAT_PLOT,noscale_PLOT,by="BBLID")
+  
+  noscale_PMAT <- CAT_PMAT %>% group_by(BBLID) %>% summarise(noscale_PMAT = median(`Response Time (ms)`))
+  CAT_PMAT <- left_join(CAT_PMAT,noscale_PMAT,by="BBLID")
+  
+  noscale_PVRT <- CAT_PVRT %>% group_by(BBLID) %>% summarise(noscale_PVRT = median(`Response Time (ms)`))
+  CAT_PVRT <- left_join(CAT_PVRT,noscale_PVRT,by="BBLID")
+  
+  noscale_RDISC <- CAT_RDISC %>% group_by(BBLID) %>% summarise(noscale_RDISC = median(`Response Time (ms)`))
+  CAT_RDISC <- left_join(CAT_RDISC,noscale_RDISC,by="BBLID")
+  
+  noscale_VOLT <- CAT_VOLT %>% group_by(BBLID) %>% summarise(noscale_VOLT = median(`Response Time (ms)`))
+  CAT_VOLT <- left_join(CAT_VOLT,noscale_VOLT,by="BBLID")
 }
 
 
@@ -512,7 +545,18 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
   CNB_merged <- left_join(CNB_merged,MRT_VOLT,by=c("bblid"="BBLID"))
   
   # add noscale
-  CNB_merged <- left_join(CNB_merged,noscale,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,noscale_ADT,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,noscale_CPF,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,noscale_CPW,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,noscale_DDISC,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,noscale_EDISC,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,noscale_ER40,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,noscale_MEDF,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,noscale_PLOT,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,noscale_PMAT,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,noscale_PVRT,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,noscale_RDISC,by=c("bblid"="BBLID"))
+  CNB_merged <- left_join(CNB_merged,noscale_VOLT,by=c("bblid"="BBLID"))
 }
 
 
@@ -534,6 +578,60 @@ fullCNB <- read.csv("data/inputs/cnb_merged/cnb_merged_20220906.csv")
 
 demos <- CNB_merged %>% dplyr::select(bblid:dotest)
 merged_RTs <- CNB_merged %>% dplyr::select(matches("tprt|mcr|rtcr|MRT|corrt|mcrrt|totrt|CRRT|noscale")) %>% cbind(demos,.)
+
+# * plotting with no order regression, or scaling ----
+# no order regression
+pdf("data/outputs/scatters/CNB-CAT_RT_test-retest_scatter_matrices_ALL_noOreg_221005.pdf",height=9,width=12)
+pairs.panels(merged_RTs %>% dplyr::select(matches("adt_rtcr|ADT_MRT")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("aim_totrt|S_AIM.AIMTOTRT")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
+pairs.panels(merged_RTs %>% dplyr::select(matches("cpf_w_rtcr|CPF_MRT")),lm=TRUE,scale=TRUE,ci=TRUE)                          # new, corrected cpf (cpfv2)
+pairs.panels(merged_RTs %>% dplyr::select(matches("cpt_tprt|CPT108.CATCPTT_TPRT")),lm=TRUE,scale=TRUE,ci=TRUE) # cpt
+pairs.panels(merged_RTs %>% dplyr::select(matches("cpw_w_rtcr|CPW_MRT")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("ddisc_mcr|DDISC_MRT")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("dscorrt|S_DIGSYM.DSCORRT")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym
+pairs.panels(merged_RTs %>% dplyr::select(matches("dsmcrrt|S_DIGSYM.DSMCRRT")),lm=TRUE,scale=TRUE,ci=TRUE) # digsym mem
+pairs.panels(merged_RTs %>% dplyr::select(matches("edisc_mcr|EDISC_MRT")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("er40_rtcr|ER40_MRT")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("gng_rtcr|GNG60.GNG60_RTCR")),lm=TRUE,scale=TRUE,ci=TRUE) # gng
+pairs.panels(merged_RTs %>% dplyr::select(matches("medf_rtcr|MEDF_MRT")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("plot_rtcr|PLOT_MRT")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("pmat_rtcr|PMAT_MRT")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("pvrt_rtcr|PVRT_MRT")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("rdisc_mcr|RDISC_MRT")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("volt_w_rtcr|VOLT_MRT")),lm=TRUE,scale=TRUE,ci=TRUE)
+dev.off()
+
+# no scaling, no rapid tests because they were not scaled
+pdf("data/outputs/scatters/CNB-CAT_RT_test-retest_scatter_matrices_ALL_noscale_221005.pdf",height=9,width=12)
+pairs.panels(x_all %>% dplyr::select(matches("adt_rtcr_Oreg|noscale_ADT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("cpf_w_rtcr_Oreg|noscale_CPF_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)     
+pairs.panels(x_all %>% dplyr::select(matches("cpw_w_rtcr_Oreg|noscale_CPW_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("ddisc_mcr_Oreg|noscale_DDISC_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("edisc_mcr_Oreg|noscale_EDISC_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("er40_rtcr_Oreg|noscale_ER40_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("medf_rtcr_Oreg|noscale_MEDF_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("plot_rtcr_Oreg|noscale_PLOT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("pmat_rtcr_Oreg|noscale_PMAT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("pvrt_rtcr_Oreg|noscale_PVRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("rdisc_mcr_Oreg|noscale_RDISC_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(x_all %>% dplyr::select(matches("volt_w_rtcr_Oreg|noscale_VOLT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
+dev.off()
+
+# no scaling or order regressing, no rapid tests because they were not scaled
+pdf("data/outputs/scatters/CNB-CAT_RT_test-retest_scatter_matrices_ALL_noscaleorOreg_221005.pdf",height=9,width=12)
+pairs.panels(merged_RTs %>% dplyr::select(matches("adt_rtcr|noscale_ADT$")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("cpf_w_rtcr|noscale_CPF$")),lm=TRUE,scale=TRUE,ci=TRUE)                
+pairs.panels(merged_RTs %>% dplyr::select(matches("cpw_w_rtcr|noscale_CPW$")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("ddisc_mcr|noscale_DDISC$")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("edisc_mcr|noscale_EDISC$")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("er40_rtcr|noscale_ER40$")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("medf_rtcr|noscale_MEDF$")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("plot_rtcr|noscale_PLOT$")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("pmat_rtcr|noscale_PMAT$")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("pvrt_rtcr|noscale_PVRT$")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("rdisc_mcr|noscale_RDISC$")),lm=TRUE,scale=TRUE,ci=TRUE)
+pairs.panels(merged_RTs %>% dplyr::select(matches("volt_w_rtcr|noscale_VOLT$")),lm=TRUE,scale=TRUE,ci=TRUE)
+dev.off()
 
 # order regress
 {
@@ -581,6 +679,42 @@ merged_RTs <- CNB_merged %>% dplyr::select(matches("tprt|mcr|rtcr|MRT|corrt|mcrr
 }
 
 
+# extreme outliers to check 
+# CPF -- extreme outlier, avg on full/ext high on CAT
+outlier_CPF <- x_all %>% filter(cpf_w_rtcr_Oreg<1,CPF_MRT_Oreg>4) %>% dplyr::select(bblid,dotest,cpf_rtcr,cpf_w_rtcr,CPF_MRT,noscale_CPF,cpf_rtcr_Oreg,cpf_w_rtcr_Oreg,CPF_MRT_Oreg,noscale_CPF_Oreg)
+# BBLIDs (114007)
+
+# CPW -- extreme outlier, high-avg on full/ext high on CAT
+outlier_CPW <- x_all %>% filter(cpw_w_rtcr_Oreg>2, CPW_MRT_Oreg>6) %>% dplyr::select(bblid,dotest,cpw_rtcr,cpw_w_rtcr,CPW_MRT,noscale_CPW,cpw_rtcr_Oreg,cpw_w_rtcr_Oreg,CPW_MRT_Oreg,noscale_CPW_Oreg)
+# BBLIDs (22293)
+
+# DDISC -- extreme outlier, ext high full/low-avg on CAT
+outlier_DDISC <- x_all %>% filter(ddisc_mcr_Oreg>6) %>% dplyr::select(bblid,dotest,ddisc_mcr,DDISC_MRT,noscale_DDISC,ddisc_mcr_Oreg,DDISC_MRT_Oreg,noscale_DDISC_Oreg)
+# BBLIDs (22048)
+
+# DS mem and non-mem -- extreme outlier, high-avg on full/ext high on CAT
+outlier_DS <- x_all %>% filter(dscorrt_Oreg>1, S_DIGSYM.DSCORRT_Oreg>4) %>% dplyr::select(bblid,dotest,dscorrt,dscorrt_Oreg,S_DIGSYM.DSCORRT,S_DIGSYM.DSCORRT_Oreg)
+outlier_DSm <- x_all %>% filter(dsmcrrt_Oreg<2, S_DIGSYM.DSMCRRT_Oreg>6) %>% dplyr::select(bblid,dotest,dsmemcr,dsmcrrt,dsmemcr_Oreg,dsmcrrt_Oreg,S_DIGSYM.DSCORRT,S_DIGSYM.DSMCRRT,S_DIGSYM.DSCORRT_Oreg,S_DIGSYM.DSMCRRT_Oreg)
+# BBLIDs (20974), mem BBLIDs (19838)
+
+# MEDF -- extreme outliers ~3, higher by > 3SD on CAT than full
+outlier_MEDF <- x_all %>% filter(abs(cpf_w_rtcr_Oreg - CPF_MRT_Oreg) > 3) %>% dplyr::select(bblid,dotest,cpf_rtcr,cpf_w_rtcr,CPF_MRT,noscale_CPF,cpf_rtcr_Oreg,cpf_w_rtcr_Oreg,CPF_MRT_Oreg,noscale_CPF_Oreg)
+# BBLIDs (114007,22591,111663)
+
+# PLOT -- extreme outliers, avg and high-avg on full/ext high on CAT
+outlier_CPF <- x_all %>% filter(abs(cpf_w_rtcr_Oreg - CPF_MRT_Oreg) > 3) %>% dplyr::select(bblid,dotest,cpf_rtcr,cpf_w_rtcr,CPF_MRT,noscale_CPF,cpf_rtcr_Oreg,cpf_w_rtcr_Oreg,CPF_MRT_Oreg,noscale_CPF_Oreg)
+# BBLIDs (114007,22591,111663)
+
+# PMAT -- extreme outliers, avg and high-avg on full/ext high on CAT 
+outlier_CPF <- x_all %>% filter(abs(cpf_w_rtcr_Oreg - CPF_MRT_Oreg) > 3) %>% dplyr::select(bblid,dotest,cpf_rtcr,cpf_w_rtcr,CPF_MRT,noscale_CPF,cpf_rtcr_Oreg,cpf_w_rtcr_Oreg,CPF_MRT_Oreg,noscale_CPF_Oreg)
+# BBLIDs (114007,22591,111663)
+
+# RDISC -- extreme outliers, ext high on full/avg and not as high on CAT
+outlier_CPF <- x_all %>% filter(abs(cpf_w_rtcr_Oreg - CPF_MRT_Oreg) > 3) %>% dplyr::select(bblid,dotest,cpf_rtcr,cpf_w_rtcr,CPF_MRT,noscale_CPF,cpf_rtcr_Oreg,cpf_w_rtcr_Oreg,CPF_MRT_Oreg,noscale_CPF_Oreg)
+# BBLIDs (114007,22591,111663)
+
+
+
 
 x_all <- data.frame(merged_RTs,sc)
 x_TD <- data.frame(merged_RTs,sc) %>% filter(study_group %in% c("Healthy Controls"))
@@ -590,7 +724,7 @@ x_MD <- data.frame(merged_RTs,sc) %>% filter(study_group %in% c("Mood-Anx-BP"))
 # * all individual tests printed out by condition ---- 
 
 # overall
-pdf("data/outputs/scatters/CNB-CAT_RT_test-retest_scatter_matrices_ALL_bytest_220908.pdf",height=9,width=12)
+pdf("data/outputs/scatters/CNB-CAT_RT_test-retest_scatter_matrices_ALL_bytest_221005.pdf",height=9,width=12)
 pairs.panels(x_all %>% dplyr::select(matches("adt_rtcr_Oreg|ADT_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)
 pairs.panels(x_all %>% dplyr::select(matches("aim_totrt_Oreg|S_AIM.AIMTOTRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE) # aim
 pairs.panels(x_all %>% dplyr::select(matches("cpf_w_rtcr_Oreg|CPF_MRT_Oreg")),lm=TRUE,scale=TRUE,ci=TRUE)                          # new, corrected cpf (cpfv2)
