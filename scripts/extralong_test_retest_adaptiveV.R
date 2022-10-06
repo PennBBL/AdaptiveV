@@ -23,12 +23,12 @@ library(lubridate)
 
 # load CSVs and create dataset ----
 
-XL <- read.csv("data/inputs/cnb/cnb_merged_webcnp_surveys_allbblprjcts_longform.csv")  #29895 rows , 8/4/22
-extralong <- XL %>% filter(test_sessions.bblid.clean>9999) %>% rename(bblid = test_sessions.bblid.clean)  # 16093 rows
+XL <- read.csv("data/inputs/cnb/cnb_merged_webcnp_surveys_smryscores_allbbl_longform.csv")  #30020 rows , 10/3/22
+extralong <- XL %>% filter(test_sessions.bblid.clean>9999) %>% rename(bblid = test_sessions.bblid.clean)  # 16181 rows
 # extralong <- XL %>% filter(test_sessions.bblid.clean>9999,test_sessions.siteid != "adaptive_v") %>% rename(bblid = test_sessions.bblid.clean)
 
 # cpt_acc generation
-extralong <- extralong %>% mutate(cpt_acc = cpt_ptp - cpt_pfp) %>% dplyr::select(datasetid_platform:cpt_pfp,cpt_acc,cpt_fprt:KRDISC.trr_41.1)
+extralong <- extralong %>% mutate(cpt_acc = cpt_ptp - cpt_pfp) %>% dplyr::select(datasetid_platform:bblid,test_sessions_v.age:cpt_pfp,cpt_acc,cpt_fprt:EDISC.test)
 
 # disc scoring
 ddisc_qs <- extralong %>% dplyr::select((names(extralong)[grep('DDISC.q',colnames(extralong))]))
@@ -37,9 +37,9 @@ ddisc_ttrs <- extralong %>% dplyr::select((names(extralong)[grep('DDISC.trr',col
 extralong$ddisc_mcr <- rowMedians(as.matrix(ddisc_ttrs))
 
 rdisc_qs <- extralong %>% dplyr::select((names(extralong)[grep('RDISC.q',colnames(extralong))]))
-extralong$rdisc_sum <- rowSums(rdisc_qs[,1:41]-1)
+extralong$rdisc_sum <- rowSums(rdisc_qs-1)
 rdisc_ttrs <- extralong %>% dplyr::select((names(extralong)[grep('RDISC.trr',colnames(extralong))]))
-extralong$rdisc_mcr <- rowMedians(as.matrix(rdisc_ttrs[,1:41]))
+extralong$rdisc_mcr <- rowMedians(as.matrix(rdisc_ttrs))
 
 edisc_qs <- extralong %>% dplyr::select((names(extralong)[grep('EDISC',colnames(extralong))])) %>% 
   dplyr::select((names(extralong)[grep('_resp',colnames(extralong))])) %>% 
@@ -100,7 +100,7 @@ PRA_iw2_tomerge <- PRA_iw2 %>% dplyr::select(bblid,test_sessions.datasetid:test_
                                              test_sessions_v.dotest,test_sessions_v.valid_code,test_sessions_v.age,
                                              test_sessions_v.dob,test_sessions_v.education,PRA_D.test:PRA_D.PRADCR_RAW)
 
-# all(PRA_iw$test_sessions.datasetid  %in% PRA_iw2$test_sessions.datasetid) # TRUE, so we can just stick with PRA_iw2
+# all(PRA_iw1$test_sessions.datasetid  %in% PRA_iw2$test_sessions.datasetid) # TRUE, so we can just stick with PRA_iw2
 
 # athena_254_360 <- read.csv("data/inputs/athena_254_360_220713.csv",na.strings=c(""," ","NA")) # PRA cols, but empty
 # athena_3360_1878 <- read.csv("data/inputs/athena_3360_1878.csv",na.strings=c(""," ","NA")) # no PRA cols
@@ -409,7 +409,11 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
     }
     
     # getting rid of invalid codes
-    dat <- subset(dat, (dat[,grepl("_valid",colnames(dat))] != "N"))
+    if (test %in% c("ddisc","rdisc","edisc")){
+      dat <- subset(dat, (dat[,grepl("DISC.valid_code",colnames(dat))] != "N"))
+    } else {
+      dat <- subset(dat, (dat[,grepl("_valid",colnames(dat))] != "N"))
+    }
     
     n <- unique(dat$bblid)
     
@@ -437,7 +441,7 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
     assign(paste0("new_",test),new_dat)
   }
   
-  # special step for EDISC -- need to see if I can get n > 46, ideally n > 50
+  # special step for EDISC -- need to see if I can get n > 49, ideally n > 50
   {
     test <- tests[8]
     test_sum <- test_sums[8]
@@ -527,7 +531,7 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   newtests <- mget(newtexts)
   
   # print both regular pairs.panels as well as drop_3sd implemented pairs.panels
-  # pdf("data/outputs/full_full/all_testretest_noPRA_moreQC_220802.pdf",height=9,width=12)
+  # pdf("data/outputs/full_full/all_testretest_noPRA_moreQC_221005.pdf",height=9,width=12)
   # for (i in 1:length(tests)) {
   #   pairs.panels(newtests[[i]] %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
   #   pairs.panels(newtests[[i]] %>% filter(drop_3sd != 1) %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
@@ -535,10 +539,10 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   # dev.off()
   
   # print table
-  # test_row %>% 
+  # test_row %>%
   #   kbl(caption = "More Info for Scatters", align = rep("c", 8)) %>%
   #   kable_classic(full_width = F, html_font = "Cambria") %>%
-  #   save_kable(file = "data/outputs/full_full/full_full_info_table_220802.pdf", self_contained = T)
+  #   save_kable(file = "data/outputs/full_full/full_full_info_table_221005.pdf", self_contained = T)
 }
 
 
@@ -613,7 +617,7 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
     assign(paste0("new_",test,"_365"),new_testdat)
   }
   
-  # tests that need more rows: DIGSYM (7), EDISC (8), RDISC (15)
+  # tests that need more rows: DIGSYM (i=7,n=39), EDISC (i=8,n=31), RDISC (i=15,n=30)
   for (i in c(7,8,15)) {
     test <- tests[i]
     test_sum <- test_sums[i]
@@ -798,21 +802,32 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
   
   
   # print both regular pairs.panels as well as drop_3sd implemented pairs.panels
-  pdf("data/outputs/full_full/all_testretest_someTP3_365_220810.pdf",height=9,width=12)
-  for (i in 1:length(tests)) {
-    pairs.panels(newtests[[i]] %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
-    # pairs.panels(newtests[[i]] %>% filter(drop_3sd != 1) %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
-  }
-  pairs.panels(new_digsym_123_365 %>% dplyr::select(matches("dsmemcr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
-  pairs.panels(new_dat %>% dplyr::select(matches("PRA_D.PRADWORDCR_t")),lm=TRUE,scale=TRUE,ci=TRUE)
-  pairs.panels(new_pra %>% dplyr::select(matches("PRA_D.PRADWORDCR_t")),lm=TRUE,scale=TRUE,ci=TRUE)
-  dev.off()
+  # pdf("data/outputs/full_full/all_testretest_someTP3_365_221005.pdf",height=9,width=12)
+  # for (i in 1:length(tests)) {
+  #   pairs.panels(newtests[[i]] %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
+  #   # pairs.panels(newtests[[i]] %>% filter(drop_3sd != 1) %>% dplyr::select(matches(test_sums[i])),lm=TRUE,scale=TRUE,ci=TRUE)
+  # }
+  # pairs.panels(new_digsym_123_365 %>% dplyr::select(matches("dsmemcr_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # # pairs.panels(new_dat %>% dplyr::select(matches("PRA_D.PRADWORDCR_t")),lm=TRUE,scale=TRUE,ci=TRUE) # PRA data only using first two TPs
+  # pairs.panels(new_pra %>% dplyr::select(matches("PRA_D.PRADWORDCR_t")),lm=TRUE,scale=TRUE,ci=TRUE)
+  # dev.off()
   
-  # print table
+  
+  # add PRA data to table before printing
+  # old code
+  # test_row[i,] <- c(dim(test_dat)[1],dim(test_dat)[1]-sum_3sd,min(test_dat$new_diffdays),max(test_dat$new_diffdays),round(mean(test_dat$new_diffdays),1),median(test_dat$new_diffdays))
+  test_row <- rbind(test_row[1:13,],
+                    c(dim(new_pra)[1],dim(new_pra)[1]-sum_3sd,min(new_pra$new_diffdays),max(new_pra$new_diffdays),round(mean(new_pra$new_diffdays),1),median(new_pra$new_diffdays)),
+                    test_row[14:16,])
+  rownames(test_row)[14] <- "PRA"
+  
+  # print table (with or without QC column)
   # test_row %>%
+  #   dplyr::select(!matches("QC")) %>%  # add this to ignoore the QC row
   #   kbl(caption = "More Info for Scatters", align = rep("c", 8)) %>%
   #   kable_classic(full_width = F, html_font = "Cambria") %>%
-  #   save_kable(file = "data/outputs/full_full/full_full_info_table_someTP3_365_220804.pdf", self_contained = T)
+  #   # save_kable(file = "data/outputs/full_full/full_full_info_table_someTP3_365_221005.pdf", self_contained = T)
+  #   save_kable(file = "data/outputs/full_full/full_full_info_table_someTP3_365_noQCcol_221005.pdf", self_contained = T)
   
 }
 
@@ -1000,7 +1015,7 @@ demos <- extralong_repeat %>% dplyr::select(datasetid_platform:test_sessions.fam
 
 
 
-# checking memory tests
+# checking memory tests ----
 # starting with CPF: 4  groups
 # 1) people who got the same test form (< 2 months apart from each other)
 # 2) people who got the same test form (> 2 months apart from each other)
