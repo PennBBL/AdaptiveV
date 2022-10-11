@@ -27,7 +27,7 @@ colClean <- function(x){ colnames(x) <- gsub(".1$", "", colnames(x)); x }
   studyEnroll$BBLID = as.numeric(studyEnroll$BBLID)
   
   studyEnroll <- studyEnroll%>%
-    filter( BBLID>1000, BBLID != 18026) # 18026 is an old test record according to Mruganka
+    filter( BBLID>1000, BBLID != 18026) # 18026 is an old test record according to Mrugank
   studyEnroll$formatted_doenroll<- as.Date(as.character(studyEnroll$DOENROLL), format = "%d-%b-%y")
   
   names(studyEnroll)<-tolower(names(studyEnroll))
@@ -333,7 +333,6 @@ write.csv(dat_combined2,"data/inputs/cnb_merged/cnb_merged_20221005.csv",row.nam
 
 
 
-# still haven't touched code below because it's GOA stuff
 
 
 
@@ -342,81 +341,250 @@ write.csv(dat_combined2,"data/inputs/cnb_merged/cnb_merged_20221005.csv",row.nam
 
 { # using Mrugank's merged files, 9/30/22
   # 301 unique BBLIDs
-  CATGOA_ext <- read.csv("data/inputs/goa/externalizing_adaptive.csv") %>% arrange(bblid)   # duplicate BBLIDs 22358,106255
-  CATGOA_mood <- read.csv("data/inputs/goa/mood_anxiety_adaptive.csv") %>% arrange(bblid)   # duplicate BBLIDs 22196,22358,23336,23348,100056,106255,107712,114007
-  CATGOA_per <- read.csv("data/inputs/goa/personality_adaptive.csv") %>% arrange(bblid)   # duplicate BBLIDs 106255
-  CATGOA_phob <- read.csv("data/inputs/goa/phobia_adaptive.csv") %>% arrange(bblid)   # duplicate BBLIDs 22196,22358,23348,106255,107712
-  CATGOA_psy <- read.csv("data/inputs/goa/psychosis_adaptive.csv") %>% arrange(bblid)   # duplicate BBLIDs 22358,106255
+  CATGOA_ext <- read.csv("data/inputs/goa/externalizing_adaptive.csv") %>% arrange(bblid) %>% 
+    filter(!is.na(Domain),study_status %notin% c("dropout","excluded","not enrolled"))    # n = 273 unique BBLID, duplicate BBLIDs 106255
+  CATGOA_mood <- read.csv("data/inputs/goa/mood_anxiety_adaptive.csv") %>% arrange(bblid) %>% 
+    filter(!is.na(Domain),study_status %notin% c("dropout","excluded","not enrolled"))    # n = 276 unique BBLID, duplicate BBLIDs 22196,23336,100056,106255,107712,114007
+  CATGOA_per <- read.csv("data/inputs/goa/personality_adaptive.csv") %>% arrange(bblid) %>% 
+    filter(!is.na(Domain),study_status %notin% c("dropout","excluded","not enrolled"))    # n = 273 unique BBLID, duplicate BBLIDs 106255
+  CATGOA_phob <- read.csv("data/inputs/goa/phobia_adaptive.csv") %>% arrange(bblid) %>% 
+    filter(!is.na(Domain),study_status %notin% c("dropout","excluded","not enrolled"))    # n = 274 unique BBLID, duplicate BBLIDs 22196,106255,107712
+  CATGOA_psy <- read.csv("data/inputs/goa/psychosis_adaptive.csv") %>% arrange(bblid) %>% 
+    filter(!is.na(Domain),study_status %notin% c("dropout","excluded","not enrolled"))    # n = 273 unique BBLID, duplicate BBLIDs 106255
   
   # Digging on Slack and checking other notes to figure out these duplicates
-  # 22358: first link crashed, given new link (DROPOUT)
-  # 106255: unclear
+  # 106255: unclear, two administrations, 4 months apart
   # 
     
   # figuring out why there are duplicates
   
-  phenome <-bind_rows(mood_anxiety,externalizing,phobia)
+  phenome <- bind_rows(CATGOA_ext,CATGOA_mood,CATGOA_per,CATGOA_phob,CATGOA_psy)
   
-  phenome_subset<-phenome%>%
-    select(bblid,Domain,Score)%>%
-    filter(!is.na(as.numeric(bblid)))%>%
-    filter(bblid>1000)%>%
+  phenome_subset <- phenome %>%
+    dplyr::select(bblid:Date,Score) %>%
+    filter(!is.na(as.numeric(bblid))) %>%
+    filter(bblid>1000) %>%
     pivot_wider(names_from = Domain, values_from = Score)
   
   phenome_subset$bblid<- as.numeric(phenome_subset$bblid)
+  names(phenome_subset)[10:14] <- c("Externalizing","Mood","Personality","Phobias","Psychosis")
   
-  tracker3<- left_join(tracker2,phenome_subset, by = "bblid")
+  # unlist the scores
+  temp_ext <- unlist(phenome_subset$Externalizing)
+  temp_moo <- unlist(phenome_subset$Mood)
+  temp_per <- unlist(phenome_subset$Personality)
+  temp_pho <- unlist(phenome_subset$Phobias)
+  temp_psy <- unlist(phenome_subset$Psychosis)
+  
+  
+  
+  # trying something else for now
+  CATGOA_ext <- read.csv("data/inputs/goa/externalizing_adaptive.csv") %>% arrange(bblid) %>% 
+    filter(!is.na(Domain),study_status %notin% c("dropout","excluded","not enrolled")) %>% 
+    rename(CAText_score=Score) # n = 273 unique BBLID, duplicate BBLIDs 106255
+  CATGOA_mood <- read.csv("data/inputs/goa/mood_anxiety_adaptive.csv") %>% arrange(bblid) %>% 
+    filter(!is.na(Domain),study_status %notin% c("dropout","excluded","not enrolled")) %>% 
+    rename(CATmood_score=Score)    # n = 276 unique BBLID, duplicate BBLIDs 22196,23336,100056,106255,107712,114007
+  CATGOA_per <- read.csv("data/inputs/goa/personality_adaptive.csv") %>% arrange(bblid) %>% 
+    filter(!is.na(Domain),study_status %notin% c("dropout","excluded","not enrolled")) %>% 
+    rename(CATper_score=Score)    # n = 273 unique BBLID, duplicate BBLIDs 106255
+  CATGOA_phob <- read.csv("data/inputs/goa/phobia_adaptive.csv") %>% arrange(bblid) %>% 
+    filter(!is.na(Domain),study_status %notin% c("dropout","excluded","not enrolled")) %>% 
+    rename(CATphob_score=Score)    # n = 274 unique BBLID, duplicate BBLIDs 22196,106255,107712
+  CATGOA_psy <- read.csv("data/inputs/goa/psychosis_adaptive.csv") %>% arrange(bblid) %>% 
+    filter(!is.na(Domain),study_status %notin% c("dropout","excluded","not enrolled")) %>% 
+    rename(CATpsy_score=Score)    # n = 273 unique BBLID, duplicate BBLIDs 106255
+  
+  phenome_1 <- left_join(CATGOA_ext %>% dplyr::select(bblid:educ,Date:Time,CAText_score),CATGOA_mood %>% dplyr::select(bblid,CATmood_score),by="bblid")
+  phenome_1 <- left_join(phenome_1,CATGOA_per %>% dplyr::select(bblid,CATper_score),by="bblid")
+  phenome_1 <- left_join(phenome_1,CATGOA_phob %>% dplyr::select(bblid,CATphob_score),by="bblid")
+  phenome_1 <- left_join(phenome_1,CATGOA_psy %>% dplyr::select(bblid,CATpsy_score),by="bblid")
+  
+  
+  # still need to work through the following duplicate BBLIDs: 16527,22593,106255,107712
+  
+  # all(phenome_subset$bblid %in% demographics_adaptive$bblid) TRUE
+  phenome_tojoin <- left_join(demographics_adaptive %>% dplyr::select(bblid,proto_1:proto_2),phenome_1,by="bblid") %>% 
+    dplyr::select(bblid:Date,proto_1:proto_2,CAText_score:CATpsy_score)
 }
-
-#Oracle
-
-{
-  adaptive<-read.csv("C:/Users/Mrugank/Desktop/oracle dump/oracle_dump_update/adaptive.csv") 
-  adaptive<-adaptive%>%
-    select(-c("ORD","REAL_LINK","CONDITION_IDENTIFIER","LIST","GRP"))%>%
-    unite(Order, c("ORDER_NAME", "LINK_NAME"))%>%
-    mutate(BBLID = as.numeric(BBLID))%>%
-    filter(BBLID>1000)
-  
-  adaptive$Order <- paste("Oracle", adaptive$Order, sep="_")
-    
-  adaptive_oracle_pivot<- adaptive%>%
-    pivot_wider(names_from = Order, values_from = DONE)
-  
-  names(adaptive_oracle_pivot)<-tolower(names(adaptive_oracle_pivot))
-  
-  tracker4<- left_join(tracker3,adaptive_oracle_pivot, by = "bblid")
-}
-
-
 
 #GOASSESS Full
 {
-  common_interview<- read.csv("C:/Users/Mrugank/Desktop/oracle dump/oracle_dump_update/axis_common_interview.csv")%>%
-    select(bblid,
-           assessment)%>%
-    filter(assessment == 'PNC GOASSESS(GAF Mod)' )%>%
-    filter(bblid>1000)%>%
-    mutate(status = 1)%>%
-    distinct(bblid,assessment, status)%>%
-    pivot_wider(names_from = assessment, values_from = status)
+  common_interview<- read.csv("data/inputs/goa/Goassess.csv") %>% filter(bblid>9999)
+  x <- common_interview
   
+  ext <- data.frame(
+    x$bblid,
+    x$redcapid,
+    x$odd002,
+    x$cdd010,
+    x$cdd003,
+    x$cdd008,
+    x$cdd005,
+    x$cdd001,
+    x$cdd007,
+    x$odd005,
+    x$cdd009,
+    x$odd001,
+    x$add016_short,
+    x$cdd002,
+    x$odd003,
+    x$add012_short,
+    x$cdd006,
+    x$add011_short,
+    x$odd006,
+    x$cdd004,
+    x$add021_short,
+    x$add013_short,
+    x$add014_short,
+    x$add022_short,
+    x$add020_short,
+    x$add015_short,
+    x$cdd011) 
   
-
-  tracker5<- left_join(tracker4, common_interview, by = "bblid")
+  mood <- data.frame(
+    x$bblid,
+    x$redcapid,
+    x$dep001_short,
+    x$ocd007,
+    x$gad002,
+    x$dep002_short,
+    x$ocd001,
+    x$sip032,
+    x$pan001,
+    x$ocd005,
+    x$ocd016,
+    x$pan004,
+    x$gad001,
+    x$pan003,
+    x$dep006_short,
+    x$ocd003,
+    x$scr007,
+    x$man007_short,
+    x$ocd012,
+    x$dep004_short,
+    x$sui001_short,
+    x$ocd004,
+    x$ocd006,
+    x$ocd011,
+    x$ocd019,
+    x$ocd013,
+    x$ocd008,
+    x$scr001,
+    x$sip039,
+    x$ocd018,
+    x$man004_short,
+    x$sip033,
+    x$ocd017,
+    x$man005_short,
+    x$ocd002,
+    x$ocd014,
+    x$scr006,
+    x$ocd015,
+    x$sep510,
+    x$sip038)
   
-  missing_goa<-common_interview[common_interview$bblid %notin% studyEnroll3$bblid,]
+  # missing info for now
+  per <- data.frame(
+    x$bblid,
+    x$redcapid
+  )
+  
+  fear <- data.frame(
+    x$bblid,
+    x$redcapid,
+    x$agr006,
+    x$agr005,
+    x$soc004,
+    x$agr008,
+    x$soc003,
+    x$agr004,
+    x$agr001,
+    x$soc005,
+    x$soc001,
+    x$phb004,
+    x$agr002,
+    x$agr003,
+    x$phb007,
+    x$soc002,
+    x$phb006,
+    x$phb001,
+    x$agr007,
+    x$phb002,
+    x$sep509,
+    x$phb003,
+    x$phb005,
+    x$sep508,
+    x$phb008,
+    x$sep500,
+    x$sep511)
+  
+  psy <- data.frame(
+    x$bblid,
+    x$redcapid,
+    x$sip012,
+    x$sip007,
+    x$sip010,
+    x$sip008,
+    x$sip011,
+    x$sip013,
+    x$sip005,
+    x$sip003,
+    x$sip004,
+    x$sip006,
+    x$sip009,
+    x$psy001,
+    x$psy029,
+    x$sip014,
+    x$psy060,
+    x$psy020,
+    x$psy070,
+    x$man006_short,
+    x$psy050,
+    x$man003_short,
+    x$man002_short,
+    x$man001_short,
+    x$psy071,
+    x$sip027,
+    x$sip028)
+  
+  # make sum scores
+  ext <- cbind(ext[,1:2],mutate_all(ext[,3:ncol(ext)], function(x) as.numeric(as.character(x))))
+  ext[ext == 9] <- NA   # 9 is for unknown
+  ext <- ext %>% mutate(ext_sum = rowSums(.[,3:ncol(.)],na.rm=T))
+  
+  mood[mood == 9] <- NA   # 9 is for unknown
+  mood <- mood %>% mutate(mood_sum = rowSums(.[,3:ncol(.)],na.rm=T))
+  
+  fear[fear == 9] <- NA   # 9 is for unknown
+  fear <- fear %>% mutate(fear_sum = rowSums(.[,3:ncol(.)],na.rm = T))
+  
+  psy[psy == 9] <- NA   # 9 is for unknown
+  psy <- psy %>% mutate(psy_sum = rowSums(.[,3:ncol(.)],na.rm = T))
+  
+  # combine all sum scores into one dataframe
+  fullGOA <- left_join(ext %>% dplyr::select(x.bblid,x.redcapid,ext_sum),
+                       mood %>% dplyr::select(x.bblid,x.redcapid,mood_sum),by=c("x.bblid","x.redcapid"))
+  fullGOA <- left_join(fullGOA,fear %>% dplyr::select(x.bblid,x.redcapid,fear_sum),by=c("x.bblid","x.redcapid"))
+  fullGOA <- left_join(fullGOA,psy %>% dplyr::select(x.bblid,x.redcapid,psy_sum),by=c("x.bblid","x.redcapid"))  # 305 unique BBLIDs, 10/06/22
+  names(fullGOA)[1:2] <- c("bblid","redcapid")
+  
+  # combine Full GOA scores with CAT GOA scores + demos
+  allGOA <- left_join(fullGOA,phenome_tojoin,by="bblid") # 345 rows because of the duplicate BBLIDs, 10/06/22
+  # can't fix this in time right now so I'm just going to pick random records for the duplicates
+  allGOA <- allGOA %>% arrange(bblid)
+  allGOA <- allGOA[-c(173,98:100,250,267:297,301:303,314),]
 }
 
-tracker6 = data.frame(lapply(tracker5, as.character), stringsAsFactors=FALSE)
-write.csv(tracker6,"C:/Users/Mrugank/Desktop/Adaptive_V/adaptive_tracker1.csv", row.names = FALSE)
+
+write.csv(allGOA,"data/inputs/goa/GOA_merged_221006.csv", row.names = FALSE)
 
 
 
 
 
 
-# extra
+# extra ----
 
 # full GOA records to check, initial QA with Ally
 common_interview <- read.csv("data/inputs/goa/axis_common_interview_220829.csv") %>%
