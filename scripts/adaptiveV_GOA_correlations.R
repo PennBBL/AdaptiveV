@@ -90,6 +90,8 @@ temp_GOA$psy132 <- as.numeric(temp_GOA$psy132)
 # psy071 (believed things later found out it wasn't true), psy_skip (1=continue because hallucinations &/or delusions were endorsed),
 # psy131 (current?), psy132 (age of last symptom occurrence)
 
+# misssing full GOA data for 23472 (Ally is still working on completing this interview, 10/12/22 I can manually check this data for now), 
+# 23354 (all sections marked as complete, but interview complete marked as "no" -- checking with Ally, 10/12/22), 96149
 
 
 
